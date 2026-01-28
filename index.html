@@ -4,10 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Destiny Springs Reception Hub 2026</title>
-    <!-- CSS and Frameworks -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
@@ -16,8 +18,6 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
-        .permission-pulse { animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .5; } }
     </style>
 
     <script type="module">
@@ -108,10 +108,8 @@
             React.useEffect(() => {
                 const initAuth = async () => {
                     try {
-                        // Ensure we use the app-specific auth instance
                         await signInAnonymously(auth);
                     } catch (e) { 
-                        // Set specific error to show instructions
                         if (e.code === 'auth/configuration-not-found') {
                             setAuthError('config-missing');
                         } else {
@@ -171,8 +169,23 @@
             };
             const addShift = () => {
                 if (!selectedDate || !user) return;
-                addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { ...newEvent, date: String(selectedDate), createdAt: Date.now() });
+                addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { 
+                    ...newEvent, 
+                    date: String(selectedDate), 
+                    confirmed: true, // Default to confirmed as requested
+                    createdAt: Date.now() 
+                });
                 setIsAddModalOpen(false);
+            };
+            const toggleConfirmation = (id, currentStatus) => {
+                if (!user) return;
+                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), {
+                    confirmed: !currentStatus
+                });
+            };
+            const removeShift = (id) => {
+                if (!user) return;
+                deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id));
             };
 
             const month = currentDate.getMonth();
@@ -180,29 +193,24 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const firstDayOfMonth = new Date(year, month, 1).getDay();
 
-            // Error Helper for auth/configuration-not-found
+            // Error Helper Screens
             if (authError === 'config-missing') return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-xl space-y-6" },
-                    React.createElement('div', { className: "text-blue-500 font-black text-6xl mb-4" }, "!"),
+                    React.createElement('div', { className: "text-rose-500 font-black text-6xl mb-4" }, "!"),
                     React.createElement('h2', { className: "text-white text-2xl font-bold uppercase tracking-tight" }, "Authentication Missing"),
-                    React.createElement('p', { className: "text-slate-400 text-sm leading-relaxed" }, "Firebase says the project exists, but Authentication hasn't been set up yet. Here is exactly what to click:"),
                     React.createElement('div', { className: "text-left text-[11px] bg-slate-900 p-6 rounded-2xl border border-blue-500/20 space-y-4 font-mono" }, 
-                        React.createElement('p', null, "1. Open your Firebase Console for ", React.createElement('strong', { className: "text-white" }, "reception-calendar-1")),
-                        React.createElement('p', null, "2. Click ", React.createElement('strong', { className: "text-white" }, "Authentication"), " in the left menu."),
-                        React.createElement('p', null, "3. Click the ", React.createElement('strong', { className: "text-white" }, "Sign-in method"), " tab."),
-                        React.createElement('p', null, "4. Click ", React.createElement('strong', { className: "text-white" }, "Add new provider"), " and choose ", React.createElement('strong', { className: "text-white" }, "Anonymous"), "."),
-                        React.createElement('p', null, "5. Toggle to ", React.createElement('strong', { className: "text-white" }, "Enable"), " and click ", React.createElement('strong', { className: "text-white" }, "Save"), "."),
-                        React.createElement('p', null, "6. Refresh this page.")
+                        React.createElement('p', null, "1. Open your Firebase Console."),
+                        React.createElement('p', null, "2. Go to ", React.createElement('strong', { className: "text-white" }, "Authentication"), " > ", React.createElement('strong', { className: "text-white" }, "Sign-in method"), "."),
+                        React.createElement('p', null, "3. Enable ", React.createElement('strong', { className: "text-white" }, "Anonymous"), " provider."),
+                        React.createElement('p', null, "4. Refresh this page.")
                     ),
-                    React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-10 py-4 rounded-xl font-black uppercase tracking-widest hover:bg-blue-500 shadow-xl transition-all" }, "Provider Enabled - Refresh Hub")
+                    React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-10 py-4 rounded-xl font-black uppercase transition-all shadow-xl" }, "Refresh Hub")
                 )
             );
 
-            // Error Helper for Database Rules
             if (permissionError) return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-xl space-y-6" },
                     React.createElement('div', { className: "text-rose-500 font-black text-4xl" }, "DATABASE LOCKED"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Your database rules are blocking access. Go to Firestore Database > Rules and publish:"),
                     React.createElement('pre', { className: "bg-black p-4 rounded-xl text-blue-400 text-[10px] text-left border border-white/10" }, 
                         `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`
                     ),
@@ -230,7 +238,13 @@
                         React.createElement('span', { className: `text-sm font-bold ${isHoliday ? 'text-rose-500' : isDarkMode ? 'text-slate-400' : 'text-slate-600'}` }, d),
                         isHoliday && React.createElement('div', { className: "text-[8px] text-rose-500 font-bold uppercase truncate" }, String(isHoliday)),
                         React.createElement('div', { className: "mt-1 space-y-0.5 overflow-hidden" }, 
-                            dayShifts.map(s => React.createElement('div', { key: s.id, className: `${RECEPTIONISTS[s.empId]?.color || 'bg-slate-400'} text-white text-[9px] px-1 rounded truncate` }, `${String(s.time)} ${RECEPTIONISTS[s.empId]?.name || 'Staff'}`))
+                            dayShifts.map(s => React.createElement('div', { 
+                                key: s.id, 
+                                className: `${RECEPTIONISTS[s.empId]?.color || 'bg-slate-400'} text-white text-[9px] px-1 rounded truncate flex items-center gap-1 ${s.confirmed === false ? 'opacity-60 grayscale-[0.5]' : ''}` 
+                            }, 
+                                s.confirmed === false && React.createElement('span', { className: "text-[8px] font-black" }, "?"),
+                                `${String(s.time)} ${RECEPTIONISTS[s.empId]?.name || 'Staff'}`
+                            ))
                         ),
                         React.createElement('button', { 
                             onClick: (e) => { e.stopPropagation(); setSelectedDate(dateKey); setIsAddModalOpen(true); },
@@ -241,11 +255,11 @@
             }
 
             return React.createElement('div', { className: `${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'} h-screen flex flex-col md:flex-row overflow-hidden font-sans` },
-                // Sidebar
+                // Nav Sidebar
                 React.createElement('div', { className: `w-20 border-r flex flex-col items-center py-8 gap-10 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}` },
                     React.createElement('div', { className: "text-blue-500 font-black text-2xl italic tracking-tighter" }, "DS"),
                     React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.Calendar)),
-                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.FileText)),
+                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.FileText)),
                     React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "mt-auto p-3 hover:scale-110 active:scale-90 transition-all opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
                 ),
                 
@@ -260,7 +274,7 @@
                         React.createElement('section', { className: "mb-8 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left" },
                             React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Desk Vibe"),
                             React.createElement('div', { className: "flex flex-wrap gap-2 mb-4" }, DESK_VIBES.map(v => React.createElement('button', { key: v.label, onClick: () => saveStatus(v, deskStatus.note), className: `p-2 rounded-xl text-xl transition-all ${deskStatus.vibe?.label === v.label ? 'bg-blue-600 shadow-lg ring-2 ring-blue-400/20' : 'bg-slate-800/50'}` }, v.emoji))),
-                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => saveStatus(deskStatus.vibe, e.target.value), className: "w-full bg-slate-800/50 border-none rounded-xl p-3 text-xs h-20 outline-none transition-all focus:bg-slate-800 focus:ring-1 focus:ring-blue-500/20", placeholder: "General notes..." })
+                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => saveStatus(deskStatus.vibe, e.target.value), className: "w-full bg-slate-800/50 border-none rounded-xl p-3 text-xs h-20 outline-none transition-all focus:bg-slate-800", placeholder: "General notes..." })
                         ),
                         React.createElement('section', { className: "mb-8 text-left" },
                             React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Daily Tasks"),
@@ -271,6 +285,24 @@
                             React.createElement('div', { className: "space-y-1" }, tasks.map(t => React.createElement('div', { key: t.id, className: "flex items-center justify-between text-xs p-1 group text-left" }, 
                                 React.createElement('span', { onClick: () => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id), { completed: !t.completed }), className: `cursor-pointer flex-1 ${t.completed ? 'line-through opacity-40' : 'font-medium'}` }, String(t.text)),
                                 React.createElement('button', { onClick: () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id)), className: "text-slate-600 opacity-0 group-hover:opacity-100 hover:text-rose-500" }, "×")
+                            )))
+                        ),
+                        selectedDate && React.createElement('section', { className: "bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10 text-left" },
+                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest italic" }, "Shifts: " + selectedDate),
+                            React.createElement('div', { className: "space-y-1" }, (events[selectedDate] || []).map(s => (
+                                React.createElement('div', { key: s.id, className: `p-3 rounded-xl flex items-center justify-between group ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-200 shadow-sm'}` },
+                                    React.createElement('div', { className: "flex items-center gap-3" },
+                                        React.createElement('button', { 
+                                            onClick: () => toggleConfirmation(s.id, s.confirmed !== false),
+                                            className: `w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${s.confirmed !== false ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-emerald-500/50'}`
+                                        }, s.confirmed !== false && React.createElement('span', { className: "text-[10px] font-black text-white" }, "✓")),
+                                        React.createElement('div', null,
+                                            React.createElement('p', { className: "text-[9px] font-bold opacity-50 uppercase tracking-tighter" }, String(s.time)),
+                                            React.createElement('p', { className: "text-[10px] font-black tracking-tight" }, RECEPTIONISTS[s.empId]?.name || 'Staff')
+                                        )
+                                    ),
+                                    React.createElement('button', { onClick: () => removeShift(s.id), className: "opacity-0 group-hover:opacity-100 text-rose-500 text-xs" }, "×")
+                                )
                             )))
                         )
                     ),
