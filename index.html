@@ -17,18 +17,16 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        .animate-fade-in { animation: fade-in 0.2s ease-out forwards; }
         
-        /* Drag and Drop Visuals */
-        .drag-over { border: 2px dashed #3b82f6 !important; background-color: rgba(59, 130, 246, 0.1) !important; transform: scale(1.02); transition: all 0.2s ease; }
-        .draggable-staff:hover { cursor: grab; }
-        .draggable-staff:active { cursor: grabbing; }
+        .drag-over { border: 2px dashed #3b82f6 !important; background-color: rgba(59, 130, 246, 0.15) !important; transform: scale(1.01); transition: all 0.15s ease; }
+        .draggable-item:hover { cursor: grab; filter: brightness(1.1); }
+        .draggable-item:active { cursor: grabbing; }
 
         @media print {
             .no-print { display: none !important; }
-            .print-only { display: block !important; }
             body { background-color: white !important; color: black !important; overflow: visible !important; }
-            .flex-1 { overflow: visible !important; }
+            .calendar-grid { border: 1px solid #ccc !important; }
         }
     </style>
 
@@ -59,40 +57,21 @@
             "2026-11-26": "Thanksgiving Day", "2026-12-25": "Christmas Day",
         };
 
-        const DESK_VIBES = [
-            { emoji: '☕', label: 'Coffee Powered' }, { emoji: '✨', label: 'Sparkle Mode' },
-            { emoji: '🚀', label: 'Fast & Efficient' }, { emoji: '🎧', label: 'In the Zone' },
-            { emoji: '🌈', label: 'Busy & Happy' }, { emoji: '🦁', label: 'Chaos Coordinator' }
+        const PRESET_COLORS = [
+            { name: 'Rose', bg: 'bg-rose-500', hex: '#f43f5e' },
+            { name: 'Cyan', bg: 'bg-cyan-500', hex: '#06b6d4' },
+            { name: 'Orange', bg: 'bg-orange-500', hex: '#f97316' },
+            { name: 'Violet', bg: 'bg-violet-500', hex: '#8b5cf6' },
+            { name: 'Lime', bg: 'bg-lime-500', hex: '#84cc16' },
+            { name: 'Indigo', bg: 'bg-indigo-500', hex: '#6366f1' },
+            { name: 'Amber', bg: 'bg-amber-500', hex: '#f59e0b' },
+            { name: 'Emerald', bg: 'bg-emerald-500', hex: '#10b981' }
         ];
-
-        const COLORS = ['bg-rose-500', 'bg-cyan-500', 'bg-orange-500', 'bg-violet-500', 'bg-lime-500', 'bg-indigo-500', 'bg-teal-500', 'bg-slate-500'];
 
         const INITIAL_REPORT = {
             mail: '', property: '', keysBadges: '', supplies: '', visitations: '',
             discharges: '', itConcerns: '', aoc: '', maintenance: '', caseManager: '',
             visitorBook: '', otherConcerns: ''
-        };
-
-        const Icons = {
-            Calendar: () => React.createElement('svg', { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" }, 
-                React.createElement('rect', { x: 3, y: 4, width: 18, height: 18, rx: 2, ry: 2 }),
-                React.createElement('line', { x1: 16, y1: 2, x2: 16, y2: 6 }),
-                React.createElement('line', { x1: 8, y1: 2, x2: 8, y2: 6 }),
-                React.createElement('line', { x1: 3, y1: 10, x2: 21, y2: 10 })
-            ),
-            FileText: () => React.createElement('svg', { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
-                React.createElement('path', { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
-                React.createElement('polyline', { points: "14 2 14 8 20 8" }),
-                React.createElement('line', { x1: 16, y1: 13, x2: 8, y2: 13 }),
-                React.createElement('line', { x1: 16, y1: 17, x2: 8, y2: 17 }),
-                React.createElement('polyline', { points: "10 9 9 9 8 9" })
-            ),
-            Users: () => React.createElement('svg', { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
-                React.createElement('path', { d: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" }),
-                React.createElement('circle', { cx: "9", cy: "7", r: "4" }),
-                React.createElement('path', { d: "M23 21v-2a4 4 0 0 0-3-3.87" }),
-                React.createElement('path', { d: "M16 3.13a4 4 0 0 1 0 7.75" })
-            )
         };
 
         function App() {
@@ -101,42 +80,34 @@
             const [activeTab, setActiveTab] = React.useState('calendar');
             const [selectedDate, setSelectedDate] = React.useState(null);
             
-            // Sync with Firestore or Local Storage
             const [events, setEvents] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_events')) || {});
-            const [tasks, setTasks] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_tasks')) || []);
             const [staff, setStaff] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_staff')) || {});
-            const [deskStatus, setDeskStatus] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_vibe')) || { vibe: DESK_VIBES[0], note: '' });
+            const [dayNotes, setDayNotes] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_day_notes')) || {});
             const [currentReport, setCurrentReport] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_report')) || INITIAL_REPORT);
 
             const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
             const [isStaffModalOpen, setIsStaffModalOpen] = React.useState(false);
-            const [newEvent, setNewEvent] = React.useState({ title: 'Shift', empId: '', time: '09:00' });
-            const [newStaffName, setNewStaffName] = React.useState('');
-            const [newTaskText, setNewTaskText] = React.useState('');
-            const [authError, setAuthError] = React.useState(null);
+            const [editingShift, setEditingShift] = React.useState(null);
+            
+            const [newStaff, setNewStaff] = React.useState({ name: '', color: PRESET_COLORS[0].bg });
+            const [newEvent, setNewEvent] = React.useState({ empId: '', time: '09:00', notes: '' });
             const [isDarkMode, setIsDarkMode] = React.useState(true);
-            const [isSaving, setIsSaving] = React.useState(false);
 
-            // Persistence effects
-            React.useEffect(() => { 
+            // Persist locally
+            React.useEffect(() => {
                 localStorage.setItem('ds_hub_events', JSON.stringify(events));
                 localStorage.setItem('ds_hub_staff', JSON.stringify(staff));
-                localStorage.setItem('ds_hub_tasks', JSON.stringify(tasks));
-                localStorage.setItem('ds_hub_vibe', JSON.stringify(deskStatus));
+                localStorage.setItem('ds_hub_day_notes', JSON.stringify(dayNotes));
                 localStorage.setItem('ds_hub_report', JSON.stringify(currentReport));
-            }, [events, staff, tasks, deskStatus, currentReport]);
+            }, [events, staff, dayNotes, currentReport]);
 
             // Auth
             React.useEffect(() => {
-                const initAuth = async () => {
-                    try { await signInAnonymously(auth); } 
-                    catch (e) { setAuthError(e.code === 'auth/configuration-not-found' ? 'config-missing' : e.code); }
-                };
-                initAuth();
-                return onAuthStateChanged(auth, (u) => { if (u) setUser(u); });
+                signInAnonymously(auth);
+                return onAuthStateChanged(auth, setUser);
             }, []);
 
-            // Real-time Cloud Sync
+            // Firestore Sync
             React.useEffect(() => {
                 if (!user) return;
                 const unsubShifts = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), (snap) => {
@@ -153,265 +124,198 @@
                     snap.forEach(d => { list[d.id] = { ...d.data(), id: d.id }; });
                     setStaff(list);
                 });
-                const unsubTasks = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), (snap) => {
-                    const list = [];
-                    snap.forEach(d => list.push({ ...d.data(), id: d.id }));
-                    setTasks(list);
-                });
-                const unsubStatus = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), (snap) => {
-                    if (snap.exists()) setDeskStatus(snap.data());
+                const unsubDayNotes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'dayNotes'), (snap) => {
+                    const notes = {};
+                    snap.forEach(d => { notes[d.id] = d.data().text; });
+                    setDayNotes(notes);
                 });
                 const unsubReport = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), (snap) => {
-                    if (snap.exists()) setCurrentReport({ ...INITIAL_REPORT, ...snap.data() });
+                    if (snap.exists()) setCurrentReport(snap.data());
                 });
-                return () => { unsubShifts(); unsubStaff(); unsubTasks(); unsubStatus(); unsubReport(); };
+                return () => { unsubShifts(); unsubStaff(); unsubDayNotes(); unsubReport(); };
             }, [user]);
 
-            // Staff Management
+            // CRUD Operations
             const addStaff = async () => {
-                if (!newStaffName.trim() || !user) return;
-                const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), {
-                    name: newStaffName.trim(),
-                    color: randomColor,
-                    createdAt: Date.now()
-                });
-                setNewStaffName('');
-            };
-            const deleteStaff = async (id) => {
-                if (!user) return;
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', id));
-                } catch (e) { console.error("Error deleting staff:", e); }
+                if (!newStaff.name.trim()) return;
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), { ...newStaff, createdAt: Date.now() });
+                setNewStaff({ name: '', color: PRESET_COLORS[0].bg });
             };
 
-            // Shift Management
-            const addShift = async () => {
-                if (!selectedDate || !user || !newEvent.empId) return;
-                setIsSaving(true);
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { 
-                    ...newEvent, 
-                    date: String(selectedDate), 
+            const addShift = async (date, empId = null) => {
+                const targetEmpId = empId || newEvent.empId;
+                if (!date || !targetEmpId) return;
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), {
+                    date,
+                    empId: targetEmpId,
+                    time: newEvent.time || '09:00',
                     confirmed: true,
-                    createdAt: Date.now() 
+                    notes: '',
+                    createdAt: Date.now()
                 });
                 setIsAddModalOpen(false);
-                setIsSaving(false);
-            };
-            const toggleConfirmation = async (id, currentStatus) => {
-                if (!user) return;
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { confirmed: !currentStatus });
-            };
-            const updateShiftStaff = async (shiftId, newStaffId) => {
-                if (!user) return;
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', shiftId), { empId: newStaffId });
-            };
-            const removeShift = async (id) => { 
-                if (!user) return; 
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id)); 
-                } catch (e) { console.error("Error deleting shift:", e); }
+                setNewEvent({ empId: '', time: '09:00', notes: '' });
             };
 
-            // Task Management
-            const addTask = async (e) => {
-                e.preventDefault();
-                if (!newTaskText.trim() || !user) return;
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), {
-                    text: newTaskText.trim(),
-                    completed: false,
-                    createdAt: Date.now()
-                });
-                setNewTaskText('');
+            const updateShift = async (id, data) => {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), data);
+                setEditingShift(null);
             };
 
-            const toggleTask = async (task) => {
-                if (!user) return;
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', task.id), {
-                    completed: !task.completed
-                });
+            const deleteItem = async (col, id) => {
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', col, id));
             };
 
-            const deleteTask = async (id) => {
-                if (!user) return;
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', id));
-                } catch (e) { console.error("Error deleting task:", e); }
+            const saveDayNote = async (date, text) => {
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dayNotes', date), { text });
             };
 
-            // Drag and Drop Logic
-            const onDragStart = (e, staffId) => {
-                e.dataTransfer.setData("staffId", staffId);
-                e.dataTransfer.effectAllowed = "move";
+            // Drag and Drop
+            const onDragStart = (e, type, id) => {
+                e.dataTransfer.setData("type", type);
+                e.dataTransfer.setData("id", id);
             };
-            const onDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
-            const onDragLeave = (e) => { e.currentTarget.classList.remove('drag-over'); };
-            const onDropOnShift = (e, shiftId) => {
+
+            const onDrop = async (e, date) => {
                 e.preventDefault();
                 e.currentTarget.classList.remove('drag-over');
-                const staffId = e.dataTransfer.getData("staffId");
-                if (staffId && shiftId) updateShiftStaff(shiftId, staffId);
+                const type = e.dataTransfer.getData("type");
+                const id = e.dataTransfer.getData("id");
+
+                if (type === 'staff') {
+                    addShift(date, id);
+                } else if (type === 'shift') {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { date });
+                }
             };
 
+            // Calendar Logic
             const month = currentDate.getMonth();
             const year = currentDate.getFullYear();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const firstDayOfMonth = new Date(year, month, 1).getDay();
+            const firstDay = new Date(year, month, 1).getDay();
 
-            // Error Helper
-            if (authError === 'config-missing') return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
-                React.createElement('div', { className: "max-w-xl space-y-6" },
-                    React.createElement('div', { className: "text-rose-500 font-black text-6xl" }, "!"),
-                    React.createElement('h2', { className: "text-white text-2xl font-bold uppercase" }, "Cloud Sync Required"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Enable 'Anonymous' Authentication in your Firebase Console to start syncing with the team."),
-                    React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-10 py-4 rounded-xl font-black uppercase transition-all shadow-xl" }, "Refresh Now")
-                )
-            );
-
-            if (!user) return React.createElement('div', { className: "h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-6" }, 
-                React.createElement('div', { className: "w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" }),
-                React.createElement('p', { className: "text-blue-500 font-black tracking-widest text-[10px] uppercase animate-pulse" }, "Securing Connection...")
-            );
-
-            const calendarDays = [];
-            for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(React.createElement('div', { key: `p-${i}`, className: `h-24 sm:h-32 border ${isDarkMode ? 'border-slate-800 bg-slate-900/10' : 'border-slate-100'}` }));
+            const calendarCells = [];
+            for (let i = 0; i < firstDay; i++) calendarCells.push(React.createElement('div', { key: `p-${i}`, className: "h-32 border border-slate-800/30 bg-slate-900/10" }));
+            
             for (let d = 1; d <= daysInMonth; d++) {
                 const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const isHoliday = HOLIDAYS_2026[dateKey];
                 const dayShifts = events[dateKey] || [];
-                calendarDays.push(
+                const holiday = HOLIDAYS_2026[dateKey];
+                const note = dayNotes[dateKey];
+
+                calendarCells.push(
                     React.createElement('div', {
                         key: d,
+                        onDragOver: (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); },
+                        onDragLeave: (e) => e.currentTarget.classList.remove('drag-over'),
+                        onDrop: (e) => onDrop(e, dateKey),
                         onClick: () => setSelectedDate(dateKey),
-                        className: `h-24 sm:h-32 border p-2 cursor-pointer relative group transition-all ${isDarkMode ? 'border-slate-800 hover:bg-slate-800' : 'border-slate-100 hover:bg-slate-50'} ${selectedDate === dateKey ? 'ring-2 ring-blue-500 z-10' : ''}`
-                    }, 
-                        React.createElement('span', { className: `text-sm font-bold ${isHoliday ? 'text-rose-500' : isDarkMode ? 'text-slate-400' : 'text-slate-600'}` }, d),
-                        isHoliday && React.createElement('div', { className: "text-[8px] text-rose-500 font-bold uppercase truncate" }, String(isHoliday)),
-                        React.createElement('div', { className: "mt-1 space-y-0.5 overflow-hidden" }, 
-                            dayShifts.map(s => React.createElement('div', { 
-                                key: s.id, 
-                                className: `${staff[s.empId]?.color || 'bg-slate-400'} text-white text-[9px] px-1 rounded truncate flex items-center gap-1 ${s.confirmed === false ? 'opacity-60 grayscale-[0.5]' : ''}` 
-                            }, 
-                                s.confirmed === false && React.createElement('span', { className: "text-[8px] font-black" }, "?"),
-                                `${String(s.time)} ${staff[s.empId]?.name || 'Staff'}`
+                        className: `h-32 border p-2 relative group overflow-y-auto no-scrollbar transition-all ${isDarkMode ? 'border-slate-800 hover:bg-slate-800/40' : 'border-slate-200 hover:bg-slate-50'} ${selectedDate === dateKey ? 'ring-2 ring-blue-500 z-10' : ''}`
+                    },
+                        React.createElement('div', { className: "flex justify-between items-start mb-1" },
+                            React.createElement('span', { className: `text-lg font-black ${holiday ? 'text-rose-500' : 'text-slate-500'}` }, d),
+                            holiday && React.createElement('span', { className: "text-[8px] bg-rose-500 text-white px-1 rounded uppercase font-bold" }, String(holiday))
+                        ),
+                        note && React.createElement('div', { className: "text-[9px] font-black text-rose-400 uppercase leading-tight mb-1 bg-rose-500/10 p-1 rounded border border-rose-500/20" }, "⚠️ " + String(note)),
+                        React.createElement('div', { className: "space-y-1" },
+                            dayShifts.map(s => (
+                                React.createElement('div', {
+                                    key: s.id,
+                                    draggable: true,
+                                    onDragStart: (e) => onDragStart(e, 'shift', s.id),
+                                    onClick: (e) => { e.stopPropagation(); setEditingShift(s); },
+                                    className: `draggable-item p-1.5 rounded shadow-sm text-white font-bold leading-none flex items-center gap-1 transition-all ${staff[s.empId]?.color || 'bg-slate-500'} ${!s.confirmed ? 'opacity-50 ring-1 ring-white/30 ring-dashed' : ''}`
+                                },
+                                    !s.confirmed && React.createElement('span', { className: "text-[10px]" }, "❓"),
+                                    React.createElement('span', { className: "text-[11px] truncate flex-1" }, (staff[s.empId]?.name || '...').toUpperCase())
+                                )
                             ))
                         ),
-                        React.createElement('button', { 
+                        React.createElement('button', {
                             onClick: (e) => { e.stopPropagation(); setSelectedDate(dateKey); setIsAddModalOpen(true); },
-                            className: "absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 bg-blue-600 text-white p-1 rounded-lg text-xs"
+                            className: "absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 bg-blue-600 text-white w-6 h-6 rounded-full font-bold shadow-lg"
                         }, "+")
                     )
                 );
             }
 
-            return React.createElement('div', { className: `${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'} h-screen flex flex-col md:flex-row overflow-hidden font-sans` },
-                // Sidebar Nav
-                React.createElement('div', { className: `w-20 border-r flex flex-col items-center py-8 gap-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'} no-print` },
+            return React.createElement('div', { className: `${isDarkMode ? 'bg-slate-950' : 'bg-slate-50'} h-screen flex flex-col md:flex-row overflow-hidden` },
+                // Sidebar Navigation
+                React.createElement('div', { className: `w-20 border-r flex flex-col items-center py-8 gap-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} no-print` },
                     React.createElement('div', { className: "text-blue-500 font-black text-2xl italic" }, "DS"),
-                    React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600' : 'hover:bg-slate-800'}` }, React.createElement(Icons.Calendar)),
-                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600' : 'hover:bg-slate-800'}` }, React.createElement(Icons.FileText)),
-                    React.createElement('button', { onClick: () => setIsStaffModalOpen(true), className: "p-3 rounded-2xl transition-all hover:bg-slate-800" }, React.createElement(Icons.Users)),
-                    React.createElement('div', { className: "mt-auto flex flex-col items-center gap-4" },
-                        isSaving && React.createElement('div', { className: "w-2 h-2 bg-emerald-500 rounded-full animate-ping" }),
-                        React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "p-3 opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
-                    )
+                    React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-4 rounded-2xl ${activeTab === 'calendar' ? 'bg-blue-600 shadow-xl' : 'hover:bg-slate-800'}` }, "📅"),
+                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-4 rounded-2xl ${activeTab === 'report' ? 'bg-blue-600 shadow-xl' : 'hover:bg-slate-800'}` }, "📋"),
+                    React.createElement('button', { onClick: () => setIsStaffModalOpen(true), className: "p-4 rounded-2xl hover:bg-slate-800 text-xl" }, "👥"),
+                    React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "mt-auto p-4 opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
                 ),
-                
+
                 activeTab === 'calendar' ? 
                 React.createElement('div', { className: "flex-1 flex overflow-hidden" },
-                    // Status & Staff Sidebar
-                    React.createElement('div', { className: `w-80 border-r p-6 overflow-y-auto no-scrollbar ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-100'} no-print` },
-                        React.createElement('header', { className: "mb-6" },
-                            React.createElement('h1', { className: "text-xl font-black tracking-tighter" }, "DESTINY SPRINGS"),
-                            React.createElement('p', { className: "text-[10px] font-bold text-slate-500 uppercase" }, "Team Hub")
+                    // Control Panel
+                    React.createElement('div', { className: `w-80 border-r p-6 overflow-y-auto no-scrollbar ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-white border-slate-200'} no-print` },
+                        React.createElement('header', { className: "mb-8" },
+                            React.createElement('h1', { className: "text-2xl font-black tracking-tighter" }, "TEAM HUB"),
+                            React.createElement('p', { className: "text-[10px] font-bold text-slate-500 uppercase tracking-widest" }, "Reception Intelligence")
                         ),
                         
-                        // Drag Source: Staff List
-                        React.createElement('section', { className: "mb-6" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest italic" }, "Available Staff (Drag to Swap)"),
-                            React.createElement('div', { className: "flex flex-wrap gap-2" }, Object.values(staff).map(s => (
-                                React.createElement('div', { 
-                                    key: s.id, 
+                        React.createElement('section', { className: "mb-8" },
+                            React.createElement('h2', { className: "text-[11px] font-black text-slate-500 uppercase mb-4 tracking-[0.2em]" }, "Team (Drag to Assign)"),
+                            React.createElement('div', { className: "flex flex-wrap gap-2" }, 
+                                Object.values(staff).map(s => React.createElement('div', {
+                                    key: s.id,
                                     draggable: true,
-                                    onDragStart: (e) => onDragStart(e, s.id),
-                                    className: `draggable-staff px-3 py-1 rounded-full text-[10px] font-black text-white ${s.color} shadow-sm active:scale-95 transition-transform`
-                                }, s.name)
-                            )))
-                        ),
-
-                        React.createElement('section', { className: "mb-6 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Desk Vibe"),
-                            React.createElement('div', { className: "flex flex-wrap gap-2 mb-4" }, DESK_VIBES.map(v => React.createElement('button', { key: v.label, onClick: () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: deskStatus.note }), className: `p-2 rounded-xl text-xl ${deskStatus.vibe?.label === v.label ? 'bg-blue-600' : 'bg-slate-800/50'}` }, v.emoji))),
-                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: deskStatus.vibe, note: e.target.value }), className: "w-full bg-slate-800/50 border-none rounded-xl p-3 text-xs h-16 outline-none focus:bg-slate-800", placeholder: "Immediate alerts..." })
-                        ),
-
-                        React.createElement('section', { className: "mb-6" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Daily Tasks"),
-                            React.createElement('form', { onSubmit: addTask, className: "flex gap-2 mb-4" }, 
-                                React.createElement('input', { value: newTaskText, onChange: e => setNewTaskText(e.target.value), className: "flex-1 bg-slate-800/50 rounded-lg p-2 text-xs outline-none", placeholder: "Add task..." }),
-                                React.createElement('button', { type: "submit", className: "bg-blue-600 px-3 rounded-lg font-bold" }, "+")
-                            ),
-                            React.createElement('div', { className: "space-y-1" }, tasks.map(t => React.createElement('div', { key: t.id, className: "flex items-center justify-between text-xs p-1 group text-left" }, 
-                                React.createElement('span', { onClick: () => toggleTask(t), className: `cursor-pointer flex-1 ${t.completed ? 'line-through opacity-40' : 'font-medium'}` }, String(t.text)),
-                                React.createElement('button', { onClick: () => deleteTask(t.id), className: "text-slate-600 hover:text-rose-500 transition-colors" }, "×")
-                            )))
-                        ),
-
-                        selectedDate && React.createElement('section', { className: "bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Shifts: " + selectedDate),
-                            React.createElement('div', { className: "space-y-1" }, (events[selectedDate] || []).map(s => (
-                                React.createElement('div', { 
-                                    key: s.id, 
-                                    onDragOver: onDragOver,
-                                    onDragLeave: onDragLeave,
-                                    onDrop: (e) => onDropOnShift(e, s.id),
-                                    className: `p-3 rounded-xl flex items-center justify-between group transition-all ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-200'}` 
-                                },
-                                    React.createElement('div', { className: "flex items-center gap-3" },
-                                        React.createElement('button', { 
-                                            onClick: () => toggleConfirmation(s.id, s.confirmed !== false),
-                                            className: `w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${s.confirmed !== false ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700'}`
-                                        }, s.confirmed !== false && React.createElement('span', { className: "text-[10px] font-black text-white" }, "✓")),
-                                        React.createElement('div', { className: "text-left" },
-                                            React.createElement('p', { className: "text-[9px] font-bold opacity-50 uppercase" }, String(s.time)),
-                                            React.createElement('p', { className: "text-[10px] font-black" }, staff[s.empId]?.name || 'Staff')
-                                        )
-                                    ),
-                                    React.createElement('button', { onClick: () => removeShift(s.id), className: "text-rose-500 opacity-40 hover:opacity-100 transition-opacity" }, "×")
-                                )
-                            )))
-                        )
-                    ),
-                    // Main Grid
-                    React.createElement('div', { className: "flex-1 p-8 overflow-y-auto no-scrollbar" },
-                        React.createElement('div', { className: "flex justify-between items-center mb-8 no-print" },
-                            React.createElement('h2', { className: "text-4xl font-black tracking-tighter uppercase" }, currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })),
-                            React.createElement('div', { className: "flex gap-3 bg-slate-900 p-1 rounded-xl shadow-lg border border-slate-800" }, 
-                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month-1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg text-xs" }, "◀"),
-                                React.createElement('button', { onClick: () => window.print(), className: "px-4 py-1 text-[10px] font-black uppercase hover:text-blue-500 transition-all" }, "Print Summary"),
-                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month+1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg text-xs" }, "▶")
+                                    onDragStart: (e) => onDragStart(e, 'staff', s.id),
+                                    className: `draggable-item px-4 py-2 rounded-xl text-[12px] font-black text-white shadow-md ${s.color}`
+                                }, s.name.toUpperCase()))
                             )
                         ),
-                        React.createElement('div', { className: "grid grid-cols-7 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl" },
-                            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => React.createElement('div', { key: day, className: "p-4 text-center text-[10px] font-black text-slate-500 uppercase border-b border-slate-800 bg-slate-900/30" }, day)),
-                            calendarDays
+
+                        selectedDate && React.createElement('section', { className: "animate-fade-in space-y-4" },
+                            React.createElement('div', { className: "p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20" },
+                                React.createElement('label', { className: "text-[10px] font-black text-rose-500 uppercase mb-2 block" }, "Day Alert (eg: Needs Coverage)"),
+                                React.createElement('input', { 
+                                    value: dayNotes[selectedDate] || '', 
+                                    onChange: (e) => saveDayNote(selectedDate, e.target.value),
+                                    className: "w-full bg-slate-900 border-none rounded-xl p-3 text-xs outline-none text-rose-400 font-bold",
+                                    placeholder: "Type important note..."
+                                })
+                            )
+                        )
+                    ),
+
+                    // Calendar
+                    React.createElement('div', { className: "flex-1 p-8 overflow-y-auto no-scrollbar" },
+                        React.createElement('div', { className: "flex justify-between items-center mb-8 no-print" },
+                            React.createElement('h2', { className: "text-5xl font-black tracking-tighter uppercase" }, currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })),
+                            React.createElement('div', { className: "flex gap-4" },
+                                React.createElement('div', { className: "flex bg-slate-900 p-1 rounded-2xl border border-slate-800" },
+                                    React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month-1, 1)), className: "p-3 hover:bg-slate-800 rounded-xl" }, "◀"),
+                                    React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month+1, 1)), className: "p-3 hover:bg-slate-800 rounded-xl" }, "▶")
+                                ),
+                                React.createElement('button', { onClick: () => window.print(), className: "bg-white text-slate-950 px-8 py-2 rounded-2xl font-black uppercase text-sm shadow-xl" }, "Print")
+                            )
+                        ),
+                        React.createElement('div', { className: "grid grid-cols-7 border border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl bg-slate-900/20 calendar-grid" },
+                            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => React.createElement('div', { key: day, className: "py-6 text-center text-[11px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-900/40" }, day)),
+                            calendarCells
                         )
                     )
                 ) : 
                 // Report Page
                 React.createElement('div', { className: "flex-1 p-12 overflow-y-auto bg-slate-950 no-scrollbar" },
-                    React.createElement('div', { className: "max-w-4xl mx-auto space-y-8" },
-                        React.createElement('header', { className: "border-b border-slate-800 pb-6 mb-8 text-left" },
-                            React.createElement('h2', { className: "text-5xl font-black text-blue-500 italic tracking-tighter uppercase" }, "SHIFT REPORT"),
-                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-widest mt-2" }, "Official Destiny Springs Healthcare Handover")
+                    React.createElement('div', { className: "max-w-4xl mx-auto space-y-12" },
+                        React.createElement('header', { className: "border-b border-slate-800 pb-8" },
+                            React.createElement('h2', { className: "text-6xl font-black text-blue-500 italic" }, "SHIFT REPORT"),
+                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-[0.3em] mt-4" }, "Healthcare Provider Log")
                         ),
-                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-8 text-left" }, 
-                            Object.keys(INITIAL_REPORT).map(k => React.createElement('div', { key: k, className: "space-y-2" },
-                                React.createElement('label', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest" }, k.replace(/([A-Z])/g, ' $1')),
+                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-10" }, 
+                            Object.keys(INITIAL_REPORT).map(k => React.createElement('div', { key: k, className: "space-y-3" },
+                                React.createElement('label', { className: "text-[11px] font-black text-slate-400 uppercase tracking-widest" }, k.replace(/([A-Z])/g, ' $1')),
                                 React.createElement('textarea', { 
                                     value: String(currentReport[k] || ''), 
-                                    onChange: e => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { ...currentReport, [k]: e.target.value }), 
-                                    className: "w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-sm h-32 focus:border-blue-500 outline-none transition-all resize-none no-scrollbar", 
+                                    onChange: e => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { [k]: e.target.value }), 
+                                    className: "w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 text-sm h-40 focus:border-blue-500 outline-none transition-all resize-none shadow-inner", 
                                     placeholder: `Update status...` 
                                 })
                             ))
@@ -419,39 +323,89 @@
                     )
                 ),
 
+                // Edit Shift Modal
+                editingShift && React.createElement('div', { className: "fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-4" },
+                    React.createElement('div', { className: "bg-slate-900 border border-slate-800 p-8 rounded-[3rem] w-full max-w-sm shadow-2xl animate-fade-in" },
+                        React.createElement('h3', { className: "text-2xl font-black uppercase text-white mb-6" }, "Edit Shift"),
+                        React.createElement('div', { className: "space-y-6" },
+                            React.createElement('div', { className: "flex items-center justify-between p-4 bg-slate-800/50 rounded-2xl" },
+                                React.createElement('span', { className: "font-black uppercase text-xs" }, staff[editingShift.empId]?.name),
+                                React.createElement('button', { 
+                                    onClick: () => updateShift(editingShift.id, { confirmed: !editingShift.confirmed }),
+                                    className: `px-4 py-2 rounded-xl font-black text-[10px] uppercase ${editingShift.confirmed ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white animate-pulse'}`
+                                }, editingShift.confirmed ? 'Confirmed' : 'Not Confirmed')
+                            ),
+                            React.createElement('input', { 
+                                type: "time", value: editingShift.time, 
+                                onChange: (e) => setEditingShift({...editingShift, time: e.target.value}),
+                                className: "w-full bg-slate-800 p-4 rounded-2xl font-black text-white outline-none"
+                            }),
+                            React.createElement('textarea', { 
+                                placeholder: "Internal shift notes...",
+                                value: editingShift.notes || '',
+                                onChange: (e) => setEditingShift({...editingShift, notes: e.target.value}),
+                                className: "w-full bg-slate-800 p-4 rounded-2xl text-sm outline-none h-24 resize-none"
+                            }),
+                            React.createElement('div', { className: "flex gap-3" },
+                                React.createElement('button', { onClick: () => updateShift(editingShift.id, editingShift), className: "flex-1 bg-blue-600 py-4 rounded-2xl font-black uppercase text-sm" }, "Save"),
+                                React.createElement('button', { onClick: () => { deleteItem('shifts', editingShift.id); setEditingShift(null); }, className: "bg-rose-600 px-6 py-4 rounded-2xl font-black" }, "Delete")
+                            ),
+                            React.createElement('button', { onClick: () => setEditingShift(null), className: "w-full text-slate-500 font-bold uppercase text-[10px]" }, "Cancel")
+                        )
+                    )
+                ),
+
                 // Assignment Modal
-                isAddModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left" },
-                    React.createElement('div', { className: "bg-slate-900 p-8 rounded-3xl w-full max-w-sm border border-slate-800 shadow-2xl animate-fade-in" },
-                        React.createElement('h3', { className: "text-2xl font-black mb-6 tracking-tight uppercase text-white" }, "Assign Staff"),
-                        React.createElement('div', { className: "grid grid-cols-2 gap-2 mb-6" }, Object.values(staff).map(s => React.createElement('button', { key: s.id, onClick: () => setNewEvent({...newEvent, empId: s.id}), className: `flex items-center gap-2 p-3 rounded-xl border-2 text-[11px] font-black transition-all ${newEvent.empId === s.id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-transparent text-slate-500 hover:bg-slate-800'}` }, 
-                            React.createElement('div', { className: `w-2 h-2 rounded-full ${s.color}` }), s.name
-                        ))),
-                        React.createElement('input', { type: "time", value: newEvent.time, onChange: e => setNewEvent({...newEvent, time: e.target.value}), className: "w-full bg-slate-800 border-none rounded-xl p-3 text-white font-bold mb-4 outline-none" }),
-                        React.createElement('button', { onClick: addShift, className: "w-full bg-blue-600 text-white py-4 rounded-xl font-black active:scale-95 transition-transform" }, "ASSIGN SHIFT"),
-                        React.createElement('button', { onClick: () => setIsAddModalOpen(false), className: "w-full mt-2 text-slate-600 text-[10px] font-black uppercase tracking-widest text-center block" }, "Close")
+                isAddModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4" },
+                    React.createElement('div', { className: "bg-slate-900 p-8 rounded-[3rem] w-full max-w-sm border border-slate-800 shadow-2xl animate-fade-in" },
+                        React.createElement('h3', { className: "text-2xl font-black mb-6 uppercase text-white" }, "Quick Assign"),
+                        React.createElement('div', { className: "grid grid-cols-2 gap-2 mb-6" }, 
+                            Object.values(staff).map(s => React.createElement('button', { 
+                                key: s.id, 
+                                onClick: () => setNewEvent({...newEvent, empId: s.id}), 
+                                className: `p-3 rounded-2xl border-2 transition-all font-black text-[10px] uppercase ${newEvent.empId === s.id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-transparent hover:bg-slate-800'}` 
+                            }, s.name))
+                        ),
+                        React.createElement('input', { type: "time", value: newEvent.time, onChange: e => setNewEvent({...newEvent, time: e.target.value}), className: "w-full bg-slate-800 border-none rounded-2xl p-4 text-white font-black mb-6" }),
+                        React.createElement('button', { onClick: () => addShift(selectedDate), className: "w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase shadow-2xl active:scale-95 transition-all" }, "Assign Shift"),
+                        React.createElement('button', { onClick: () => setIsAddModalOpen(false), className: "w-full mt-4 text-slate-600 font-black uppercase text-[10px]" }, "Close")
                     )
                 ),
 
                 // Staff Management Modal
-                isStaffModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left" },
-                    React.createElement('div', { className: "bg-slate-900 p-8 rounded-3xl w-full max-w-md border border-slate-800 shadow-2xl animate-fade-in" },
-                        React.createElement('div', { className: "flex justify-between items-center mb-6" },
-                            React.createElement('h3', { className: "text-2xl font-black uppercase text-white" }, "Manage Team"),
-                            React.createElement('button', { onClick: () => setIsStaffModalOpen(false), className: "text-slate-500 text-2xl" }, "×")
+                isStaffModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/95 backdrop-blur-md z-[100] flex items-center justify-center p-4" },
+                    React.createElement('div', { className: "bg-slate-900 p-10 rounded-[4rem] w-full max-w-lg border border-slate-800 shadow-2xl animate-fade-in" },
+                        React.createElement('div', { className: "flex justify-between items-center mb-8" },
+                            React.createElement('h3', { className: "text-3xl font-black uppercase text-white" }, "Team Setup"),
+                            React.createElement('button', { onClick: () => setIsStaffModalOpen(false), className: "text-slate-500 text-4xl" }, "×")
                         ),
-                        React.createElement('div', { className: "flex gap-2 mb-6" }, 
-                            React.createElement('input', { value: newStaffName, onChange: e => setNewStaffName(e.target.value), className: "flex-1 bg-slate-800 rounded-xl p-3 text-white text-sm outline-none", placeholder: "New employee name..." }),
-                            React.createElement('button', { onClick: addStaff, className: "bg-blue-600 px-6 rounded-xl font-black" }, "+")
+                        React.createElement('div', { className: "space-y-6 mb-8" },
+                            React.createElement('input', { 
+                                value: newStaff.name, 
+                                onChange: e => setNewStaff({...newStaff, name: e.target.value}), 
+                                className: "w-full bg-slate-800 rounded-2xl p-4 text-white font-bold outline-none", 
+                                placeholder: "Enter name..." 
+                            }),
+                            React.createElement('div', { className: "grid grid-cols-4 gap-3" },
+                                PRESET_COLORS.map(c => React.createElement('button', {
+                                    key: c.bg,
+                                    onClick: () => setNewStaff({...newStaff, color: c.bg}),
+                                    className: `h-12 rounded-xl transition-all ${c.bg} ${newStaff.color === c.bg ? 'ring-4 ring-white scale-110' : 'opacity-40 hover:opacity-100'}`
+                                }))
+                            ),
+                            React.createElement('button', { onClick: addStaff, className: "w-full bg-blue-600 py-4 rounded-2xl font-black uppercase tracking-widest" }, "Add Member")
                         ),
-                        React.createElement('div', { className: "space-y-2 max-h-64 overflow-y-auto no-scrollbar" }, Object.values(staff).map(s => (
-                            React.createElement('div', { key: s.id, className: "flex items-center justify-between p-3 bg-slate-800/50 rounded-xl" },
-                                React.createElement('div', { className: "flex items-center gap-3" },
-                                    React.createElement('div', { className: `w-3 h-3 rounded-full ${s.color}` }),
-                                    React.createElement('span', { className: "text-sm font-bold" }, s.name)
-                                ),
-                                React.createElement('button', { onClick: () => deleteStaff(s.id), className: "text-rose-500 font-bold hover:text-rose-400 transition-colors" }, "Delete")
-                            )
-                        )))
+                        React.createElement('div', { className: "space-y-3 max-h-60 overflow-y-auto no-scrollbar" }, 
+                            Object.values(staff).map(s => (
+                                React.createElement('div', { key: s.id, className: "flex items-center justify-between p-4 bg-slate-800/40 rounded-3xl" },
+                                    React.createElement('div', { className: "flex items-center gap-4" },
+                                        React.createElement('div', { className: `w-4 h-4 rounded-full ${s.color}` }),
+                                        React.createElement('span', { className: "font-black uppercase text-sm" }, s.name)
+                                    ),
+                                    React.createElement('button', { onClick: () => deleteItem('staff', s.id), className: "text-rose-500 font-black text-xs uppercase p-2" }, "Remove")
+                                )
+                            ))
+                        )
                     )
                 )
             );
