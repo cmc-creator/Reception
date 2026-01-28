@@ -18,14 +18,25 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fade-in { animation: fade-in 0.3s ease-out forwards; }
+        
+        /* Drag and Drop Visuals */
+        .drag-over { border: 2px dashed #3b82f6 !important; background-color: rgba(59, 130, 246, 0.1) !important; transform: scale(1.02); transition: all 0.2s ease; }
+        .draggable-staff:hover { cursor: grab; }
+        .draggable-staff:active { cursor: grabbing; }
+
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
+            body { background-color: white !important; color: black !important; overflow: visible !important; }
+            .flex-1 { overflow: visible !important; }
+        }
     </style>
 
     <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
-        // YOUR VERIFIED FIREBASE CONFIGURATION
         const firebaseConfig = {
             apiKey: "AIzaSyCYraZ_M0NknCg6lgdncSpucHfgPOMqBi8",
             authDomain: "reception-calendar-1.firebaseapp.com",
@@ -36,7 +47,6 @@
             measurementId: "G-5PZMYFEPYW"
         };
 
-        // Standard Initialization
         const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -49,22 +59,13 @@
             "2026-11-26": "Thanksgiving Day", "2026-12-25": "Christmas Day",
         };
 
-        const RECEPTIONISTS = {
-            izzy: { name: 'Izzy', color: 'bg-rose-500', text: 'text-rose-400', border: 'border-rose-500/30' },
-            karen: { name: 'Karen', color: 'bg-cyan-500', text: 'text-cyan-400', border: 'border-cyan-500/30' },
-            kenny: { name: 'Kenny', color: 'bg-orange-500', text: 'text-orange-400', border: 'border-orange-500/30' },
-            annalissia: { name: 'Annalissia', color: 'bg-violet-500', text: 'text-violet-400', border: 'border-violet-500/30' },
-            julie: { name: 'Julie', color: 'bg-lime-500', text: 'text-lime-400', border: 'border-lime-500/30' },
-            nathan: { name: 'Nathan', color: 'bg-indigo-500', text: 'text-indigo-400', border: 'border-indigo-500/30' },
-            patrice: { name: 'Patrice', color: 'bg-teal-500', text: 'text-teal-400', border: 'border-teal-500/30' },
-            prn: { name: 'PRN/Temp', color: 'bg-slate-500', text: 'text-slate-400', border: 'border-slate-500/30' },
-        };
-
         const DESK_VIBES = [
             { emoji: '☕', label: 'Coffee Powered' }, { emoji: '✨', label: 'Sparkle Mode' },
             { emoji: '🚀', label: 'Fast & Efficient' }, { emoji: '🎧', label: 'In the Zone' },
             { emoji: '🌈', label: 'Busy & Happy' }, { emoji: '🦁', label: 'Chaos Coordinator' }
         ];
+
+        const COLORS = ['bg-rose-500', 'bg-cyan-500', 'bg-orange-500', 'bg-violet-500', 'bg-lime-500', 'bg-indigo-500', 'bg-teal-500', 'bg-slate-500'];
 
         const INITIAL_REPORT = {
             mail: '', property: '', keysBadges: '', supplies: '', visitations: '',
@@ -85,6 +86,12 @@
                 React.createElement('line', { x1: 16, y1: 13, x2: 8, y2: 13 }),
                 React.createElement('line', { x1: 16, y1: 17, x2: 8, y2: 17 }),
                 React.createElement('polyline', { points: "10 9 9 9 8 9" })
+            ),
+            Users: () => React.createElement('svg', { width: 20, height: 20, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round" },
+                React.createElement('path', { d: "M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" }),
+                React.createElement('circle', { cx: "9", cy: "7", r: "4" }),
+                React.createElement('path', { d: "M23 21v-2a4 4 0 0 0-3-3.87" }),
+                React.createElement('path', { d: "M16 3.13a4 4 0 0 1 0 7.75" })
             )
         };
 
@@ -94,50 +101,44 @@
             const [activeTab, setActiveTab] = React.useState('calendar');
             const [selectedDate, setSelectedDate] = React.useState(null);
             
-            // LOCAL FALLBACK DATA (Loaded instantly from browser cache)
+            // Sync with Firestore or Local Storage
             const [events, setEvents] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_events')) || {});
             const [tasks, setTasks] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_tasks')) || []);
+            const [staff, setStaff] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_staff')) || {});
             const [deskStatus, setDeskStatus] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_vibe')) || { vibe: DESK_VIBES[0], note: '' });
             const [currentReport, setCurrentReport] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_report')) || INITIAL_REPORT);
 
             const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-            const [newEvent, setNewEvent] = React.useState({ title: 'Front Desk Shift', empId: 'izzy', time: '09:00' });
+            const [isStaffModalOpen, setIsStaffModalOpen] = React.useState(false);
+            const [newEvent, setNewEvent] = React.useState({ title: 'Shift', empId: '', time: '09:00' });
+            const [newStaffName, setNewStaffName] = React.useState('');
             const [newTaskText, setNewTaskText] = React.useState('');
-            const [permissionError, setPermissionError] = React.useState(false);
             const [authError, setAuthError] = React.useState(null);
             const [isDarkMode, setIsDarkMode] = React.useState(true);
             const [isSaving, setIsSaving] = React.useState(false);
 
-            // Save to browser cache whenever local state updates
-            React.useEffect(() => { localStorage.setItem('ds_hub_events', JSON.stringify(events)); }, [events]);
-            React.useEffect(() => { localStorage.setItem('ds_hub_tasks', JSON.stringify(tasks)); }, [tasks]);
-            React.useEffect(() => { localStorage.setItem('ds_hub_vibe', JSON.stringify(deskStatus)); }, [deskStatus]);
-            React.useEffect(() => { localStorage.setItem('ds_hub_report', JSON.stringify(currentReport)); }, [currentReport]);
+            // Persistence effects
+            React.useEffect(() => { 
+                localStorage.setItem('ds_hub_events', JSON.stringify(events));
+                localStorage.setItem('ds_hub_staff', JSON.stringify(staff));
+                localStorage.setItem('ds_hub_tasks', JSON.stringify(tasks));
+                localStorage.setItem('ds_hub_vibe', JSON.stringify(deskStatus));
+                localStorage.setItem('ds_hub_report', JSON.stringify(currentReport));
+            }, [events, staff, tasks, deskStatus, currentReport]);
 
-            // Authentication Logic
+            // Auth
             React.useEffect(() => {
                 const initAuth = async () => {
-                    try {
-                        await signInAnonymously(auth);
-                    } catch (e) { 
-                        if (e.code === 'auth/configuration-not-found') setAuthError('config-missing');
-                        else setAuthError(e.code);
-                    }
+                    try { await signInAnonymously(auth); } 
+                    catch (e) { setAuthError(e.code === 'auth/configuration-not-found' ? 'config-missing' : e.code); }
                 };
                 initAuth();
-                const unsubscribe = onAuthStateChanged(auth, (u) => { if (u) setUser(u); });
-                return () => unsubscribe();
+                return onAuthStateChanged(auth, (u) => { if (u) setUser(u); });
             }, []);
 
-            // Data Listeners (Real-time Cloud Sync)
+            // Real-time Cloud Sync
             React.useEffect(() => {
                 if (!user) return;
-
-                const handleError = (err) => {
-                    if (err.code === 'permission-denied') setPermissionError(true);
-                    console.error("Cloud Connection Lost:", err);
-                };
-
                 const unsubShifts = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), (snap) => {
                     const data = {};
                     snap.forEach(d => {
@@ -146,74 +147,77 @@
                         data[s.date].push({ ...s, id: d.id });
                     });
                     setEvents(data);
-                }, handleError);
-
+                });
+                const unsubStaff = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), (snap) => {
+                    const list = {};
+                    snap.forEach(d => { list[d.id] = { ...d.data(), id: d.id }; });
+                    setStaff(list);
+                });
                 const unsubTasks = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), (snap) => {
                     const list = [];
                     snap.forEach(d => list.push({ ...d.data(), id: d.id }));
                     setTasks(list);
-                }, handleError);
-
+                });
                 const unsubStatus = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), (snap) => {
                     if (snap.exists()) setDeskStatus(snap.data());
-                }, handleError);
-
+                });
                 const unsubReport = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), (snap) => {
                     if (snap.exists()) setCurrentReport({ ...INITIAL_REPORT, ...snap.data() });
-                }, handleError);
-
-                return () => { unsubShifts(); unsubTasks(); unsubStatus(); unsubReport(); };
+                });
+                return () => { unsubShifts(); unsubStaff(); unsubTasks(); unsubStatus(); unsubReport(); };
             }, [user]);
 
-            const saveStatus = async (v, n) => {
-                const updated = { vibe: v, note: String(n) };
-                setDeskStatus(updated); // Update UI immediately
+            // Staff Management
+            const addStaff = async () => {
+                if (!newStaffName.trim() || !user) return;
+                const randomColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), {
+                    name: newStaffName.trim(),
+                    color: randomColor,
+                    createdAt: Date.now()
+                });
+                setNewStaffName('');
+            };
+            const deleteStaff = async (id) => {
                 if (!user) return;
-                setIsSaving(true);
-                try {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), updated);
-                } catch(e) { console.error(e); }
-                setIsSaving(false);
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', id));
             };
 
-            const saveReport = async (f, v) => {
-                const updated = { ...currentReport, [f]: String(v) };
-                setCurrentReport(updated); // Update UI immediately
-                if (!user) return;
-                setIsSaving(true);
-                try {
-                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), updated);
-                } catch(e) { console.error(e); }
-                setIsSaving(false);
-            };
-
+            // Shift Management
             const addShift = async () => {
-                if (!selectedDate || !user) return;
+                if (!selectedDate || !user || !newEvent.empId) return;
                 setIsSaving(true);
-                try {
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { 
-                        ...newEvent, 
-                        date: String(selectedDate), 
-                        confirmed: true,
-                        createdAt: Date.now() 
-                    });
-                    setIsAddModalOpen(false);
-                } catch(e) { console.error(e); }
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { 
+                    ...newEvent, 
+                    date: String(selectedDate), 
+                    confirmed: true,
+                    createdAt: Date.now() 
+                });
+                setIsAddModalOpen(false);
                 setIsSaving(false);
             };
-
             const toggleConfirmation = async (id, currentStatus) => {
                 if (!user) return;
-                try {
-                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { confirmed: !currentStatus });
-                } catch(e) { console.error(e); }
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { confirmed: !currentStatus });
             };
-
-            const removeShift = async (id) => {
+            const updateShiftStaff = async (shiftId, newStaffId) => {
                 if (!user) return;
-                try {
-                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id));
-                } catch(e) { console.error(e); }
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', shiftId), { empId: newStaffId });
+            };
+            const removeShift = async (id) => { if (!user) return; await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id)); };
+
+            // Drag and Drop Logic
+            const onDragStart = (e, staffId) => {
+                e.dataTransfer.setData("staffId", staffId);
+                e.dataTransfer.effectAllowed = "move";
+            };
+            const onDragOver = (e) => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); };
+            const onDragLeave = (e) => { e.currentTarget.classList.remove('drag-over'); };
+            const onDropOnShift = (e, shiftId) => {
+                e.preventDefault();
+                e.currentTarget.classList.remove('drag-over');
+                const staffId = e.dataTransfer.getData("staffId");
+                if (staffId && shiftId) updateShiftStaff(shiftId, staffId);
             };
 
             const month = currentDate.getMonth();
@@ -221,30 +225,19 @@
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             const firstDayOfMonth = new Date(year, month, 1).getDay();
 
-            // Error Helper Screens
+            // Error Helper
             if (authError === 'config-missing') return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-xl space-y-6" },
-                    React.createElement('div', { className: "text-rose-500 font-black text-6xl mb-4" }, "!"),
-                    React.createElement('h2', { className: "text-white text-2xl font-bold uppercase tracking-tight" }, "Authentication Missing"),
-                    React.createElement('div', { className: "text-left text-[11px] bg-slate-900 p-6 rounded-2xl border border-blue-500/20 space-y-4 font-mono" }, 
-                        React.createElement('p', null, "1. Open your Firebase Console."),
-                        React.createElement('p', null, "2. Go to Authentication > Sign-in method."),
-                        React.createElement('p', null, "3. Enable 'Anonymous' provider."),
-                        React.createElement('p', null, "4. Refresh this page.")
-                    ),
-                    React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-10 py-4 rounded-xl font-black uppercase transition-all shadow-xl" }, "Refresh Hub")
+                    React.createElement('div', { className: "text-rose-500 font-black text-6xl" }, "!"),
+                    React.createElement('h2', { className: "text-white text-2xl font-bold uppercase" }, "Cloud Sync Required"),
+                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Enable 'Anonymous' Authentication in your Firebase Console to start syncing with the team."),
+                    React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-10 py-4 rounded-xl font-black uppercase transition-all shadow-xl" }, "Refresh Now")
                 )
             );
 
-            if (permissionError) return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
-                React.createElement('div', { className: "max-w-xl space-y-6" },
-                    React.createElement('div', { className: "text-rose-500 font-black text-4xl" }, "DATABASE LOCKED"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Your rules are blocking access. Go to Firestore Database > Rules and publish:"),
-                    React.createElement('pre', { className: "bg-black p-4 rounded-xl text-blue-400 text-[10px] text-left border border-white/10" }, 
-                        `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`
-                    ),
-                    React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-8 py-3 rounded-xl font-bold" }, "Rules Updated - Reload Hub")
-                )
+            if (!user) return React.createElement('div', { className: "h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-6" }, 
+                React.createElement('div', { className: "w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" }),
+                React.createElement('p', { className: "text-blue-500 font-black tracking-widest text-[10px] uppercase animate-pulse" }, "Securing Connection...")
             );
 
             const calendarDays = [];
@@ -264,10 +257,10 @@
                         React.createElement('div', { className: "mt-1 space-y-0.5 overflow-hidden" }, 
                             dayShifts.map(s => React.createElement('div', { 
                                 key: s.id, 
-                                className: `${RECEPTIONISTS[s.empId]?.color || 'bg-slate-400'} text-white text-[9px] px-1 rounded truncate flex items-center gap-1 ${s.confirmed === false ? 'opacity-60 grayscale-[0.5]' : ''}` 
+                                className: `${staff[s.empId]?.color || 'bg-slate-400'} text-white text-[9px] px-1 rounded truncate flex items-center gap-1 ${s.confirmed === false ? 'opacity-60 grayscale-[0.5]' : ''}` 
                             }, 
                                 s.confirmed === false && React.createElement('span', { className: "text-[8px] font-black" }, "?"),
-                                `${String(s.time)} ${RECEPTIONISTS[s.empId]?.name || 'Staff'}`
+                                `${String(s.time)} ${staff[s.empId]?.name || 'Staff'}`
                             ))
                         ),
                         React.createElement('button', { 
@@ -279,53 +272,64 @@
             }
 
             return React.createElement('div', { className: `${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'} h-screen flex flex-col md:flex-row overflow-hidden font-sans` },
-                // Nav Sidebar
-                React.createElement('div', { className: `w-20 border-r flex flex-col items-center py-8 gap-10 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}` },
-                    React.createElement('div', { className: "text-blue-500 font-black text-2xl italic tracking-tighter" }, "DS"),
-                    React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.Calendar)),
-                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.FileText)),
+                // Sidebar Nav
+                React.createElement('div', { className: `w-20 border-r flex flex-col items-center py-8 gap-8 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'} no-print` },
+                    React.createElement('div', { className: "text-blue-500 font-black text-2xl italic" }, "DS"),
+                    React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600' : 'hover:bg-slate-800'}` }, React.createElement(Icons.Calendar)),
+                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600' : 'hover:bg-slate-800'}` }, React.createElement(Icons.FileText)),
+                    React.createElement('button', { onClick: () => setIsStaffModalOpen(true), className: "p-3 rounded-2xl transition-all hover:bg-slate-800" }, React.createElement(Icons.Users)),
                     React.createElement('div', { className: "mt-auto flex flex-col items-center gap-4" },
                         isSaving && React.createElement('div', { className: "w-2 h-2 bg-emerald-500 rounded-full animate-ping" }),
-                        React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "p-3 hover:scale-110 opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
+                        React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "p-3 opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
                     )
                 ),
                 
                 activeTab === 'calendar' ? 
                 React.createElement('div', { className: "flex-1 flex overflow-hidden" },
-                    // Status Panel
-                    React.createElement('div', { className: `w-80 border-r p-6 overflow-y-auto no-scrollbar ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-100'}` },
-                        React.createElement('header', { className: "mb-8 text-left" },
+                    // Status & Staff Sidebar
+                    React.createElement('div', { className: `w-80 border-r p-6 overflow-y-auto no-scrollbar ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-100'} no-print` },
+                        React.createElement('header', { className: "mb-6" },
                             React.createElement('h1', { className: "text-xl font-black tracking-tighter" }, "DESTINY SPRINGS"),
-                            React.createElement('p', { className: "text-[10px] font-bold text-slate-500 uppercase tracking-widest" }, "Reception Hub")
+                            React.createElement('p', { className: "text-[10px] font-bold text-slate-500 uppercase" }, "Team Hub")
                         ),
-                        React.createElement('section', { className: "mb-8 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Desk Vibe"),
-                            React.createElement('div', { className: "flex flex-wrap gap-2 mb-4" }, DESK_VIBES.map(v => React.createElement('button', { key: v.label, onClick: () => saveStatus(v, deskStatus.note), className: `p-2 rounded-xl text-xl transition-all ${deskStatus.vibe?.label === v.label ? 'bg-blue-600 shadow-lg ring-2 ring-blue-400/20' : 'bg-slate-800/50'}` }, v.emoji))),
-                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => saveStatus(deskStatus.vibe, e.target.value), className: "w-full bg-slate-800/50 border-none rounded-xl p-3 text-xs h-20 outline-none transition-all focus:bg-slate-800", placeholder: "General notes..." })
-                        ),
-                        React.createElement('section', { className: "mb-8 text-left" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Daily Tasks"),
-                            React.createElement('form', { onSubmit: async (e) => { e.preventDefault(); if(!newTaskText.trim() || !user)return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), { text: newTaskText, completed: false, createdAt: Date.now() }); setNewTaskText(''); }, className: "flex gap-2 mb-4" }, 
-                                React.createElement('input', { value: newTaskText, onChange: e => setNewTaskText(e.target.value), className: "flex-1 bg-slate-800/50 rounded-lg p-2 text-xs outline-none", placeholder: "Add task..." }),
-                                React.createElement('button', { type: "submit", className: "bg-blue-600 px-3 rounded-lg font-bold" }, "+")
-                            ),
-                            React.createElement('div', { className: "space-y-1" }, tasks.map(t => React.createElement('div', { key: t.id, className: "flex items-center justify-between text-xs p-1 group text-left" }, 
-                                React.createElement('span', { onClick: () => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id), { completed: !t.completed }), className: `cursor-pointer flex-1 ${t.completed ? 'line-through opacity-40' : 'font-medium'}` }, String(t.text)),
-                                React.createElement('button', { onClick: () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id)), className: "text-slate-600 opacity-0 group-hover:opacity-100 hover:text-rose-500" }, "×")
+                        
+                        // Drag Source: Staff List
+                        React.createElement('section', { className: "mb-6" },
+                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest italic" }, "Available Staff (Drag to Swap)"),
+                            React.createElement('div', { className: "flex flex-wrap gap-2" }, Object.values(staff).map(s => (
+                                React.createElement('div', { 
+                                    key: s.id, 
+                                    draggable: true,
+                                    onDragStart: (e) => onDragStart(e, s.id),
+                                    className: `draggable-staff px-3 py-1 rounded-full text-[10px] font-black text-white ${s.color} shadow-sm active:scale-95 transition-transform`
+                                }, s.name)
                             )))
                         ),
-                        selectedDate && React.createElement('section', { className: "bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10 text-left" },
-                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest italic" }, "Shifts: " + selectedDate),
+
+                        React.createElement('section', { className: "mb-6 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10" },
+                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Desk Vibe"),
+                            React.createElement('div', { className: "flex flex-wrap gap-2 mb-4" }, DESK_VIBES.map(v => React.createElement('button', { key: v.label, onClick: () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: deskStatus.note }), className: `p-2 rounded-xl text-xl ${deskStatus.vibe?.label === v.label ? 'bg-blue-600' : 'bg-slate-800/50'}` }, v.emoji))),
+                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: deskStatus.vibe, note: e.target.value }), className: "w-full bg-slate-800/50 border-none rounded-xl p-3 text-xs h-16 outline-none focus:bg-slate-800", placeholder: "Immediate alerts..." })
+                        ),
+
+                        selectedDate && React.createElement('section', { className: "bg-blue-500/5 p-4 rounded-2xl border border-blue-500/10" },
+                            React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Shifts: " + selectedDate),
                             React.createElement('div', { className: "space-y-1" }, (events[selectedDate] || []).map(s => (
-                                React.createElement('div', { key: s.id, className: `p-3 rounded-xl flex items-center justify-between group ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-200 shadow-sm'}` },
+                                React.createElement('div', { 
+                                    key: s.id, 
+                                    onDragOver: onDragOver,
+                                    onDragLeave: onDragLeave,
+                                    onDrop: (e) => onDropOnShift(e, s.id),
+                                    className: `p-3 rounded-xl flex items-center justify-between group transition-all ${isDarkMode ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-200'}` 
+                                },
                                     React.createElement('div', { className: "flex items-center gap-3" },
                                         React.createElement('button', { 
                                             onClick: () => toggleConfirmation(s.id, s.confirmed !== false),
-                                            className: `w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${s.confirmed !== false ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700 hover:border-emerald-500/50'}`
+                                            className: `w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${s.confirmed !== false ? 'bg-emerald-500 border-emerald-500' : 'border-slate-700'}`
                                         }, s.confirmed !== false && React.createElement('span', { className: "text-[10px] font-black text-white" }, "✓")),
-                                        React.createElement('div', null,
-                                            React.createElement('p', { className: "text-[9px] font-bold opacity-50 uppercase tracking-tighter" }, String(s.time)),
-                                            React.createElement('p', { className: "text-[10px] font-black tracking-tight" }, RECEPTIONISTS[s.empId]?.name || 'Staff')
+                                        React.createElement('div', { className: "text-left" },
+                                            React.createElement('p', { className: "text-[9px] font-bold opacity-50 uppercase" }, String(s.time)),
+                                            React.createElement('p', { className: "text-[10px] font-black" }, staff[s.empId]?.name || 'Staff')
                                         )
                                     ),
                                     React.createElement('button', { onClick: () => removeShift(s.id), className: "opacity-0 group-hover:opacity-100 text-rose-500 text-xs" }, "×")
@@ -333,18 +337,18 @@
                             )))
                         )
                     ),
-                    // Grid View
+                    // Main Grid
                     React.createElement('div', { className: "flex-1 p-8 overflow-y-auto no-scrollbar" },
-                        React.createElement('div', { className: "flex justify-between items-center mb-8" },
+                        React.createElement('div', { className: "flex justify-between items-center mb-8 no-print" },
                             React.createElement('h2', { className: "text-4xl font-black tracking-tighter uppercase" }, currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })),
                             React.createElement('div', { className: "flex gap-3 bg-slate-900 p-1 rounded-xl shadow-lg border border-slate-800" }, 
-                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month-1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg transition-colors text-xs" }, "◀"),
-                                React.createElement('button', { onClick: () => setCurrentDate(new Date(2026, 0, 1)), className: "px-4 py-1 text-[10px] font-bold uppercase tracking-widest hover:text-blue-500 transition-colors" }, "Today"),
-                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month+1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg transition-colors text-xs" }, "▶")
+                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month-1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg text-xs" }, "◀"),
+                                React.createElement('button', { onClick: () => window.print(), className: "px-4 py-1 text-[10px] font-black uppercase hover:text-blue-500 transition-all" }, "Print Summary"),
+                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month+1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg text-xs" }, "▶")
                             )
                         ),
                         React.createElement('div', { className: "grid grid-cols-7 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl" },
-                            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => React.createElement('div', { key: day, className: "p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-900/30" }, day)),
+                            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => React.createElement('div', { key: day, className: "p-4 text-center text-[10px] font-black text-slate-500 uppercase border-b border-slate-800 bg-slate-900/30" }, day)),
                             calendarDays
                         )
                     )
@@ -354,14 +358,14 @@
                     React.createElement('div', { className: "max-w-4xl mx-auto space-y-8" },
                         React.createElement('header', { className: "border-b border-slate-800 pb-6 mb-8 text-left" },
                             React.createElement('h2', { className: "text-5xl font-black text-blue-500 italic tracking-tighter uppercase" }, "SHIFT REPORT"),
-                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-widest mt-2" }, "Official Handover Log")
+                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-widest mt-2" }, "Official Destiny Springs Healthcare Handover")
                         ),
                         React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-8 text-left" }, 
                             Object.keys(INITIAL_REPORT).map(k => React.createElement('div', { key: k, className: "space-y-2" },
                                 React.createElement('label', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest" }, k.replace(/([A-Z])/g, ' $1')),
                                 React.createElement('textarea', { 
                                     value: String(currentReport[k] || ''), 
-                                    onChange: e => saveReport(k, e.target.value), 
+                                    onChange: e => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { ...currentReport, [k]: e.target.value }), 
                                     className: "w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-sm h-32 focus:border-blue-500 outline-none transition-all resize-none no-scrollbar", 
                                     placeholder: `Update status...` 
                                 })
@@ -370,15 +374,39 @@
                     )
                 ),
 
+                // Assignment Modal
                 isAddModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left" },
                     React.createElement('div', { className: "bg-slate-900 p-8 rounded-3xl w-full max-w-sm border border-slate-800 shadow-2xl animate-fade-in" },
                         React.createElement('h3', { className: "text-2xl font-black mb-6 tracking-tight uppercase text-white" }, "Assign Staff"),
-                        React.createElement('div', { className: "grid grid-cols-2 gap-2 mb-6" }, Object.entries(RECEPTIONISTS).map(([id, e]) => React.createElement('button', { key: id, onClick: () => setNewEvent({...newEvent, empId: id}), className: `flex items-center gap-2 p-3 rounded-xl border-2 text-[11px] font-black transition-all ${newEvent.empId === id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-transparent text-slate-500 hover:bg-slate-800'}` }, 
-                            React.createElement('div', { className: `w-2 h-2 rounded-full ${e.color}` }), e.name
+                        React.createElement('div', { className: "grid grid-cols-2 gap-2 mb-6" }, Object.values(staff).map(s => React.createElement('button', { key: s.id, onClick: () => setNewEvent({...newEvent, empId: s.id}), className: `flex items-center gap-2 p-3 rounded-xl border-2 text-[11px] font-black transition-all ${newEvent.empId === s.id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-transparent text-slate-500 hover:bg-slate-800'}` }, 
+                            React.createElement('div', { className: `w-2 h-2 rounded-full ${s.color}` }), s.name
                         ))),
                         React.createElement('input', { type: "time", value: newEvent.time, onChange: e => setNewEvent({...newEvent, time: e.target.value}), className: "w-full bg-slate-800 border-none rounded-xl p-3 text-white font-bold mb-4 outline-none" }),
-                        React.createElement('button', { onClick: addShift, className: "w-full bg-blue-600 text-white py-4 rounded-xl font-black active:scale-95 transition-transform shadow-lg shadow-blue-600/20" }, "ASSIGN SHIFT"),
+                        React.createElement('button', { onClick: addShift, className: "w-full bg-blue-600 text-white py-4 rounded-xl font-black active:scale-95 transition-transform" }, "ASSIGN SHIFT"),
                         React.createElement('button', { onClick: () => setIsAddModalOpen(false), className: "w-full mt-2 text-slate-600 text-[10px] font-black uppercase tracking-widest text-center block" }, "Close")
+                    )
+                ),
+
+                // Staff Management Modal
+                isStaffModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left" },
+                    React.createElement('div', { className: "bg-slate-900 p-8 rounded-3xl w-full max-w-md border border-slate-800 shadow-2xl animate-fade-in" },
+                        React.createElement('div', { className: "flex justify-between items-center mb-6" },
+                            React.createElement('h3', { className: "text-2xl font-black uppercase text-white" }, "Manage Team"),
+                            React.createElement('button', { onClick: () => setIsStaffModalOpen(false), className: "text-slate-500 text-2xl" }, "×")
+                        ),
+                        React.createElement('div', { className: "flex gap-2 mb-6" }, 
+                            React.createElement('input', { value: newStaffName, onChange: e => setNewStaffName(e.target.value), className: "flex-1 bg-slate-800 rounded-xl p-3 text-white text-sm outline-none", placeholder: "New employee name..." }),
+                            React.createElement('button', { onClick: addStaff, className: "bg-blue-600 px-6 rounded-xl font-black" }, "+")
+                        ),
+                        React.createElement('div', { className: "space-y-2 max-h-64 overflow-y-auto no-scrollbar" }, Object.values(staff).map(s => (
+                            React.createElement('div', { key: s.id, className: "flex items-center justify-between p-3 bg-slate-800/50 rounded-xl" },
+                                React.createElement('div', { className: "flex items-center gap-3" },
+                                    React.createElement('div', { className: `w-3 h-3 rounded-full ${s.color}` }),
+                                    React.createElement('span', { className: "text-sm font-bold" }, s.name)
+                                ),
+                                React.createElement('button', { onClick: () => deleteStaff(s.id), className: "text-rose-500 font-bold" }, "Delete")
+                            )
+                        )))
                     )
                 )
             );
