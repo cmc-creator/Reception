@@ -13,7 +13,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-        body { background-color: #020617; } /* bg-slate-950 */
+        body { background-color: #020617; margin: 0; padding: 0; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -25,13 +25,23 @@
         import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
-        // SAFETY WRAPPER FOR CONFIG
+        // SAFETY CONFIG PARSING
         let firebaseConfig = null;
         try {
             const raw = window.__firebase_config || localStorage.getItem('ds_firebase_config');
-            if (raw) firebaseConfig = JSON.parse(raw);
+            if (raw) {
+                // Try direct JSON parse first
+                try {
+                    firebaseConfig = JSON.parse(raw);
+                } catch (e) {
+                    // If JSON.parse fails, it's likely a JS Object Literal (common in Firebase console snippets).
+                    // We use a safer Function constructor to evaluate the object string which handles
+                    // unquoted keys, single quotes, and trailing commas.
+                    firebaseConfig = (new Function(`return (${raw})`))();
+                }
+            }
         } catch (e) {
-            console.error("Config Parse Error", e);
+            console.error("Configuration Error:", e);
         }
 
         const appId = window.__app_id || 'destiny-springs-hub';
@@ -91,7 +101,7 @@
             const [selectedDate, setSelectedDate] = React.useState(null);
             const [events, setEvents] = React.useState({});
             const [tasks, setTasks] = React.useState([]);
-            const [deskStatus, setDeskStatus] = React.useState({ vibe: DESK_VIBES[0], note: 'We\'re parked at 3 West.' });
+            const [deskStatus, setDeskStatus] = React.useState({ vibe: DESK_VIBES[0], note: '' });
             const [currentReport, setCurrentReport] = React.useState(INITIAL_REPORT);
             const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
             const [newEvent, setNewEvent] = React.useState({ title: 'Front Desk Shift', empId: 'izzy', time: '09:00' });
@@ -172,15 +182,15 @@
                 React.createElement('div', { className: "max-w-md space-y-6" },
                     React.createElement('div', { className: "text-blue-500 font-black text-4xl mb-2" }, "DS"),
                     React.createElement('h2', { className: "text-white text-xl font-bold uppercase tracking-tight" }, "Connect Destiny Springs Hub"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Paste your Firebase Config JSON here to start syncing across devices."),
+                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Paste your Firebase Config snippet here to start syncing across devices."),
                     React.createElement('textarea', { 
                         className: "w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs h-32 text-blue-400 outline-none",
-                        placeholder: '{ "apiKey": "...", ... }',
+                        placeholder: '{ apiKey: "...", authDomain: "...", ... }',
                         value: configInput,
                         onChange: e => setConfigInput(e.target.value)
                     }),
                     React.createElement('button', { 
-                        onClick: () => { try { localStorage.setItem('ds_firebase_config', JSON.stringify(JSON.parse(configInput))); window.location.reload(); } catch(e){alert("Invalid Config JSON")} },
+                        onClick: () => { try { localStorage.setItem('ds_firebase_config', configInput); window.location.reload(); } catch(e){alert("Please paste valid code from Firebase Console")} },
                         className: "w-full bg-blue-600 text-white py-4 rounded-xl font-black shadow-lg uppercase tracking-widest active:scale-95 transition-transform"
                     }, "Go Live")
                 )
@@ -189,7 +199,10 @@
             if (permissionError) return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-xl space-y-6" },
                     React.createElement('div', { className: "text-rose-500 font-black text-4xl" }, "DATABASE LOCKED"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Please go to Firebase Firestore > Rules and allow read/write access."),
+                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Please go to Firebase Firestore > Rules and change them to allow access:"),
+                    React.createElement('pre', { className: "bg-black p-4 rounded-xl text-blue-400 text-[10px] text-left border border-white/10" }, 
+                        `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`
+                    ),
                     React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-8 py-3 rounded-xl font-bold" }, "Rules Updated - Reload")
                 )
             );
@@ -271,7 +284,7 @@
                     React.createElement('div', { className: "max-w-4xl mx-auto space-y-8" },
                         React.createElement('header', { className: "border-b border-slate-800 pb-6 mb-8 text-left" },
                             React.createElement('h2', { className: "text-5xl font-black text-blue-500 italic tracking-tighter uppercase" }, "SHIFT REPORT"),
-                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-widest mt-2" }, "Handover Log")
+                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-widest mt-2" }, "Official Handover Log")
                         ),
                         React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-8 text-left" }, 
                             Object.keys(INITIAL_REPORT).map(k => React.createElement('div', { key: k, className: "space-y-2" },
