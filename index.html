@@ -4,12 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Destiny Springs Reception Hub 2026</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React and ReactDOM -->
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
+        body { background-color: #020617; } /* bg-slate-950 */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -21,9 +25,15 @@
         import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
-        // CONFIGURATION
-        const rawConfig = window.__firebase_config || localStorage.getItem('ds_firebase_config');
-        const firebaseConfig = rawConfig ? JSON.parse(rawConfig) : null;
+        // SAFETY WRAPPER FOR CONFIG
+        let firebaseConfig = null;
+        try {
+            const raw = window.__firebase_config || localStorage.getItem('ds_firebase_config');
+            if (raw) firebaseConfig = JSON.parse(raw);
+        } catch (e) {
+            console.error("Config Parse Error", e);
+        }
+
         const appId = window.__app_id || 'destiny-springs-hub';
 
         const HOLIDAYS_2026 = {
@@ -94,14 +104,15 @@
                 const initialize = async () => {
                     try {
                         const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-                        const auth = getAuth(firebaseApp);
+                        const authInstance = getAuth(firebaseApp);
                         const firestore = getFirestore(firebaseApp);
                         setDb(firestore);
-                        await signInAnonymously(auth);
-                    } catch (e) { console.error("Firebase Auth Init failed:", e); }
+                        await signInAnonymously(authInstance);
+                    } catch (e) { console.error("Firebase Init Failed:", e); }
                 };
                 initialize();
-                return onAuthStateChanged(getAuth(), setUser);
+                const authInstance = getAuth();
+                return onAuthStateChanged(authInstance, setUser);
             }, []);
 
             React.useEffect(() => {
@@ -138,10 +149,16 @@
                 return () => { unsubShifts(); unsubTasks(); unsubStatus(); unsubReport(); };
             }, [user, db]);
 
-            const saveStatus = (v, n) => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: String(n) });
-            const saveReport = (f, v) => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { ...currentReport, [f]: String(v) });
+            const saveStatus = (v, n) => {
+                if (!db) return;
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: String(n) });
+            };
+            const saveReport = (f, v) => {
+                if (!db) return;
+                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { ...currentReport, [f]: String(v) });
+            };
             const addShift = () => {
-                if (!selectedDate) return;
+                if (!selectedDate || !db) return;
                 addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { ...newEvent, date: String(selectedDate), createdAt: Date.now() });
                 setIsAddModalOpen(false);
             };
@@ -154,8 +171,8 @@
             if (!firebaseConfig) return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-md space-y-6" },
                     React.createElement('div', { className: "text-blue-500 font-black text-4xl mb-2" }, "DS"),
-                    React.createElement('h2', { className: "text-white text-xl font-bold uppercase tracking-tight" }, "Connect Team Hub"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Paste your Firebase Config to start syncing data across all employee devices."),
+                    React.createElement('h2', { className: "text-white text-xl font-bold uppercase tracking-tight" }, "Connect Destiny Springs Hub"),
+                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Paste your Firebase Config JSON here to start syncing across devices."),
                     React.createElement('textarea', { 
                         className: "w-full bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs h-32 text-blue-400 outline-none",
                         placeholder: '{ "apiKey": "...", ... }',
@@ -171,11 +188,8 @@
 
             if (permissionError) return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-xl space-y-6" },
-                    React.createElement('div', { className: "text-rose-500 font-black text-4xl" }, "ACCESS DENIED"),
-                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Your Firebase project needs to allow data saving. Go to Firestore > Rules and set:"),
-                    React.createElement('pre', { className: "bg-black p-4 rounded-xl text-blue-400 text-[10px] text-left border border-white/10" }, 
-                        `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`
-                    ),
+                    React.createElement('div', { className: "text-rose-500 font-black text-4xl" }, "DATABASE LOCKED"),
+                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Please go to Firebase Firestore > Rules and allow read/write access."),
                     React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-8 py-3 rounded-xl font-bold" }, "Rules Updated - Reload")
                 )
             );
@@ -199,18 +213,17 @@
                         ),
                         React.createElement('button', { 
                             onClick: (e) => { e.stopPropagation(); setSelectedDate(dateKey); setIsAddModalOpen(true); },
-                            className: "absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 bg-blue-600 text-white px-2 py-0.5 rounded-lg text-xs"
+                            className: "absolute bottom-1 right-1 opacity-0 group-hover:opacity-100 bg-blue-600 text-white p-1 rounded-lg text-xs"
                         }, "+")
                     )
                 );
             }
 
             return React.createElement('div', { className: `${isDarkMode ? 'bg-slate-950 text-slate-100' : 'bg-white text-slate-900'} h-screen flex flex-col md:flex-row overflow-hidden font-sans` },
-                // Sidebar
                 React.createElement('div', { className: `w-20 border-r flex flex-col items-center py-8 gap-10 ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}` },
                     React.createElement('div', { className: "text-blue-500 font-black text-2xl" }, "DS"),
-                    React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800'}` }, React.createElement(Icons.Calendar)),
-                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800'}` }, React.createElement(Icons.FileText)),
+                    React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.Calendar)),
+                    React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.FileText)),
                     React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "mt-auto p-3" }, isDarkMode ? "☀️" : "🌙")
                 ),
                 
@@ -219,7 +232,7 @@
                     React.createElement('div', { className: `w-80 border-r p-6 overflow-y-auto no-scrollbar ${isDarkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-50 border-slate-100'}` },
                         React.createElement('header', { className: "mb-8 text-left" },
                             React.createElement('h1', { className: "text-xl font-black tracking-tighter" }, "DESTINY SPRINGS"),
-                            React.createElement('p', { className: "text-[10px] font-bold text-slate-500 uppercase tracking-widest" }, "Front Desk Intel")
+                            React.createElement('p', { className: "text-[10px] font-bold text-slate-500 uppercase tracking-widest" }, "Reception Hub")
                         ),
                         React.createElement('section', { className: "mb-8 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 text-left" },
                             React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Current Vibe"),
@@ -228,5 +241,71 @@
                         ),
                         React.createElement('section', { className: "mb-8 text-left" },
                             React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Daily Tasks"),
-                            React.createElement('form', { onSubmit: e => { e.preventDefault(); if(!newTaskText.trim())return; addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), { text: newTaskText, completed: false, createdAt: Date.now() }); setNewTaskText(''); }, className: "flex gap-2 mb-4" }, 
-                                React.createElement('input', { value: newTaskText,
+                            React.createElement('form', { onSubmit: e => { e.preventDefault(); if(!newTaskText.trim() || !db)return; addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), { text: newTaskText, completed: false, createdAt: Date.now() }); setNewTaskText(''); }, className: "flex gap-2 mb-4" }, 
+                                React.createElement('input', { value: newTaskText, onChange: e => setNewTaskText(e.target.value), className: "flex-1 bg-slate-800/50 rounded-lg p-2 text-xs outline-none", placeholder: "New task..." }),
+                                React.createElement('button', { type: "submit", className: "bg-blue-600 px-3 rounded-lg font-bold" }, "+")
+                            ),
+                            React.createElement('div', { className: "space-y-1" }, tasks.map(t => React.createElement('div', { key: t.id, className: "flex items-center justify-between text-xs p-1 group text-left" }, 
+                                React.createElement('span', { onClick: () => db && updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id), { completed: !t.completed }), className: `cursor-pointer flex-1 ${t.completed ? 'line-through opacity-40' : 'font-medium'}` }, String(t.text)),
+                                React.createElement('button', { onClick: () => db && deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id)), className: "text-slate-600 opacity-0 group-hover:opacity-100 hover:text-rose-500" }, "×")
+                            )))
+                        )
+                    ),
+                    React.createElement('div', { className: "flex-1 p-8 overflow-y-auto no-scrollbar" },
+                        React.createElement('div', { className: "flex justify-between items-center mb-8" },
+                            React.createElement('h2', { className: "text-4xl font-black tracking-tighter uppercase" }, currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })),
+                            React.createElement('div', { className: "flex gap-3 bg-slate-900 p-1 rounded-xl shadow-lg border border-slate-800" }, 
+                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month-1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg transition-colors" }, "◀"),
+                                React.createElement('button', { onClick: () => setCurrentDate(new Date(2026, 0, 1)), className: "px-4 py-1 text-xs font-bold uppercase tracking-widest hover:text-blue-500 transition-colors" }, "Today"),
+                                React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month+1, 1)), className: "p-2 hover:bg-slate-800 rounded-lg transition-colors" }, "▶")
+                            )
+                        ),
+                        React.createElement('div', { className: "grid grid-cols-7 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl" },
+                            ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => React.createElement('div', { key: day, className: "p-4 text-center text-[10px] font-black text-slate-500 uppercase tracking-widest border-b border-slate-800 bg-slate-900/30" }, day)),
+                            calendarDays
+                        )
+                    )
+                ) : 
+                // Report
+                React.createElement('div', { className: "flex-1 p-12 overflow-y-auto bg-slate-950 no-scrollbar" },
+                    React.createElement('div', { className: "max-w-4xl mx-auto space-y-8" },
+                        React.createElement('header', { className: "border-b border-slate-800 pb-6 mb-8 text-left" },
+                            React.createElement('h2', { className: "text-5xl font-black text-blue-500 italic tracking-tighter uppercase" }, "SHIFT REPORT"),
+                            React.createElement('p', { className: "text-slate-500 text-xs font-bold uppercase tracking-widest mt-2" }, "Handover Log")
+                        ),
+                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-8 text-left" }, 
+                            Object.keys(INITIAL_REPORT).map(k => React.createElement('div', { key: k, className: "space-y-2" },
+                                React.createElement('label', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest" }, k.replace(/([A-Z])/g, ' $1')),
+                                React.createElement('textarea', { 
+                                    value: String(currentReport[k] || ''), 
+                                    onChange: e => saveReport(k, e.target.value), 
+                                    className: "w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 text-sm h-32 focus:border-blue-500 outline-none transition-all resize-none no-scrollbar", 
+                                    placeholder: `Update status...` 
+                                })
+                            ))
+                        )
+                    )
+                ),
+
+                isAddModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left" },
+                    React.createElement('div', { className: "bg-slate-900 p-8 rounded-3xl w-full max-w-sm border border-slate-800 shadow-2xl animate-fade-in" },
+                        React.createElement('h3', { className: "text-2xl font-black mb-6 tracking-tight uppercase text-white" }, "Assign Staff"),
+                        React.createElement('div', { className: "grid grid-cols-2 gap-2 mb-6" }, Object.entries(RECEPTIONISTS).map(([id, e]) => React.createElement('button', { key: id, onClick: () => setNewEvent({...newEvent, empId: id}), className: `flex items-center gap-2 p-3 rounded-xl border-2 text-[11px] font-black transition-all ${newEvent.empId === id ? 'border-blue-500 bg-blue-500/10 text-blue-400' : 'border-transparent text-slate-500 hover:bg-slate-800'}` }, 
+                            React.createElement('div', { className: `w-2 h-2 rounded-full ${e.color}` }), e.name
+                        ))),
+                        React.createElement('input', { type: "time", value: newEvent.time, onChange: e => setNewEvent({...newEvent, time: e.target.value}), className: "w-full bg-slate-800 border-none rounded-xl p-3 text-white font-bold mb-4 outline-none" }),
+                        React.createElement('button', { onClick: addShift, className: "w-full bg-blue-600 text-white py-4 rounded-xl font-black active:scale-95 transition-transform shadow-lg shadow-blue-600/20" }, "ASSIGN SHIFT"),
+                        React.createElement('button', { onClick: () => setIsAddModalOpen(false), className: "w-full mt-2 text-slate-600 text-[10px] font-black uppercase tracking-widest text-center block" }, "Close")
+                    )
+                )
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(React.createElement(App));
+    </script>
+</head>
+<body class="overflow-hidden">
+    <div id="root"></div>
+</body>
+</html>
