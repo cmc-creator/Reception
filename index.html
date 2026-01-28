@@ -22,7 +22,7 @@
 
     <script type="module">
         import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, enableIndexedDbPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 
         // YOUR VERIFIED FIREBASE CONFIGURATION
@@ -36,7 +36,7 @@
             measurementId: "G-5PZMYFEPYW"
         };
 
-        // Standard Initialization (Rule 3)
+        // Standard Initialization
         const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
         const auth = getAuth(app);
         const db = getFirestore(app);
@@ -93,43 +93,49 @@
             const [currentDate, setCurrentDate] = React.useState(new Date(2026, 0, 1));
             const [activeTab, setActiveTab] = React.useState('calendar');
             const [selectedDate, setSelectedDate] = React.useState(null);
-            const [events, setEvents] = React.useState({});
-            const [tasks, setTasks] = React.useState([]);
-            const [deskStatus, setDeskStatus] = React.useState({ vibe: DESK_VIBES[0], note: '' });
-            const [currentReport, setCurrentReport] = React.useState(INITIAL_REPORT);
+            
+            // LOCAL FALLBACK DATA (Loaded instantly from browser cache)
+            const [events, setEvents] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_events')) || {});
+            const [tasks, setTasks] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_tasks')) || []);
+            const [deskStatus, setDeskStatus] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_vibe')) || { vibe: DESK_VIBES[0], note: '' });
+            const [currentReport, setCurrentReport] = React.useState(() => JSON.parse(localStorage.getItem('ds_hub_report')) || INITIAL_REPORT);
+
             const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
             const [newEvent, setNewEvent] = React.useState({ title: 'Front Desk Shift', empId: 'izzy', time: '09:00' });
             const [newTaskText, setNewTaskText] = React.useState('');
             const [permissionError, setPermissionError] = React.useState(false);
             const [authError, setAuthError] = React.useState(null);
             const [isDarkMode, setIsDarkMode] = React.useState(true);
+            const [isSaving, setIsSaving] = React.useState(false);
 
-            // Step 1: Authentication Logic (Rule 3)
+            // Save to browser cache whenever local state updates
+            React.useEffect(() => { localStorage.setItem('ds_hub_events', JSON.stringify(events)); }, [events]);
+            React.useEffect(() => { localStorage.setItem('ds_hub_tasks', JSON.stringify(tasks)); }, [tasks]);
+            React.useEffect(() => { localStorage.setItem('ds_hub_vibe', JSON.stringify(deskStatus)); }, [deskStatus]);
+            React.useEffect(() => { localStorage.setItem('ds_hub_report', JSON.stringify(currentReport)); }, [currentReport]);
+
+            // Authentication Logic
             React.useEffect(() => {
                 const initAuth = async () => {
                     try {
                         await signInAnonymously(auth);
                     } catch (e) { 
-                        if (e.code === 'auth/configuration-not-found') {
-                            setAuthError('config-missing');
-                        } else {
-                            setAuthError(e.code);
-                        }
+                        if (e.code === 'auth/configuration-not-found') setAuthError('config-missing');
+                        else setAuthError(e.code);
                     }
                 };
                 initAuth();
-                const unsubscribe = onAuthStateChanged(auth, (u) => {
-                    if (u) setUser(u);
-                });
+                const unsubscribe = onAuthStateChanged(auth, (u) => { if (u) setUser(u); });
                 return () => unsubscribe();
             }, []);
 
-            // Step 2: Data Listeners (Rule 1)
+            // Data Listeners (Real-time Cloud Sync)
             React.useEffect(() => {
                 if (!user) return;
 
                 const handleError = (err) => {
                     if (err.code === 'permission-denied') setPermissionError(true);
+                    console.error("Cloud Connection Lost:", err);
                 };
 
                 const unsubShifts = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), (snap) => {
@@ -159,33 +165,55 @@
                 return () => { unsubShifts(); unsubTasks(); unsubStatus(); unsubReport(); };
             }, [user]);
 
-            const saveStatus = (v, n) => {
+            const saveStatus = async (v, n) => {
+                const updated = { vibe: v, note: String(n) };
+                setDeskStatus(updated); // Update UI immediately
                 if (!user) return;
-                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: String(n) });
+                setIsSaving(true);
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), updated);
+                } catch(e) { console.error(e); }
+                setIsSaving(false);
             };
-            const saveReport = (f, v) => {
+
+            const saveReport = async (f, v) => {
+                const updated = { ...currentReport, [f]: String(v) };
+                setCurrentReport(updated); // Update UI immediately
                 if (!user) return;
-                setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { ...currentReport, [f]: String(v) });
+                setIsSaving(true);
+                try {
+                    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), updated);
+                } catch(e) { console.error(e); }
+                setIsSaving(false);
             };
-            const addShift = () => {
+
+            const addShift = async () => {
                 if (!selectedDate || !user) return;
-                addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { 
-                    ...newEvent, 
-                    date: String(selectedDate), 
-                    confirmed: true, // Default to confirmed as requested
-                    createdAt: Date.now() 
-                });
-                setIsAddModalOpen(false);
+                setIsSaving(true);
+                try {
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), { 
+                        ...newEvent, 
+                        date: String(selectedDate), 
+                        confirmed: true,
+                        createdAt: Date.now() 
+                    });
+                    setIsAddModalOpen(false);
+                } catch(e) { console.error(e); }
+                setIsSaving(false);
             };
-            const toggleConfirmation = (id, currentStatus) => {
+
+            const toggleConfirmation = async (id, currentStatus) => {
                 if (!user) return;
-                updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), {
-                    confirmed: !currentStatus
-                });
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { confirmed: !currentStatus });
+                } catch(e) { console.error(e); }
             };
-            const removeShift = (id) => {
+
+            const removeShift = async (id) => {
                 if (!user) return;
-                deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id));
+                try {
+                    await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id));
+                } catch(e) { console.error(e); }
             };
 
             const month = currentDate.getMonth();
@@ -200,8 +228,8 @@
                     React.createElement('h2', { className: "text-white text-2xl font-bold uppercase tracking-tight" }, "Authentication Missing"),
                     React.createElement('div', { className: "text-left text-[11px] bg-slate-900 p-6 rounded-2xl border border-blue-500/20 space-y-4 font-mono" }, 
                         React.createElement('p', null, "1. Open your Firebase Console."),
-                        React.createElement('p', null, "2. Go to ", React.createElement('strong', { className: "text-white" }, "Authentication"), " > ", React.createElement('strong', { className: "text-white" }, "Sign-in method"), "."),
-                        React.createElement('p', null, "3. Enable ", React.createElement('strong', { className: "text-white" }, "Anonymous"), " provider."),
+                        React.createElement('p', null, "2. Go to Authentication > Sign-in method."),
+                        React.createElement('p', null, "3. Enable 'Anonymous' provider."),
                         React.createElement('p', null, "4. Refresh this page.")
                     ),
                     React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-10 py-4 rounded-xl font-black uppercase transition-all shadow-xl" }, "Refresh Hub")
@@ -211,16 +239,12 @@
             if (permissionError) return React.createElement('div', { className: "h-screen bg-slate-950 flex items-center justify-center p-6 text-center" }, 
                 React.createElement('div', { className: "max-w-xl space-y-6" },
                     React.createElement('div', { className: "text-rose-500 font-black text-4xl" }, "DATABASE LOCKED"),
+                    React.createElement('p', { className: "text-slate-400 text-sm" }, "Your rules are blocking access. Go to Firestore Database > Rules and publish:"),
                     React.createElement('pre', { className: "bg-black p-4 rounded-xl text-blue-400 text-[10px] text-left border border-white/10" }, 
                         `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read, write: if true;\n    }\n  }\n}`
                     ),
                     React.createElement('button', { onClick: () => window.location.reload(), className: "bg-blue-600 text-white px-8 py-3 rounded-xl font-bold" }, "Rules Updated - Reload Hub")
                 )
-            );
-
-            if (!user && !authError) return React.createElement('div', { className: "h-screen bg-slate-950 flex flex-col items-center justify-center p-6 gap-6" }, 
-                React.createElement('div', { className: "w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" }),
-                React.createElement('p', { className: "text-blue-500 font-black tracking-widest text-[10px] uppercase animate-pulse" }, "Securing Connection...")
             );
 
             const calendarDays = [];
@@ -260,7 +284,10 @@
                     React.createElement('div', { className: "text-blue-500 font-black text-2xl italic tracking-tighter" }, "DS"),
                     React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-2xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600 shadow-lg shadow-blue-500/20' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.Calendar)),
                     React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-2xl transition-all ${activeTab === 'report' ? 'bg-blue-600 shadow-lg' : 'hover:bg-slate-800 text-slate-400'}` }, React.createElement(Icons.FileText)),
-                    React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "mt-auto p-3 hover:scale-110 active:scale-90 transition-all opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
+                    React.createElement('div', { className: "mt-auto flex flex-col items-center gap-4" },
+                        isSaving && React.createElement('div', { className: "w-2 h-2 bg-emerald-500 rounded-full animate-ping" }),
+                        React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "p-3 hover:scale-110 opacity-40 hover:opacity-100" }, isDarkMode ? "☀️" : "🌙")
+                    )
                 ),
                 
                 activeTab === 'calendar' ? 
@@ -278,7 +305,7 @@
                         ),
                         React.createElement('section', { className: "mb-8 text-left" },
                             React.createElement('h2', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 tracking-widest" }, "Daily Tasks"),
-                            React.createElement('form', { onSubmit: e => { e.preventDefault(); if(!newTaskText.trim())return; addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), { text: newTaskText, completed: false, createdAt: Date.now() }); setNewTaskText(''); }, className: "flex gap-2 mb-4" }, 
+                            React.createElement('form', { onSubmit: async (e) => { e.preventDefault(); if(!newTaskText.trim() || !user)return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), { text: newTaskText, completed: false, createdAt: Date.now() }); setNewTaskText(''); }, className: "flex gap-2 mb-4" }, 
                                 React.createElement('input', { value: newTaskText, onChange: e => setNewTaskText(e.target.value), className: "flex-1 bg-slate-800/50 rounded-lg p-2 text-xs outline-none", placeholder: "Add task..." }),
                                 React.createElement('button', { type: "submit", className: "bg-blue-600 px-3 rounded-lg font-bold" }, "+")
                             ),
