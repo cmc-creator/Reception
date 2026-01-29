@@ -43,94 +43,50 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- HOLOGRAPHIC COMPONENT SUITE ---
+        // --- ICON SUITE (Defined globally to prevent ReferenceErrors) ---
         const CalendarIcon = () => (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 5px #00f3ff)' }}>
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
         );
-
         const SyncIcon = () => (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
             </svg>
         );
-
         const PersonnelIcon = () => (
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff00ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 5px #ff00ff)' }}>
                 <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
             </svg>
         );
+        const PlusIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>;
+        const AlertIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>;
+        const TrashIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0055" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
+        const ChevronLeftIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="15 18 9 12 15 6"/></svg>;
+        const ChevronRightIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>;
+        const ActivityIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff00ff" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
+        const TerminalIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>;
+        const SendIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>;
+        const LockIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>;
 
-        const PlusIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-        );
-
-        const AlertIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-            </svg>
-        );
-
-        const TrashIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0055" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-            </svg>
-        );
-
-        const ChevronLeftIcon = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-        );
-
-        const ChevronRightIcon = () => (
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-        );
-
-        const ActivityIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff00ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 5px #ff00ff)' }}>
-                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-            </svg>
-        );
-
-        const TerminalIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
-        );
-
-        const SendIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        );
-
-        const LockIcon = () => (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        );
-
-        // --- FIREBASE INITIALIZATION ---
-        const rawConfig = window.__firebase_config || '{"apiKey":"","authDomain":"reception-calendar-1.firebaseapp.com","projectId":"reception-calendar-1","storageBucket":"reception-calendar-1.firebasestorage.app","messagingSenderId":"613158953901","appId":"1:613158953901:web:ed3f0a6cc4cb23f65df724"}';
-        const firebaseConfig = JSON.parse(rawConfig);
-        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'destiny-springs-hub';
+        // --- FIREBASE CONFIGURATION ---
+        const configRaw = window.__firebase_config || '{"apiKey":"","authDomain":"reception-calendar-1.firebaseapp.com","projectId":"reception-calendar-1","storageBucket":"reception-calendar-1.firebasestorage.app","messagingSenderId":"613158953901","appId":"1:613158953901:web:ed3f0a6cc4cb23f65df724"}';
+        const firebaseConfig = JSON.parse(configRaw);
+        const appId = window.__app_id || 'destiny-springs-hub';
         
-        // Safety check for empty API Key to prevent crash
-        if (firebaseConfig.apiKey) {
-            firebase.initializeApp(firebaseConfig);
-        } else {
-            console.warn("Firebase API Key is missing. Ensure it is set in environment variables.");
-        }
-
+        firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
         const TRIVIA_SET = [
             { q: "Which planet is known as the Gas Giant?", a: "Jupiter" },
             { q: "Capital of Arizona?", a: "Phoenix" },
-            { q: "What is the chemical symbol for Gold?", a: "Au" },
             { q: "Square root of 144?", a: "12" }
         ];
 
         const REPORT_FIELDS = [
             { id: 'mail', label: 'Mail / Deliveries' }, { id: 'property', label: 'Patient Property' },
-            { id: 'supplies', label: 'Hub Supplies' }, { id: 'lobby', label: 'Lobby Status' },
+            { id: 'supplies', label: 'Hub Supplies' }, { id: 'lobby', label: 'Lobby Protocol' },
             { id: 'aoc', label: 'AOC Status' }
         ];
 
@@ -140,7 +96,7 @@
         ];
 
         function App() {
-            // --- State ---
+            // --- 1. State ---
             const [user, setUser] = useState(null);
             const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1));
             const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -150,7 +106,6 @@
             const [reportData, setReportData] = useState({});
             const [trivia, setTrivia] = useState({ index: 0, score: 0 });
             const [globalAlert, setGlobalAlert] = useState('');
-            
             const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [editingShift, setEditingShift] = useState(null);
@@ -164,14 +119,16 @@
 
             const chatEndRef = useRef(null);
 
-            // --- Function Declarations (Moved to Top for Scoping) ---
-            async function handleMasterReset() {
-                if (!confirm("ADMIN MASTER RESET: This will restore units Karen, Izzy, Annalissia, and Hal and force-populate the February Baseline Schedule.")) return;
+            // --- 2. Handlers ---
+            const handleMasterReset = async () => {
+                if (!user) return;
+                if (!confirm("ADMIN MASTER RESET: This will restore Karen, Izzy, Annalissia, and Hal and reset the February baseline schedule.")) return;
                 
                 const batch = db.batch();
+                // Rule 1: Use specific artifacts path
                 const baseRef = db.collection('artifacts').doc(appId).collection('public').doc('data');
                 
-                // Fixed IDs ensure baseline links every time
+                // Hard-coded units ensure manifest is always fixed
                 const coreTeam = [
                     { id: 'unit-karen', name: 'Karen', bg: 'bg-cyan-600/80' },
                     { id: 'unit-izzy', name: 'Izzy', bg: 'bg-rose-600/80' },
@@ -180,8 +137,7 @@
                 ];
 
                 coreTeam.forEach(m => {
-                    const ref = baseRef.collection('staff').doc(m.id);
-                    batch.set(ref, { ...m, createdAt: Date.now() }, { merge: true });
+                    batch.set(baseRef.collection('staff').doc(m.id), { ...m, createdAt: Date.now() }, { merge: true });
                 });
 
                 for (let d = 1; d <= 28; d++) {
@@ -199,20 +155,18 @@
                     }
                 }
                 await batch.commit();
-            }
+            };
 
-            async function handleSendChat(e) {
+            const handleSendChat = async (e) => {
                 e.preventDefault();
                 if (!chatInput.trim() || !user) return;
-                try {
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('messages').add({
-                        text: String(chatInput), createdAt: Date.now(), user: String(user.uid.slice(-4))
-                    });
-                    setChatInput('');
-                } catch (err) { console.error("Chat Fail", err); }
-            }
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('messages').add({
+                    text: String(chatInput), createdAt: Date.now(), user: String(user.uid.slice(-4))
+                });
+                setChatInput('');
+            };
 
-            function handleTriviaSubmit(e) {
+            const handleTriviaSubmit = (e) => {
                 e.preventDefault();
                 if (!user) return;
                 const correct = TRIVIA_SET[trivia.index || 0].a.toLowerCase().trim();
@@ -223,69 +177,66 @@
                     }, { merge: true });
                     setTriviaInput('');
                 }
-            }
+            };
 
-            function updateReport(f, v) {
+            const updateReport = (field, value) => {
                 if (!user) return;
-                db.collection('artifacts').doc(appId).collection('public').doc('data').collection('dailyReports').doc(selectedDate).set({ ...reportData, [f]: String(v) }, { merge: true });
-            }
+                db.collection('artifacts').doc(appId).collection('public').doc('data').collection('dailyReports').doc(selectedDate).set({ [field]: String(value) }, { merge: true });
+            };
 
-            async function handleAssignShift(empId) {
+            const handleAssignShift = async (empId) => {
                 if (!user || !selectedDate || !empId) return;
-                try {
-                    await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shifts').add({
-                        date: selectedDate, empId, time: newShiftTime, confirmed: true, createdAt: Date.now()
-                    });
-                    setIsAddModalOpen(false);
-                } catch (err) { console.error("Assign Fail", err); }
-            }
+                await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shifts').add({
+                    date: selectedDate, empId, time: newShiftTime, confirmed: true, createdAt: Date.now()
+                });
+                setIsAddModalOpen(false);
+            };
 
-            // --- Effects ---
+            // --- 3. Life Cycle (Rule 3 Pattern) ---
             useEffect(() => {
-                const initAuth = async () => {
+                const startAuth = async () => {
                     try {
-                        if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                        if (window.__initial_auth_token) {
                             await auth.signInWithCustomToken(window.__initial_auth_token);
                         } else {
                             await auth.signInAnonymously();
                         }
-                    } catch (err) { console.error("Handshake fail", err); }
+                    } catch (e) { console.error("Auth Fail", e); }
                 };
-                initAuth();
-                const unsub = auth.onAuthStateChanged(u => setUser(u));
-                return () => unsub();
+                startAuth();
+                return auth.onAuthStateChanged(u => setUser(u));
             }, []);
 
             useEffect(() => {
                 if (!user) return;
                 const base = db.collection('artifacts').doc(appId).collection('public').doc('data');
-                const errFn = (err) => console.error("Sync Error", err);
 
+                // Rule 1 & 2: No complex queries
                 const u1 = base.collection('shifts').onSnapshot(snap => {
                     const d = {}; snap.forEach(doc => {
                         const s = doc.data(); if (!d[s.date]) d[s.date] = [];
                         d[s.date].push({ ...s, id: doc.id });
                     }); setEvents(d);
-                }, errFn);
+                }, err => console.log("Shifts Error", err.message));
 
                 const u2 = base.collection('staff').onSnapshot(snap => {
                     const l = {}; snap.forEach(doc => { l[doc.id] = { ...doc.data(), id: doc.id }; });
                     setStaff(l);
-                }, errFn);
+                }, err => console.log("Staff Error", err.message));
 
                 const u3 = base.collection('messages').onSnapshot(snap => {
                     const msgs = []; snap.forEach(doc => msgs.push({ ...doc.data(), id: doc.id }));
                     setMessages(msgs.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)));
                     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-                }, errFn);
+                }, err => console.log("Chat Error", err.message));
 
                 const u4 = base.collection('alerts').doc('current').onSnapshot(snap => {
                     if (snap.exists) setGlobalAlert(snap.data().text);
-                }, errFn);
+                });
 
                 const u5 = base.collection('trivia').doc('shared').onSnapshot(snap => {
                     if (snap.exists) setTrivia(snap.data());
-                }, errFn);
+                });
 
                 return () => { u1(); u2(); u3(); u4(); u5(); };
             }, [user]);
@@ -296,11 +247,11 @@
                     .onSnapshot(snap => {
                         if (snap.exists) setReportData(snap.data());
                         else setReportData({});
-                    }, (err) => console.error("Report sync error", err));
+                    }, err => console.log("Report Error", err.message));
                 return () => unsub();
             }, [user, selectedDate]);
 
-            // --- UI Construction ---
+            // --- 4. Render UI ---
             const calendarMatrix = useMemo(() => {
                 const month = currentDate.getMonth();
                 const year = currentDate.getFullYear();
@@ -313,7 +264,7 @@
                     const dayShifts = events[dk] || [];
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
-                        <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[110px] p-2 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-[inset_0_0_15px_rgba(0,243,255,0.1)]' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
+                        <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[110px] p-2 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
                             <div className="flex justify-between items-start">
                                 <span className={`text-lg font-black tracking-tighter ${selectedDate === dk ? 'text-cyan-400' : 'text-slate-600'}`}>{d}</span>
                                 <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 group-hover:scale-125 transition-transform"><PlusIcon /></button>
@@ -340,27 +291,25 @@
                 <div className="h-screen bg-black flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-widest text-center gap-4">
                     <div className="text-4xl holo-text">establishing_link...</div>
                     <div className="text-[10px] opacity-50 tracking-[0.4em]">Handshake Protocol Active</div>
-                    {!firebaseConfig.apiKey && <div className="text-[8px] text-rose-500 mt-10">Critical: API Key Missing in Environment</div>}
                 </div>
             );
 
             return (
                 <div className="app-container flex h-screen w-screen overflow-hidden">
-                    {/* NAV RAIL */}
                     <nav className="no-print w-16 bg-[#050505] border-r border-white/5 flex flex-col items-center py-8 gap-10">
                         <div className="text-cyan-400 font-black text-xl holo-text">DS</div>
                         <button onClick={handleMasterReset} className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 hover:scale-110 transition-all shadow-inner" title="Admin Master Reset"><SyncIcon /></button>
                         <button onClick={() => setIsPersonnelModalOpen(true)} className="p-3 bg-fuchsia-500/10 rounded-xl border border-fuchsia-500/30 hover:scale-110 transition-all" title="Personnel Manifest"><PersonnelIcon /></button>
                         <div className="mt-auto flex flex-col items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full status-pulse ${user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full status-pulse ${user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-rose-500'}`} />
                             <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest">Protocol</div>
                         </div>
                     </nav>
 
                     <div className="flex-1 flex flex-col">
-                        <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left">
+                        <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4">
                             <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><AlertIcon /> Critical Intel</div>
-                            <input value={globalAlert} onChange={e => { setGlobalAlert(e.target.value); db.collection('artifacts').doc(appId).collection('public').doc('data').collection('alerts').doc('current').set({ text: String(e.target.value) }); }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate directive (e.g. parked at 3 West)..." />
+                            <input value={globalAlert} onChange={e => { setGlobalAlert(e.target.value); db.collection('artifacts').doc(appId).collection('public').doc('data').collection('alerts').doc('current').set({ text: String(e.target.value) }); }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
                         </header>
 
                         <div className="flex-1 flex overflow-hidden">
@@ -384,7 +333,7 @@
                                         <div ref={chatEndRef} />
                                     </div>
                                     <form onSubmit={handleSendChat} className="flex gap-1 shrink-0">
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
                                         <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold"><SendIcon /></button>
                                     </form>
                                 </div>
@@ -392,25 +341,24 @@
 
                             <main className="flex-1 p-8 overflow-y-auto no-scrollbar text-center">
                                 <div className="flex justify-between items-end mb-8 no-print">
-                                    <div className="text-left">
-                                        <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] text-white">
+                                    <div className="text-left text-white">
+                                        <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
                                             {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                                         </h2>
                                         <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
                                     </div>
                                     <div className="flex gap-4">
                                         <div className="flex bg-white/5 rounded-xl border border-white/10 p-1 text-white">
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5"><ChevronLeftIcon /></button>
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors"><ChevronRightIcon /></button>
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5 uppercase font-bold text-[10px]"><ChevronLeftIcon /></button>
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors uppercase font-bold text-[10px]"><ChevronRightIcon /></button>
                                         </div>
-                                        <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all">Export Ledger</button>
+                                        <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all">Export Matrix</button>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl">
                                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-cyan-400/60 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">{d}</div>)}
                                     {calendarMatrix}
                                 </div>
-
                                 <div className="mt-8 text-left glass-panel neon-blue p-5 flex items-center justify-between">
                                     <div className="flex-1 text-left">
                                         <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2 flex items-center gap-2"><TerminalIcon /> Terminal Challenge</h3>
@@ -425,7 +373,6 @@
                         </div>
                     </div>
 
-                    {/* PERSONNEL MODAL */}
                     {isPersonnelModalOpen && (
                         <div className="fixed inset-0 bg-black/98 backdrop-blur-2xl z-[600] flex items-center justify-center p-4">
                             <div className="glass-panel neon-fuchsia p-10 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl rounded-[2rem]">
@@ -445,7 +392,7 @@
                                             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Enroll New Unit</label>
                                             <div className="flex gap-3">
                                                 <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-sm text-white font-black outline-none focus:border-fuchsia-500" placeholder="Identity Label..." />
-                                                <button onClick={async () => { if (!newStaffName.trim()) return; await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('staff').add({ name: String(newStaffName.trim()), bg: String(newStaffColor), createdAt: Date.now() }); setNewStaffName(''); }} className="bg-fuchsia-600 px-6 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enroll</button>
+                                                <button onClick={async () => { if (!newStaffName.trim()) return; await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('staff').add({ name: newStaffName, bg: newStaffColor, createdAt: Date.now() }); setNewStaffName(''); }} className="bg-fuchsia-600 px-6 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enroll</button>
                                             </div>
                                         </div>
                                         <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-2 border-t border-white/5 pt-4">
@@ -455,7 +402,7 @@
                                                         <div className={`w-3 h-3 rounded-full ${s.bg} shadow-white/20`} />
                                                         <span className="font-black uppercase text-sm text-white">{String(s.name)}</span>
                                                     </div>
-                                                    <button onClick={async () => { if(confirm("Terminate unit identifier?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('staff').doc(s.id).delete(); }} className="text-rose-500 font-black text-[9px] uppercase px-3 py-1 hover:bg-rose-500/10 rounded-lg border border-rose-500/30">PURGE</button>
+                                                    <button onClick={async () => { if(confirm("Purge unit identifier?")) await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('staff').doc(s.id).delete(); }} className="text-rose-500 font-black text-[9px] uppercase px-3 py-1 hover:bg-rose-500/10 rounded-lg border border-rose-500/30">PURGE</button>
                                                 </div>
                                             ))}
                                         </div>
@@ -465,35 +412,28 @@
                         </div>
                     )}
 
-                    {/* DEPLOY MODAL */}
                     {isAddModalOpen && (
-                        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[500] flex items-center justify-center p-4">
+                        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[500] flex items-center justify-center p-4 text-left">
                             <div className="glass-panel neon-blue p-10 w-full max-w-md shadow-2xl rounded-3xl text-left">
                                 <h3 className="text-2xl font-black text-cyan-400 uppercase mb-8 tracking-tighter">Deploy Identity</h3>
                                 <div className="grid grid-cols-2 gap-2 mb-8">
                                     {Object.values(staff).map(s => <button key={s.id} onClick={() => handleAssignShift(s.id)} className={`p-4 rounded-xl text-[10px] font-black uppercase text-white ${s.bg} hover:scale-105 transition-all shadow-lg`}>{String(s.name)}</button>)}
                                 </div>
-                                <div className="space-y-4">
-                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block text-center">Sync Protocol Time</label>
-                                    <input type="time" value={newShiftTime} onChange={e => setNewShiftTime(e.target.value)} className="w-full bg-black border border-cyan-500/30 rounded-2xl p-5 text-4xl text-white font-black text-center outline-none" />
+                                <div className="space-y-4 text-center">
+                                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">Sync Protocol Time</label>
+                                    <input type="time" value={newShiftTime} onChange={e => setNewShiftTime(e.target.value)} className="w-full bg-black border border-cyan-500/30 rounded-2xl p-5 text-4xl text-white font-black text-center outline-none focus:border-cyan-400" />
                                     <button onClick={() => setIsAddModalOpen(false)} className="w-full text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] pt-6 text-center hover:text-white transition-colors">Abort Deployment</button>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* EDIT MODAL */}
                     {editingShift && (
                         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[500] flex items-center justify-center p-4">
                             <div className="glass-panel neon-fuchsia p-8 w-full max-w-sm shadow-2xl rounded-3xl text-left">
                                 <h3 className="text-xl font-black uppercase mb-8 text-center text-white tracking-tighter">Adjust Link</h3>
                                 <div className="space-y-6 text-center">
-                                    <button 
-                                        onClick={() => db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shifts').doc(editingShift.id).update({ confirmed: !editingShift.confirmed })} 
-                                        className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}
-                                    >
-                                        {editingShift.confirmed ? 'Link: Verified Active' : 'Link: Signal Lost'}
-                                    </button>
+                                    <button onClick={() => db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shifts').doc(editingShift.id).update({ confirmed: !editingShift.confirmed })} className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}>{editingShift.confirmed ? 'Link: Verified Active' : 'Link: Signal Lost'}</button>
                                     <input type="time" value={editingShift.time} onChange={e => db.collection('artifacts').doc(appId).collection('public').doc('data').collection('shifts').doc(editingShift.id).update({ time: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl p-4 text-3xl text-white font-black text-center" />
                                     <div className="flex gap-3">
                                         <button onClick={() => setEditingShift(null)} className="flex-1 bg-white text-black py-4 rounded-xl font-black uppercase text-xs hover:bg-cyan-400 transition-colors">Commit</button>
