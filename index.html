@@ -23,6 +23,7 @@
 
         .mono { font-family: 'JetBrains Mono', monospace; }
 
+        /* Sleek Dashboard Aesthetics */
         .app-container {
             display: flex;
             height: 100vh;
@@ -68,30 +69,30 @@
             grid-template-columns: repeat(7, 1fr);
             border-radius: 16px;
             overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .calendar-cell {
             min-height: 135px;
             background: #030303;
-            border: 0.5px solid rgba(255, 255, 255, 0.03);
+            border: 0.5px solid rgba(255, 255, 255, 0.05);
             padding: 10px;
             transition: background 0.15s ease;
         }
 
-        .calendar-cell:hover { background: rgba(255, 255, 255, 0.02); }
+        .calendar-cell:hover { background: rgba(255, 255, 255, 0.03); }
 
         .shift-pill {
-            padding: 5px 8px;
-            border-radius: 8px;
+            padding: 6px 10px;
+            border-radius: 10px;
             font-size: 13px;
             font-weight: 700;
             text-transform: uppercase;
             display: flex;
             align-items: center;
             gap: 6px;
-            margin-bottom: 3px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+            margin-bottom: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             border: 1px solid rgba(255,255,255,0.05);
         }
 
@@ -102,10 +103,18 @@
         .draggable-item { cursor: grab; transition: transform 0.1s ease; }
         .draggable-item:active { cursor: grabbing; transform: scale(0.97); }
 
+        /* Fix Print Logic: Ensure the content doesn't vanish */
         @media print {
             .no-print { display: none !important; }
+            .nav-rail, .side-panel, button { display: none !important; }
             body { background-color: white !important; color: black !important; overflow: visible !important; }
+            .app-container { display: block !important; height: auto !important; width: 100% !important; }
+            .main-content { padding: 0 !important; width: 100% !important; }
             .calendar-grid { border: 1px solid #000 !important; border-radius: 0 !important; }
+            .calendar-cell { border: 0.5px solid #000 !important; min-height: 100px !important; background: transparent !important; }
+            .shift-pill { color: black !important; border: 1px solid #ccc !important; box-shadow: none !important; }
+            .text-white { color: black !important; }
+            .text-slate-100 { color: black !important; }
         }
     </style>
 
@@ -210,7 +219,7 @@
                     snap.forEach(d => { list.push({ ...d.data(), id: d.id }); });
                     setTasks(list.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)));
                 });
-                const unsubNotes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'dayNotes'), (snap) => {
+                const unsubDayNotes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'dayNotes'), (snap) => {
                     const notes = {};
                     snap.forEach(d => { notes[d.id] = d.data().text; });
                     setDayNotes(notes);
@@ -221,7 +230,7 @@
                 const unsubStatus = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), (snap) => {
                     if (snap.exists()) setDeskStatus(snap.data());
                 });
-                return () => { unsubShifts(); unsubStaff(); unsubTasks(); unsubNotes(); unsubReport(); unsubStatus(); };
+                return () => { unsubShifts(); unsubStaff(); unsubTasks(); unsubDayNotes(); unsubReport(); unsubStatus(); };
             }, [user]);
 
             const handleAddStaff = async () => {
@@ -314,10 +323,13 @@
                     },
                         React.createElement('div', { className: "flex justify-between items-start mb-2" },
                             React.createElement('span', { className: `text-xl font-bold italic tracking-tighter ${alert ? 'text-rose-500 underline decoration-rose-500/30' : 'text-slate-700'}` }, d),
-                            React.createElement('button', { onClick: (e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }, className: "opacity-0 group-hover:opacity-100 text-blue-500 text-xl font-bold px-1" }, "+")
+                            React.createElement('button', { 
+                                onClick: (e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }, 
+                                className: "no-print text-blue-500 text-xl font-bold px-1 hover:scale-125 transition-all opacity-0 group-hover:opacity-100" 
+                            }, "+")
                         ),
                         alert && React.createElement('div', { className: "text-[10px] font-black text-rose-500 uppercase bg-rose-500/10 border border-rose-500/30 px-2 py-1 rounded mb-2 truncate" }, alert),
-                        React.createElement('div', { className: "space-y-1" }, dayShifts.map(s => (
+                        React.createElement('div', { className: "mt-1.5 space-y-1" }, dayShifts.map(s => (
                             React.createElement('div', {
                                 key: s.id, draggable: true,
                                 onDragStart: e => onDragStart(e, 'existing_shift', s.id),
@@ -365,7 +377,7 @@
                             React.createElement('div', { className: "flex flex-wrap gap-2.5 mb-4" }, DESK_VIBES.map(v => (
                                 React.createElement('button', { key: v.label, onClick: () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: deskStatus.note }), className: `p-2 rounded-xl text-2xl transition-all ${deskStatus.vibe?.label === v.label ? 'bg-blue-600 shadow-lg scale-110' : 'bg-white/5 hover:bg-white/10'}` }, v.emoji)
                             ))),
-                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: deskStatus.vibe, note: e.target.value }), className: "w-full bg-black/40 border border-white/5 rounded-xl p-3 text-xs outline-none text-blue-100 h-20 resize-none", placeholder: "Immediate desk notes..." })
+                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: deskStatus.vibe, note: e.target.value }), className: "w-full bg-black/40 border border-white/5 rounded-xl p-3 text-xs outline-none text-blue-100 h-20 resize-none shadow-inner no-scrollbar", placeholder: "General notes..." })
                         ),
 
                         React.createElement('section', { className: "mb-8" },
@@ -388,11 +400,11 @@
                         React.createElement('section', { className: "mb-8" },
                             React.createElement('h3', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 italic" }, "Team (Drag Name)"),
                             React.createElement('div', { className: "flex flex-wrap gap-2" }, Object.values(staff).map(s => (
-                                React.createElement('div', { key: s.id, draggable: true, onDragStart: e => onDragStart(e, 'staff_member', s.id), className: `draggable-item px-3 py-1.5 rounded-lg text-[13px] font-bold text-white shadow-lg ${s.color}` }, s.name.toUpperCase())
+                                React.createElement('div', { key: s.id, draggable: true, onDragStart: e => onDragStart(e, 'staff_member', s.id), className: `draggable-item px-3 py-1.5 rounded-lg text-[13px] font-bold text-white shadow-xl ${s.color}` }, s.name.toUpperCase())
                             )))
                         ),
 
-                        selectedDate && React.createElement('div', { className: "animate-fade-in p-5 rounded-2xl bg-rose-900/10 border border-rose-500/20" },
+                        selectedDate && React.createElement('div', { className: "animate-fade-in p-5 rounded-2xl bg-rose-900/10 border border-rose-500/20 shadow-lg" },
                             React.createElement('label', { className: "text-[10px] font-black text-rose-500 uppercase mb-2 block tracking-widest" }, "Day Alert"),
                             React.createElement('textarea', { value: dayNotes[selectedDate] || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dayNotes', selectedDate), { text: e.target.value }), className: "w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-rose-400 font-bold h-16 outline-none resize-none", placeholder: "Needs coverage..." })
                         )
