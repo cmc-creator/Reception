@@ -1,529 +1,545 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Destiny Springs Hub | Command Center</title>
-    <!-- Frameworks -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  doc, 
+  onSnapshot, 
+  setDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  writeBatch 
+} from 'firebase/firestore';
+import { 
+  getAuth, 
+  signInAnonymously, 
+  signInWithCustomToken, 
+  onAuthStateChanged 
+} from 'firebase/auth';
+
+// --- HOLOGRAPHIC COMPONENT SUITE (Top-level definition to prevent ReferenceErrors) ---
+const CalendarIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 5px #00f3ff)' }}>
+    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+  </svg>
+);
+
+const SyncIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/>
+  </svg>
+);
+
+const PersonnelIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ff00ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 5px #ff00ff)' }}>
+    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0055" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+  </svg>
+);
+
+const AlertIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff0000" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ filter: 'drop-shadow(0 0 8px #ff0000)' }}>
+    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+  </svg>
+);
+
+const LockIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+);
+
+const SendIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+);
+
+const ActivityIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ff00ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+  </svg>
+);
+
+const TerminalIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#00f3ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+);
+
+const ChevronLeftIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+);
+
+const ChevronRightIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+);
+
+// --- INITIALIZATION ---
+const firebaseConfig = JSON.parse(__firebase_config);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'destiny-springs-hub';
+
+const PRESET_COLORS = [
+  { bg: 'bg-cyan-600/80', glow: 'shadow-[0_0_12px_#0891b2]', text: 'text-cyan-400' }, 
+  { bg: 'bg-rose-600/80', glow: 'shadow-[0_0_12px_#e11d48]', text: 'text-rose-400' },
+  { bg: 'bg-fuchsia-600/80', glow: 'shadow-[0_0_12px_#c026d3]', text: 'text-fuchsia-400' },
+  { bg: 'bg-blue-600/80', glow: 'shadow-[0_0_12px_#2563eb]', text: 'text-blue-400' }, 
+  { bg: 'bg-emerald-600/80', glow: 'shadow-[0_0_12px_#10b981]', text: 'text-emerald-400' }
+];
+
+const TRIVIA_SET = [
+  { q: "Which planet is known as the Gas Giant?", a: "Jupiter" },
+  { q: "Capital of Arizona?", a: "Phoenix" },
+  { q: "Symbol for Gold?", a: "Au" },
+  { q: "What is 15 multiplied by 4?", a: "60" }
+];
+
+const REPORT_FIELDS = [
+  { id: 'mail', label: 'Mail / Deliveries' }, 
+  { id: 'property', label: 'Patient Property' },
+  { id: 'supplies', label: 'Hub Inventory' }, 
+  { id: 'lobby', label: 'Lobby Protocol' }, 
+  { id: 'aoc', label: 'AOC Status' }
+];
+
+const App = () => {
+  const [user, setUser] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 1, 1)); 
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
+  
+  const [events, setEvents] = useState({});
+  const [staff, setStaff] = useState({});
+  const [messages, setMessages] = useState([]);
+  const [reportData, setReportData] = useState({});
+  const [trivia, setTrivia] = useState({ index: 0, score: 0 });
+  const [globalAlert, setGlobalAlert] = useState('');
+  
+  const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingShift, setEditingShift] = useState(null);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffColor, setNewStaffColor] = useState(PRESET_COLORS[0].bg);
+  const [chatInput, setChatInput] = useState('');
+  const [newShiftTime, setNewShiftTime] = useState('08:00');
+  const [triviaInput, setTriviaInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [adminCode, setAdminCode] = useState('');
+  const [isAdminAuth, setIsAdminAuth] = useState(false);
+
+  const chatEndRef = useRef(null);
+
+  // --- Handlers ---
+  const handleMasterReset = async () => {
+    if (!user) return;
+    if (!confirm("ADMIN MASTER RESET: Restore Core Manifest and February Baseline? This will fix your staff list and schedule.")) return;
     
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
-        
-        body { 
-            background-color: #000000; 
-            margin: 0; padding: 0; 
-            color: #f8fafc; 
-            font-family: 'Inter', sans-serif; 
-            overflow: hidden; 
+    setIsSaving(true);
+    const batch = writeBatch(db);
+    
+    // Core Personnel Baseline - Explicitly hardcoded to fix "missing staff" issue
+    const coreTeam = [
+      { id: 'baseline-karen', name: 'Karen', bg: 'bg-cyan-600/80', notes: 'System Lead' }, 
+      { id: 'baseline-izzy', name: 'Izzy', bg: 'bg-rose-600/80', notes: 'Hub Specialist' },
+      { id: 'baseline-annalissia', name: 'Annalissia', bg: 'bg-fuchsia-600/80', notes: 'Support Unit' }, 
+      { id: 'baseline-hal', name: 'Hal', bg: 'bg-blue-600/80', notes: 'Lead Unit' }
+    ];
+
+    for (const member of coreTeam) {
+      const ref = doc(db, 'artifacts', appId, 'public', 'data', 'staff', member.id);
+      batch.set(ref, { 
+        name: member.name, 
+        bg: member.bg, 
+        notes: member.notes, 
+        createdAt: Date.now() 
+      }, { merge: true });
+    }
+
+    // Deploy February 2026 Patterns
+    for (let d = 1; d <= 28; d++) {
+      const dk = `2026-02-${String(d).padStart(2, '0')}`;
+      const dow = new Date(2026, 1, d).getDay();
+      
+      if (dow === 1 || dow === 3) {
+        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: 'baseline-karen', time: '08:00', confirmed: true, createdAt: Date.now() });
+      } else if (dow === 2 || dow === 4 || dow === 5) {
+        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: 'baseline-izzy', time: '08:00', confirmed: true, createdAt: Date.now() });
+      } else if (dow === 0 && d === 1) {
+        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: 'baseline-hal', time: '16:00', confirmed: true, createdAt: Date.now() });
+        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: 'baseline-annalissia', time: '08:00', confirmed: true, createdAt: Date.now() });
+      }
+    }
+
+    await batch.commit(); 
+    setIsSaving(false);
+  };
+
+  const handleTriviaSubmit = (e) => {
+    e.preventDefault();
+    if (!user) return;
+    const correct = TRIVIA_SET[trivia.index || 0].a.toLowerCase().trim();
+    if (triviaInput.toLowerCase().trim() === correct) {
+      setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'trivia', 'shared'), { index: (trivia.index + 1) % TRIVIA_SET.length, score: (trivia.score || 0) + 1 });
+      setTriviaInput('');
+    }
+  };
+
+  const handleSendChat = async (e) => {
+    e.preventDefault();
+    if (!chatInput.trim() || !user) return;
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), {
+      text: chatInput, createdAt: Date.now(), user: user.uid.slice(-4)
+    });
+    setChatInput('');
+  };
+
+  const handleAssignShift = async (empId) => {
+    if (!user || !selectedDate || !empId) return;
+    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), {
+      date: selectedDate, empId, time: newShiftTime, confirmed: true, createdAt: Date.now()
+    });
+    setIsAddModalOpen(false);
+  };
+
+  const updateReport = async (f, v) => {
+    if (!user || !selectedDate) return;
+    await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), { ...reportData, [f]: v }, { merge: true });
+  };
+
+  const verifyAdmin = (e) => {
+    e.preventDefault();
+    if (adminCode === '2026') { setIsAdminAuth(true); setAdminCode(''); }
+  };
+
+  // --- Firebase Sync ---
+  useEffect(() => {
+    const initAuth = async () => {
+      try {
+        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+          await signInWithCustomToken(auth, __initial_auth_token);
+        } else {
+          await signInAnonymously(auth);
         }
+      } catch (err) { console.error("Handshake Fail", err); }
+    };
+    initAuth();
+    return onAuthStateChanged(auth, setUser);
+  }, []);
 
-        .mono { font-family: 'JetBrains Mono', monospace; }
+  useEffect(() => {
+    if (!user) return;
+    const err = (e) => console.error("Sync Failure", e);
 
-        /* Sleek Dashboard Aesthetics */
-        .app-container {
-            display: flex;
-            height: 100vh;
-            width: 100vw;
-            background: #000000;
-        }
+    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), snap => {
+      const d = {}; snap.forEach(doc => { const s = doc.data(); if(!d[s.date]) d[s.date] = []; d[s.date].push({...s, id: doc.id}); });
+      setEvents(d);
+    }, err);
 
-        .nav-rail {
-            width: 72px;
-            background: #050505;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 32px 0;
-            z-index: 50;
-        }
+    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), snap => {
+      const l = {}; snap.forEach(doc => l[doc.id] = {...doc.data(), id: doc.id}); setStaff(l);
+    }, err);
 
-        .side-panel {
-            width: 320px;
-            background: #080808;
-            border-right: 1px solid rgba(255, 255, 255, 0.05);
-            padding: 24px;
-            overflow-y: auto;
-        }
+    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'messages'), snap => {
+      const msgs = []; snap.forEach(doc => msgs.push({...doc.data(), id: doc.id}));
+      setMessages(msgs.sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0)));
+      chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, err);
 
-        .main-content {
-            flex: 1;
-            padding: 32px;
-            overflow-y: auto;
-            background: radial-gradient(circle at top right, #0a0a0a, #000000);
-        }
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'trivia', 'shared'), snap => {
+      if (snap.exists()) setTrivia(snap.data());
+    }, err);
 
-        .section-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.06);
-            border-radius: 16px;
-            padding: 16px;
-        }
+    onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'alerts', 'current'), snap => {
+      if (snap.exists()) setGlobalAlert(snap.data().text);
+    }, err);
+  }, [user]);
 
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            border-radius: 16px;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
+  useEffect(() => {
+    if (!user || !selectedDate) return;
+    const uReport = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'dailyReports', selectedDate), snap => {
+      if (snap.exists()) setReportData(snap.data());
+      else setReportData({ status: 'ACTIVE' });
+    });
+    return () => uReport();
+  }, [user, selectedDate]);
 
-        .calendar-cell {
-            min-height: 135px;
-            background: #030303;
-            border: 0.5px solid rgba(255, 255, 255, 0.05);
-            padding: 10px;
-            transition: background 0.15s ease;
-        }
+  // --- Render Helpers ---
+  const matrixCells = useMemo(() => {
+    const monthIndex = currentDate.getMonth();
+    const yearIndex = currentDate.getFullYear();
+    const daysInMonth = new Date(yearIndex, monthIndex + 1, 0).getDate();
+    const firstDay = new Date(yearIndex, monthIndex, 1).getDay();
+    const cells = [];
+    
+    for (let i = 0; i < firstDay; i++) cells.push(<div key={`empty-${i}`} className="min-h-[110px] bg-white/[0.01] border border-white/[0.03]" />);
+    
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dk = `${yearIndex}-${String(monthIndex + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const shifts = events[dk] || [];
+      const isToday = new Date().toISOString().split('T')[0] === dk;
+      cells.push(
+        <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[110px] p-2 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-[inset_0_0_15px_rgba(0,243,255,0.1)]' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
+          <div className="flex justify-between items-start mb-1">
+            <span className={`text-lg font-black tracking-tighter ${selectedDate === dk ? 'text-cyan-400' : 'text-slate-600'}`}>{d}</span>
+            <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 opacity-100 group-hover:scale-125 transition-transform"><PlusIcon /></button>
+          </div>
+          <div className="space-y-1">
+            {shifts.length === 0 ? (
+              <div className="text-[7px] font-black text-rose-500 flex items-center gap-1 mt-2 animate-pulse uppercase tracking-widest"><AlertIcon /> Needs Coverage!</div>
+            ) : (
+              shifts.map(s => (
+                <div key={s.id} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} className={`p-1 px-2 rounded-sm text-[10px] font-black text-white shadow-lg ${staff[s.empId]?.bg || 'bg-slate-700'} uppercase flex items-center gap-1`}>
+                  <span className="truncate flex-1 text-left">{staff[s.empId]?.name || '...'}</span>
+                  <span className="opacity-50 font-mono text-[8px]">{s.time}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+    }
+    return cells;
+  }, [currentDate, events, selectedDate, staff]);
 
-        .calendar-cell:hover { background: rgba(255, 255, 255, 0.03); }
+  if (!user) return <div className="h-screen bg-black flex items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-[0.5em]">Establishing Matrix Link...</div>;
 
-        .shift-pill {
-            padding: 6px 10px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            margin-bottom: 4px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255,255,255,0.05);
-        }
+  return (
+    <div className="app-container" style={{ display: 'flex', height: '100vh', width: '100vw', background: '#000', color: '#fff' }}>
+      <style>{`
+        * { font-style: normal !important; scrollbar-width: none; }
+        ::-webkit-scrollbar { display: none; }
+        body { font-family: 'Inter', sans-serif; background: #000; overflow: hidden; }
+        .glass-panel { background: rgba(255,255,255,0.02); backdrop-filter: blur(25px); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; }
+        .neon-blue { border: 1px solid rgba(0, 243, 255, 0.4); box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05); }
+        .neon-fuchsia { border: 1px solid rgba(255, 0, 255, 0.4); box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.05); }
+        .holo-text { text-shadow: 0 0 10px rgba(0, 243, 255, 0.5); }
+        .alert-pulse { animation: alert-glow-keyframes 2s infinite; }
+        .status-pulse { animation: status-glow-keyframes 1.5s infinite; }
+        @keyframes alert-glow-keyframes { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        @keyframes status-glow-keyframes { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.2); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+      `}</style>
 
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      {/* Nav Rail */}
+      <nav className="no-print" style={{ width: '64px', background: '#050505', borderRight: '1px solid rgba(255,255,255,0.05)', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '24px 0', zIndex: 50 }}>
+        <div className="text-cyan-400 font-black text-xl mb-12 shadow-[0_0_15px_#00f3ff]">DS</div>
+        <div className="flex flex-col gap-10">
+          <button onClick={handleMasterReset} title="Admin Master Reset" className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 hover:scale-110 transition-all shadow-[0_0_15px_rgba(0,243,255,0.2)]"><SyncIcon /></button>
+          <button onClick={() => setIsPersonnelModalOpen(true)} title="Personnel Hub" className="p-3 bg-fuchsia-500/10 rounded-xl border border-fuchsia-500/30 hover:scale-110 transition-all"><PersonnelIcon /></button>
+          <button className="p-3 opacity-20"><CalendarIcon /></button>
+        </div>
+        <div className="mt-auto flex flex-col items-center gap-4">
+           <div className={`w-2.5 h-2.5 rounded-full status-pulse ${user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500 shadow-[0_0_10px_#f59e0b]'}`} title={user ? 'System Live' : 'Connecting...'} />
+           <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest">Protocol</div>
+        </div>
+      </nav>
 
-        .drag-over { border: 2px solid #3b82f6 !important; background: rgba(59, 130, 246, 0.05) !important; }
-        .draggable-item { cursor: grab; transition: transform 0.1s ease; }
-        .draggable-item:active { cursor: grabbing; transform: scale(0.97); }
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Urgent Intel Header */}
+        <div className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left">
+           <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0">
+             <AlertIcon /> Critical Intel
+           </div>
+           <input 
+              value={globalAlert} 
+              onChange={e => { setGlobalAlert(e.target.value); setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'alerts', 'current'), { text: e.target.value }); }}
+              className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900"
+              placeholder="Broadcast immediate hub directive..."
+           />
+        </div>
 
-        /* Fix Print Logic: Ensure the content doesn't vanish */
-        @media print {
-            .no-print { display: none !important; }
-            .nav-rail, .side-panel, button { display: none !important; }
-            body { background-color: white !important; color: black !important; overflow: visible !important; }
-            .app-container { display: block !important; height: auto !important; width: 100% !important; }
-            .main-content { padding: 0 !important; width: 100% !important; }
-            .calendar-grid { border: 1px solid #000 !important; border-radius: 0 !important; }
-            .calendar-cell { border: 0.5px solid #000 !important; min-height: 100px !important; background: transparent !important; }
-            .shift-pill { color: black !important; border: 1px solid #ccc !important; box-shadow: none !important; }
-            .text-white { color: black !important; }
-            .text-slate-100 { color: black !important; }
-        }
-    </style>
-
-    <script type="module">
-        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getFirestore, collection, doc, onSnapshot, setDoc, addDoc, updateDoc, deleteDoc, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyCYraZ_M0NknCg6lgdncSpucHfgPOMqBi8",
-            authDomain: "reception-calendar-1.firebaseapp.com",
-            projectId: "reception-calendar-1",
-            storageBucket: "reception-calendar-1.firebasestorage.app",
-            messagingSenderId: "613158953901",
-            appId: "1:613158953901:web:ed3f0a6cc4cb23f65df724",
-            measurementId: "G-5PZMYFEPYW"
-        };
-
-        const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = 'destiny-springs-hub';
-
-        const PRESET_COLORS = [
-            { bg: 'bg-cyan-500' }, { bg: 'bg-orange-500' }, { bg: 'bg-violet-500' }, 
-            { bg: 'bg-rose-500' }, { bg: 'bg-emerald-500' }, { bg: 'bg-amber-500' }, 
-            { bg: 'bg-indigo-500' }, { bg: 'bg-slate-500' }
-        ];
-
-        const DESK_VIBES = [
-            { emoji: '⚡', label: 'Energized' }, { emoji: '🛡️', label: 'Stable' },
-            { emoji: '🚀', label: 'Active' }, { emoji: '🎧', label: 'Zone' },
-            { emoji: '🦁', label: 'Lead' }
-        ];
-
-        const REPORT_FIELDS = [
-            { id: 'mail', label: 'Mail' }, { id: 'property', label: 'Patient Property' },
-            { id: 'keys', label: 'Keys/Badges' }, { id: 'supplies', label: 'Supplies' },
-            { id: 'visit', label: 'Visitations' }, { id: 'discharge', label: 'Discharges' },
-            { id: 'it', label: 'IT Concerns' }, { id: 'aoc', label: 'AOC' },
-            { id: 'maint', label: 'Maintenance' }, { id: 'cm', label: 'Social Services' }
-        ];
-
-        function App() {
-            const [user, setUser] = React.useState(null);
-            const [activeTab, setActiveTab] = React.useState('calendar');
-            const [currentDate, setCurrentDate] = React.useState(new Date(2026, 1, 1));
-            const [selectedDate, setSelectedDate] = React.useState(null);
-            const [isDarkMode, setIsDarkMode] = React.useState(true);
+        <div className="flex-1 flex overflow-hidden">
+          {/* SIDEBAR: INTEL FEED */}
+          <aside className="no-print flex flex-col gap-4 p-5 overflow-y-auto border-r border-white/5" style={{ width: '330px', background: '#080808' }}>
+            <header className="mb-2 text-left">
+              <h1 className="text-lg font-black text-white tracking-tighter holo-text uppercase">Archive Logs</h1>
+              <div className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest">{selectedDate}</div>
+            </header>
             
-            const [events, setEvents] = React.useState(() => JSON.parse(localStorage.getItem('ds_events')) || {});
-            const [staff, setStaff] = React.useState(() => JSON.parse(localStorage.getItem('ds_staff')) || {});
-            const [tasks, setTasks] = React.useState(() => JSON.parse(localStorage.getItem('ds_tasks')) || []);
-            const [deskStatus, setDeskStatus] = React.useState(() => JSON.parse(localStorage.getItem('ds_vibe')) || { vibe: DESK_VIBES[0], note: '' });
-            const [dayNotes, setDayNotes] = React.useState(() => JSON.parse(localStorage.getItem('ds_daynotes')) || {});
-            const [reportData, setReportData] = React.useState({});
+            <div className="space-y-3">
+              {REPORT_FIELDS.map(f => (
+                <div key={f.id} className="glass-panel neon-fuchsia p-3">
+                  <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-1 block flex items-center gap-2"><ActivityIcon /> {f.label}</label>
+                  <textarea 
+                    value={String(reportData[f.id] || '')} 
+                    onChange={e => updateReport(f.id, e.target.value)}
+                    className="w-full bg-transparent border-none text-xs text-white h-10 outline-none resize-none font-bold placeholder-slate-800" 
+                    placeholder="Log intel node..." 
+                  />
+                </div>
+              ))}
+            </div>
 
-            const [isStaffModalOpen, setIsStaffModalOpen] = React.useState(false);
-            const [isAddModalOpen, setIsAddModalOpen] = React.useState(false);
-            const [editingShift, setEditingShift] = React.useState(null);
-            
-            const [newStaffName, setNewStaffName] = React.useState('');
-            const [newStaffColor, setNewStaffColor] = React.useState(PRESET_COLORS[0].bg);
-            const [newTaskText, setNewTaskText] = React.useState('');
-            const [newShiftTime, setNewShiftTime] = React.useState('08:00');
-            const [isSaving, setIsSaving] = React.useState(false);
+            <div className="glass-panel neon-blue p-3 rounded-lg mt-auto text-left flex flex-col h-48">
+               <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block">Live Intel Feed</label>
+               <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 pr-1 no-scrollbar text-white">
+                  {messages.map(m => (
+                    <div key={m.id} className="text-[10px] leading-tight">
+                       <span className="text-cyan-500 font-black uppercase mr-1">{m.user}:</span>
+                       <span className="text-slate-300 font-medium">{m.text}</span>
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+               </div>
+               <form onSubmit={handleSendChat} className="flex gap-1 shrink-0">
+                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
+                  <button type="submit" className="bg-cyan-600 px-2 rounded text-white shadow-lg"><SendIcon /></button>
+               </form>
+            </div>
+          </aside>
 
-            React.useEffect(() => {
-                localStorage.setItem('ds_events', JSON.stringify(events));
-                localStorage.setItem('ds_staff', JSON.stringify(staff));
-                localStorage.setItem('ds_tasks', JSON.stringify(tasks));
-                localStorage.setItem('ds_vibe', JSON.stringify(deskStatus));
-                localStorage.setItem('ds_daynotes', JSON.stringify(dayNotes));
-            }, [events, staff, tasks, deskStatus, dayNotes]);
+          {/* MAIN MATRIX DISPLAY */}
+          <main className="flex-1 p-8 overflow-y-auto bg-black no-scrollbar">
+            <div className="flex justify-between items-end mb-8 no-print text-white">
+               <div className="text-left">
+                  <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+                    {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                  </h2>
+                  <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
+               </div>
+               <div className="flex gap-4">
+                  <div className="flex bg-white/5 rounded-xl border border-white/10 p-1">
+                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5"><ChevronLeftIcon /></button>
+                    <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors"><ChevronRightIcon /></button>
+                  </div>
+                  <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-[0_0_15px_rgba(0,243,255,0.4)] hover:bg-white transition-all">Export Matrix</button>
+               </div>
+            </div>
 
-            React.useEffect(() => {
-                const initAuth = async () => {
-                    await signInAnonymously(auth);
-                };
-                initAuth();
-                return onAuthStateChanged(auth, setUser);
-            }, []);
+            <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl">
+              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                <div key={day} className="py-4 text-center text-[10px] font-black text-cyan-400/60 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">{day}</div>
+              ))}
+              {matrixCells}
+            </div>
 
-            React.useEffect(() => {
-                if (!user) return;
-                const unsubShifts = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), (snap) => {
-                    const data = {};
-                    snap.forEach(d => {
-                        const s = d.data();
-                        if (!data[s.date]) data[s.date] = [];
-                        data[s.date].push({ ...s, id: d.id });
-                    });
-                    setEvents(data);
-                });
-                const unsubStaff = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), (snap) => {
-                    const list = {};
-                    snap.forEach(d => { list[d.id] = { ...d.data(), id: d.id }; });
-                    setStaff(list);
-                });
-                const unsubTasks = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), (snap) => {
-                    const list = [];
-                    snap.forEach(d => { list.push({ ...d.data(), id: d.id }); });
-                    setTasks(list.sort((a,b) => (b.createdAt || 0) - (a.createdAt || 0)));
-                });
-                const unsubDayNotes = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'dayNotes'), (snap) => {
-                    const notes = {};
-                    snap.forEach(d => { notes[d.id] = d.data().text; });
-                    setDayNotes(notes);
-                });
-                const unsubReport = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), (snap) => {
-                    if (snap.exists()) setReportData(snap.data());
-                });
-                const unsubStatus = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), (snap) => {
-                    if (snap.exists()) setDeskStatus(snap.data());
-                });
-                return () => { unsubShifts(); unsubStaff(); unsubTasks(); unsubDayNotes(); unsubReport(); unsubStatus(); };
-            }, [user]);
+            {/* TERMINAL CHALLENGE */}
+            <div className="mt-8 text-left glass-panel neon-blue p-5 flex items-center justify-between">
+               <div className="flex-1">
+                  <h3 className="text-[10px] font-black text-cyan-400 uppercase tracking-widest mb-2 flex items-center gap-2"><TerminalIcon /> Terminal Challenge</h3>
+                  <p className="text-sm font-black text-slate-300">{TRIVIA_SET[trivia.index || 0].q}</p>
+               </div>
+               <form onSubmit={handleTriviaSubmit} className="flex gap-2 w-64">
+                  <input value={triviaInput} onChange={e => setTriviaInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/40 rounded-xl p-3 text-sm outline-none text-cyan-400 font-mono shadow-inner" placeholder="Decrypt..." />
+                  <button type="submit" className="bg-cyan-600 px-6 rounded-xl font-black text-xs text-white">OK</button>
+               </form>
+            </div>
+          </main>
+        </div>
+      </div>
 
-            const handleAddStaff = async () => {
-                if (!newStaffName.trim()) return;
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), {
-                    name: newStaffName.trim(), color: newStaffColor, createdAt: Date.now()
-                });
-                setNewStaffName('');
-            };
+      {/* ADMIN PERSONNEL HUB MODAL */}
+      {isPersonnelModalOpen && (
+        <div className="fixed inset-0 bg-black/98 backdrop-blur-2xl z-[600] flex items-center justify-center p-4">
+          <div className="glass-panel neon-fuchsia p-10 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl rounded-[2rem]">
+            <div className="flex justify-between items-center mb-8 text-fuchsia-400 text-left">
+               <h3 className="text-3xl font-black uppercase tracking-tighter">Manifest Editor</h3>
+               <button onClick={() => { setIsPersonnelModalOpen(false); setIsAdminAuth(false); }} className="text-5xl font-light hover:text-white transition-colors">&times;</button>
+            </div>
 
-            const assignShift = async (date, empId, time = "08:00") => {
-                if (!empId) return;
-                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts'), {
-                    date, empId, time, confirmed: true, createdAt: Date.now()
-                });
-                setIsAddModalOpen(false);
-            };
+            {!isAdminAuth ? (
+              <form onSubmit={verifyAdmin} className="space-y-6 flex-1 flex flex-col justify-center items-center text-center">
+                 <div className="space-y-2 text-center">
+                    <div className="text-fuchsia-500 font-black text-xl flex items-center gap-3 justify-center alert-pulse"><LockIcon /> Access Restricted</div>
+                    <p className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.3em]">Enter Override to Link Core Manifest</p>
+                 </div>
+                 <input 
+                    type="password"
+                    value={adminCode}
+                    onChange={e => setAdminCode(e.target.value)}
+                    className="w-48 bg-black border border-fuchsia-500/40 rounded-xl p-4 text-center text-3xl text-white font-black tracking-[0.5em] outline-none"
+                    placeholder="****"
+                    autoFocus
+                 />
+                 <button type="submit" className="bg-fuchsia-600 px-12 py-3 rounded-xl font-black uppercase text-xs shadow-lg hover:scale-105 transition-transform text-white">Unlock Manifest</button>
+              </form>
+            ) : (
+              <div className="flex flex-col flex-1 overflow-hidden text-left">
+                <div className="space-y-4 mb-8">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] block">Enroll New Unit</label>
+                  <div className="flex gap-3">
+                    <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="flex-1 bg-black border border-white/10 rounded-xl p-3 text-sm text-white font-black outline-none focus:border-fuchsia-500" placeholder="Identity Label..." />
+                    <div className="flex gap-2">
+                       {PRESET_COLORS.map(c => <button key={c.bg} onClick={() => setNewStaffColor(c.bg)} className={`w-8 h-8 rounded-lg ${c.bg} ${newStaffColor === c.bg ? 'ring-2 ring-white shadow-xl scale-110' : 'opacity-40'}`} />)}
+                    </div>
+                    <button onClick={async () => { if (!newStaffName.trim()) return; await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'), { name: newStaffName.trim(), bg: newStaffColor, createdAt: Date.now() }); setNewStaffName(''); }} className="bg-fuchsia-600 px-6 rounded-xl font-black uppercase text-xs text-white shadow-lg">Enroll</button>
+                  </div>
+                </div>
 
-            const toggleConfirmed = async (id, current) => {
-                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { confirmed: !current });
-                setEditingShift(prev => prev ? {...prev, confirmed: !current} : null);
-            };
+                <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-2 border-t border-white/5 pt-4">
+                  {Object.values(staff).map(s => (
+                    <div key={s.id} className="flex items-center justify-between p-3 glass-panel neon-blue rounded-xl group border-white/5">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-3 h-3 rounded-full ${s.bg} shadow-white/20`} />
+                        <div className="flex flex-col text-left">
+                          <span className="font-black uppercase text-sm text-white tracking-tight">{s.name}</span>
+                          <span className="text-[7px] text-slate-600 font-bold uppercase tracking-widest">Linked: {new Date(s.createdAt || Date.now()).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <button onClick={async () => { if(confirm("Terminate unit identifier?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', s.id)); }} className="text-rose-500 font-black text-[9px] uppercase px-3 py-1 hover:bg-rose-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 border border-rose-500/30">
+                        <TrashIcon /> Purge
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
-            const restoreFeb = async () => {
-                setIsSaving(true);
-                const batch = writeBatch(db);
-                const baseline = [
-                    { name: 'Karen', color: 'bg-cyan-500' }, { name: 'Izzy', color: 'bg-orange-500' },
-                    { name: 'Annalissia', color: 'bg-violet-500' }, { name: 'Hal', color: 'bg-rose-500' }
-                ];
-                const teamIds = {};
-                for (const m of baseline) {
-                    const existing = Object.values(staff).find(s => s.name === m.name);
-                    if (existing) teamIds[m.name] = existing.id;
-                    else {
-                        const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'staff'));
-                        batch.set(ref, { ...m, createdAt: Date.now() });
-                        teamIds[m.name] = ref.id;
-                    }
-                }
-                for (let d = 1; d <= 28; d++) {
-                    const dk = `2026-02-${String(d).padStart(2, '0')}`;
-                    const dow = new Date(2026, 1, d).getDay();
-                    if (dow === 1 || dow === 3) batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: teamIds['Karen'], time: '08:00', confirmed: true, createdAt: Date.now() });
-                    else if (dow === 2 || dow === 4 || dow === 5) batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: teamIds['Izzy'], time: '08:00', confirmed: true, createdAt: Date.now() });
-                    else if (dow === 0 && d === 1) {
-                        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: teamIds['Hal'], time: '16:00', confirmed: true, createdAt: Date.now() });
-                        batch.set(doc(collection(db, 'artifacts', appId, 'public', 'data', 'shifts')), { date: dk, empId: teamIds['Annalissia'], time: '08:00', confirmed: true, createdAt: Date.now() });
-                    }
-                }
-                await batch.commit();
-                setIsSaving(false);
-            };
+      {/* DEPLOY MODAL (Assign Shift) */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[500] flex items-center justify-center p-4">
+          <div className="glass-panel neon-blue p-10 w-full max-w-md shadow-2xl rounded-3xl text-left">
+            <h3 className="text-2xl font-black text-cyan-400 uppercase mb-8 tracking-tighter">Deploy Identity</h3>
+            <div className="grid grid-cols-2 gap-2 mb-8">
+               {Object.values(staff).map(s => (
+                 <button key={s.id} onClick={() => handleAssignShift(s.id)} className={`p-4 rounded-xl text-[10px] font-black uppercase text-white ${s.bg} hover:scale-105 transition-transform shadow-lg`}>{s.name}</button>
+               ))}
+            </div>
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block text-center">Sync Protocol Time</label>
+              <input type="time" value={newShiftTime} onChange={e => setNewShiftTime(e.target.value)} className="w-full bg-black border border-cyan-500/30 rounded-2xl p-5 text-4xl text-white font-black text-center outline-none focus:border-cyan-400 shadow-inner" />
+              <button onClick={() => setIsAddModalOpen(false)} className="w-full text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] hover:text-white transition-colors pt-6 text-center">Abort Sequence</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-            const onDragStart = (e, type, id) => {
-                e.dataTransfer.setData("type", type);
-                e.dataTransfer.setData("id", id);
-            };
+      {/* MODIFY NODE MODAL (Edit Shift) */}
+      {editingShift && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[500] flex items-center justify-center p-4 text-left">
+          <div className="glass-panel neon-fuchsia p-8 w-full max-w-sm shadow-2xl rounded-3xl">
+            <h3 className="text-xl font-black uppercase mb-8 text-center text-white">Adjust Link Status</h3>
+            <div className="space-y-6">
+              <button 
+                onClick={() => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', editingShift.id), { confirmed: !editingShift.confirmed })} 
+                className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}
+              >
+                {editingShift.confirmed ? 'Link: Verified Active' : 'Link: Signal Lost'}
+              </button>
+              <input type="time" value={editingShift.time} onChange={e => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', editingShift.id), { time: e.target.value })} className="w-full bg-black border border-white/10 rounded-xl p-4 text-3xl text-white font-black text-center" />
+              <div className="flex gap-3">
+                <button onClick={() => setEditingShift(null)} className="flex-1 bg-white text-black py-4 rounded-xl font-black uppercase text-xs hover:bg-cyan-400 transition-colors">Commit</button>
+                <button onClick={async () => { if(confirm("Terminate link?")) { await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', editingShift.id)); setEditingShift(null); } }} className="bg-rose-600 px-8 py-4 rounded-xl text-white hover:bg-rose-500"><TrashIcon /></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
-            const onDrop = async (e, date) => {
-                e.preventDefault();
-                e.currentTarget.classList.remove('drag-over');
-                const type = e.dataTransfer.getData("type");
-                const id = e.dataTransfer.getData("id");
-                if (type === 'staff_member') assignShift(date, id);
-                else if (type === 'existing_shift') await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', id), { date });
-            };
-
-            const month = currentDate.getMonth();
-            const year = currentDate.getFullYear();
-            const firstDay = new Date(year, month, 1).getDay();
-            const totalDays = new Date(year, month + 1, 0).getDate();
-
-            const cells = [];
-            for (let i = 0; i < firstDay; i++) cells.push(React.createElement('div', { key: `p-${i}`, className: "calendar-cell bg-white/[0.01]" }));
-            for (let d = 1; d <= totalDays; d++) {
-                const dk = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dayShifts = events[dk] || [];
-                const alert = dayNotes[dk];
-                const isWeekend = new Date(year, month, d).getDay() === 0 || new Date(year, month, d).getDay() === 6;
-
-                cells.push(
-                    React.createElement('div', {
-                        key: d,
-                        onDragOver: e => { e.preventDefault(); e.currentTarget.classList.add('drag-over'); },
-                        onDragLeave: e => e.currentTarget.classList.remove('drag-over'),
-                        onDrop: e => onDrop(e, dk),
-                        onClick: () => setSelectedDate(dk),
-                        className: `calendar-cell relative overflow-y-auto no-scrollbar transition-all ${selectedDate === dk ? 'bg-blue-500/5' : ''} ${isWeekend ? 'bg-white/[0.02]' : ''}`
-                    },
-                        React.createElement('div', { className: "flex justify-between items-start mb-2" },
-                            React.createElement('span', { className: `text-xl font-bold italic tracking-tighter ${alert ? 'text-rose-500 underline decoration-rose-500/30' : 'text-slate-700'}` }, d),
-                            React.createElement('button', { 
-                                onClick: (e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }, 
-                                className: "no-print text-blue-500 text-xl font-bold px-1 hover:scale-125 transition-all opacity-0 group-hover:opacity-100" 
-                            }, "+")
-                        ),
-                        alert && React.createElement('div', { className: "text-[10px] font-black text-rose-500 uppercase bg-rose-500/10 border border-rose-500/30 px-2 py-1 rounded mb-2 truncate" }, alert),
-                        React.createElement('div', { className: "mt-1.5 space-y-1" }, dayShifts.map(s => (
-                            React.createElement('div', {
-                                key: s.id, draggable: true,
-                                onDragStart: e => onDragStart(e, 'existing_shift', s.id),
-                                onClick: e => { e.stopPropagation(); setEditingShift(s); },
-                                className: `shift-pill draggable-item text-white ${staff[s.empId]?.color || 'bg-slate-700'} ${s.confirmed === false ? 'opacity-30 grayscale scale-95 border border-white/30 border-dashed' : ''}`
-                            },
-                                s.confirmed === false && React.createElement('span', null, "?"),
-                                React.createElement('span', { className: "truncate flex-1" }, staff[s.empId]?.name || '...'),
-                                React.createElement('span', { className: "opacity-60 text-[10px] mono" }, s.time)
-                            )
-                        )))
-                    )
-                );
-            }
-
-            if (!user) return React.createElement('div', { className: "h-screen bg-black flex items-center justify-center text-blue-500 font-bold animate-pulse" }, "SYNCING COMMAND CENTER...");
-
-            return React.createElement('div', { className: "app-container" },
-                
-                // NAV RAIL
-                React.createElement('nav', { className: "nav-rail no-print" },
-                    React.createElement('div', { className: "text-blue-500 font-black text-2xl mb-12 italic" }, "DS"),
-                    React.createElement('div', { className: "flex flex-col gap-8" },
-                        React.createElement('button', { onClick: () => setActiveTab('calendar'), className: `p-3 rounded-xl transition-all ${activeTab === 'calendar' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40' : 'text-slate-600 hover:text-white'}` }, "📅"),
-                        React.createElement('button', { onClick: () => setActiveTab('report'), className: `p-3 rounded-xl transition-all ${activeTab === 'report' ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/40' : 'text-slate-600 hover:text-white'}` }, "📋"),
-                        React.createElement('button', { onClick: () => setIsStaffModalOpen(true), className: "p-3 rounded-xl text-slate-600 hover:text-white transition-all" }, "👥")
-                    ),
-                    React.createElement('div', { className: "mt-auto flex flex-col gap-4 items-center" },
-                        isSaving && React.createElement('div', { className: "w-2 h-2 bg-emerald-500 rounded-full animate-ping" }),
-                        React.createElement('button', { onClick: () => setIsDarkMode(!isDarkMode), className: "p-3 opacity-10 hover:opacity-50" }, "⚙️")
-                    )
-                ),
-
-                activeTab === 'calendar' ? 
-                React.createElement('div', { className: "flex-1 flex overflow-hidden" },
-                    // THE SIDE PANEL
-                    React.createElement('aside', { className: "side-panel no-scrollbar no-print" },
-                        React.createElement('header', { className: "mb-8" },
-                            React.createElement('h2', { className: "text-xs font-bold text-slate-600 uppercase tracking-widest mb-1" }, "Destiny Springs"),
-                            React.createElement('h1', { className: "text-2xl font-black tracking-tighter italic" }, "RECEPTION HUB")
-                        ),
-                        
-                        React.createElement('section', { className: "section-card mb-8 shadow-xl" },
-                            React.createElement('h3', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4" }, "Shift Vibe"),
-                            React.createElement('div', { className: "flex flex-wrap gap-2.5 mb-4" }, DESK_VIBES.map(v => (
-                                React.createElement('button', { key: v.label, onClick: () => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: v, note: deskStatus.note }), className: `p-2 rounded-xl text-2xl transition-all ${deskStatus.vibe?.label === v.label ? 'bg-blue-600 shadow-lg scale-110' : 'bg-white/5 hover:bg-white/10'}` }, v.emoji)
-                            ))),
-                            React.createElement('textarea', { value: deskStatus.note || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'deskStatus', 'current'), { vibe: deskStatus.vibe, note: e.target.value }), className: "w-full bg-black/40 border border-white/5 rounded-xl p-3 text-xs outline-none text-blue-100 h-20 resize-none shadow-inner no-scrollbar", placeholder: "General notes..." })
-                        ),
-
-                        React.createElement('section', { className: "mb-8" },
-                            React.createElement('h3', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4" }, "Daily Tasks"),
-                            React.createElement('form', { onSubmit: async e => { e.preventDefault(); if(newTaskText.trim()) { await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'checklist'), { text: newTaskText.trim(), completed: false, createdAt: Date.now() }); setNewTaskText(''); } }, className: "flex gap-2 mb-4" },
-                                React.createElement('input', { value: newTaskText, onChange: e => setNewTaskText(e.target.value), className: "flex-1 bg-black border border-white/10 rounded-xl p-3 text-xs outline-none focus:border-blue-500", placeholder: "New task..." }),
-                                React.createElement('button', { type: "submit", className: "bg-blue-600 px-4 rounded-xl font-bold" }, "+")
-                            ),
-                            React.createElement('div', { className: "space-y-1.5 max-h-40 overflow-y-auto no-scrollbar" }, tasks.map(t => (
-                                React.createElement('div', { key: t.id, className: "flex items-center justify-between p-2 hover:bg-white/5 rounded-lg group transition-all" },
-                                    React.createElement('div', { onClick: () => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id), { completed: !t.completed }), className: "flex items-center gap-3 cursor-pointer flex-1" },
-                                        React.createElement('div', { className: `w-4 h-4 rounded border flex items-center justify-center ${t.completed ? 'bg-emerald-600 border-emerald-600' : 'border-slate-700'}` }, t.completed && "✓"),
-                                        React.createElement('span', { className: `text-[11px] font-bold ${t.completed ? 'line-through opacity-30' : ''}` }, t.text)
-                                    ),
-                                    React.createElement('button', { onClick: () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'checklist', t.id)), className: "opacity-0 group-hover:opacity-100 text-rose-500 px-2" }, "×")
-                                )
-                            )))
-                        ),
-
-                        React.createElement('section', { className: "mb-8" },
-                            React.createElement('h3', { className: "text-[10px] font-black text-slate-500 uppercase tracking-widest mb-4 italic" }, "Team (Drag Name)"),
-                            React.createElement('div', { className: "flex flex-wrap gap-2" }, Object.values(staff).map(s => (
-                                React.createElement('div', { key: s.id, draggable: true, onDragStart: e => onDragStart(e, 'staff_member', s.id), className: `draggable-item px-3 py-1.5 rounded-lg text-[13px] font-bold text-white shadow-xl ${s.color}` }, s.name.toUpperCase())
-                            )))
-                        ),
-
-                        selectedDate && React.createElement('div', { className: "animate-fade-in p-5 rounded-2xl bg-rose-900/10 border border-rose-500/20 shadow-lg" },
-                            React.createElement('label', { className: "text-[10px] font-black text-rose-500 uppercase mb-2 block tracking-widest" }, "Day Alert"),
-                            React.createElement('textarea', { value: dayNotes[selectedDate] || '', onChange: e => setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'dayNotes', selectedDate), { text: e.target.value }), className: "w-full bg-black/40 border border-white/10 rounded-xl p-3 text-sm text-rose-400 font-bold h-16 outline-none resize-none", placeholder: "Needs coverage..." })
-                        )
-                    ),
-
-                    // MAIN CONTENT
-                    React.createElement('main', { className: "main-content no-scrollbar flex flex-col" },
-                        React.createElement('div', { className: "flex justify-between items-center mb-10 no-print" },
-                            React.createElement('h2', { className: "text-6xl font-black tracking-tighter uppercase italic text-white" }, currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })),
-                            React.createElement('div', { className: "flex gap-4" },
-                                React.createElement('div', { className: "flex bg-white/5 p-1 rounded-xl border border-white/10" },
-                                    React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month - 1, 1)), className: "p-3 hover:bg-white/10 rounded-lg transition-all" }, "◀"),
-                                    React.createElement('button', { onClick: () => setCurrentDate(new Date(year, month + 1, 1)), className: "p-3 hover:bg-white/10 rounded-lg transition-all" }, "▶")
-                                ),
-                                React.createElement('button', { onClick: () => window.print(), className: "bg-white text-black px-10 py-3 rounded-2xl font-black uppercase text-sm shadow-2xl hover:bg-blue-600 hover:text-white transition-all" }, "Print Summary")
-                            )
-                        ),
-                        React.createElement('div', { className: "flex-1 calendar-grid bg-white/[0.01]" },
-                            ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map(day => (
-                                React.createElement('div', { key: day, className: "py-6 text-center text-[11px] font-black text-slate-600 uppercase tracking-[0.4em] border-b border-white/10" }, day)
-                            )),
-                            cells
-                        )
-                    )
-                ) : 
-                // REPORT
-                React.createElement('div', { className: "flex-1 p-16 overflow-y-auto bg-black no-scrollbar" },
-                    React.createElement('div', { className: "max-w-5xl mx-auto space-y-12" },
-                        React.createElement('header', { className: "border-b-2 border-white/10 pb-10 flex justify-between items-end" },
-                            React.createElement('div', null,
-                                React.createElement('h2', { className: "text-7xl font-black text-blue-500 italic tracking-tighter" }, "SHIFT REPORT"),
-                                React.createElement('p', { className: "text-slate-500 text-sm font-bold uppercase tracking-[0.4em] mt-4" }, "Healthcare Provider Log")
-                            )
-                        ),
-                        React.createElement('div', { className: "grid grid-cols-1 md:grid-cols-2 gap-10" }, 
-                            REPORT_FIELDS.map(f => (
-                                React.createElement('div', { key: f.id, className: "space-y-4" },
-                                    React.createElement('label', { className: "text-[14px] font-black text-slate-400 uppercase tracking-widest" }, f.label),
-                                    React.createElement('textarea', { 
-                                        value: String(reportData[f.id] || ''), 
-                                        onChange: e => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'currentReport', 'current'), { [f.id]: e.target.value }), 
-                                        className: "w-full bg-white/[0.02] border border-white/10 rounded-[2.5rem] p-8 text-lg h-56 focus:border-blue-500 outline-none transition-all resize-none shadow-inner", 
-                                        placeholder: `Update ${f.label}...` 
-                                    })
-                                )
-                            ))
-                        )
-                    )
-                ),
-
-                // MODALS
-                isAddModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/95 backdrop-blur-xl z-[300] flex items-center justify-center p-4" },
-                    React.createElement('div', { className: "bg-zinc-900 border border-white/10 p-10 rounded-[4rem] w-full max-w-md shadow-2xl animate-fade-in" },
-                        React.createElement('h3', { className: "text-3xl font-black uppercase italic tracking-tighter mb-8" }, "Add Shift"),
-                        React.createElement('div', { className: "space-y-6" },
-                            React.createElement('div', { className: "grid grid-cols-2 gap-2 max-h-40 overflow-y-auto pr-2 no-scrollbar" }, Object.values(staff).map(s => (
-                                React.createElement('button', { key: s.id, onClick: () => assignShift(selectedDate, s.id, newShiftTime), className: `p-3 rounded-2xl text-[11px] font-black uppercase text-white shadow-xl ${s.color}` }, s.name)
-                            ))),
-                            React.createElement('input', { type: "time", value: newShiftTime, onChange: e => setNewShiftTime(e.target.value), className: "w-full bg-black border border-white/10 rounded-3xl p-5 text-4xl text-white font-black text-center" }),
-                            React.createElement('button', { onClick: () => setIsAddModalOpen(false), className: "w-full text-slate-600 font-bold uppercase text-xs pt-4" }, "Cancel")
-                        )
-                    )
-                ),
-
-                editingShift && React.createElement('div', { className: "fixed inset-0 bg-black/95 backdrop-blur-xl z-[300] flex items-center justify-center p-4" },
-                    React.createElement('div', { className: "bg-zinc-900 border border-white/10 p-10 rounded-[4rem] w-full max-w-md shadow-2xl animate-fade-in" },
-                        React.createElement('h3', { className: "text-3xl font-black uppercase text-white mb-10 italic tracking-tighter text-center" }, (staff[editingShift.empId]?.name || 'Employee') + "'s Shift"),
-                        React.createElement('div', { className: "space-y-8" },
-                            React.createElement('div', { className: "p-6 bg-white/5 rounded-2xl border border-white/5" },
-                                React.createElement('button', { 
-                                    onClick: () => toggleConfirmed(editingShift.id, editingShift.confirmed !== false),
-                                    className: `w-full py-5 rounded-3xl font-black text-base uppercase tracking-widest shadow-2xl transition-all ${editingShift.confirmed !== false ? 'bg-emerald-600 text-white' : 'bg-rose-600 text-white'}`
-                                }, editingShift.confirmed !== false ? 'Confirmed ✓' : 'UNCONFIRMED ?')
-                            ),
-                            React.createElement('div', null,
-                                React.createElement('label', { className: "text-[10px] font-black text-slate-500 uppercase mb-3 block text-center" }, "Update Time"),
-                                React.createElement('input', { type: "time", value: editingShift.time, onChange: e => updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', editingShift.id), { time: e.target.value }), className: "w-full bg-black border border-white/10 rounded-3xl p-6 text-4xl text-white font-black text-center" })
-                            ),
-                            React.createElement('div', { className: "flex gap-4" },
-                                React.createElement('button', { onClick: () => setEditingShift(null), className: "flex-1 bg-blue-600 py-6 rounded-[2rem] font-black uppercase text-xl shadow-2xl hover:bg-blue-500" }, "Done"),
-                                React.createElement('button', { onClick: () => { deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'shifts', editingShift.id)); setEditingShift(null); }, className: "bg-rose-600 px-10 py-6 rounded-[2rem] font-black text-2xl transition-all hover:scale-105" }, "🗑")
-                            )
-                        )
-                    )
-                ),
-
-                isStaffModalOpen && React.createElement('div', { className: "fixed inset-0 bg-black/95 backdrop-blur-2xl z-[300] flex items-center justify-center p-4" },
-                    React.createElement('div', { className: "bg-zinc-900 border border-white/10 p-10 rounded-[4rem] w-full max-w-xl max-h-[85vh] flex flex-col shadow-2xl animate-fade-in" },
-                        React.createElement('div', { className: "flex justify-between items-center mb-6 shrink-0" },
-                            React.createElement('h3', { className: "text-4xl font-black uppercase italic tracking-tighter" }, "Team Setup"),
-                            React.createElement('button', { onClick: () => setIsStaffModalOpen(false), className: "text-slate-500 text-6xl font-light hover:text-white" }, "×")
-                        ),
-                        React.createElement('button', { onClick: restoreFeb, className: "w-full bg-emerald-600/10 text-emerald-400 py-4 rounded-[1.5rem] border border-emerald-600/30 font-black text-[11px] uppercase mb-8 shadow-inner" }, "Restore February Schedule"),
-                        React.createElement('div', { className: "space-y-4 mb-8 shrink-0" },
-                            React.createElement('input', { value: newStaffName, onChange: e => setNewStaffName(e.target.value), className: "w-full bg-black border border-white/10 rounded-2xl p-5 text-xl text-white font-black outline-none", placeholder: "Full Name..." }),
-                            React.createElement('div', { className: "grid grid-cols-4 gap-3" }, PRESET_COLORS.map(c => (
-                                React.createElement('button', { key: c.bg, onClick: () => setNewStaffColor(c.bg), className: `h-14 rounded-2xl transition-all ${c.bg} ${newStaffColor === c.bg ? 'ring-8 ring-white/20 scale-110' : 'opacity-20 hover:opacity-100'}` })
-                            ))),
-                            React.createElement('button', { onClick: handleAddStaff, className: "w-full bg-blue-600 py-5 rounded-[1.5rem] font-black uppercase text-lg shadow-2xl" }, "Add Member")
-                        ),
-                        React.createElement('div', { className: "flex-1 overflow-y-auto no-scrollbar space-y-3 pr-2 border-t border-white/5 pt-4" }, Object.values(staff).map(s => (
-                            React.createElement('div', { key: s.id, className: "flex items-center justify-between p-5 bg-black border border-white/5 rounded-[2.5rem] shadow-lg" },
-                                React.createElement('div', { className: "flex items-center gap-6" },
-                                    React.createElement('div', { className: `w-6 h-6 rounded-full ${s.color} shadow-lg shadow-white/5` }),
-                                    React.createElement('span', { className: "font-black uppercase text-xl" }, s.name)
-                                ),
-                                React.createElement('button', { onClick: () => deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'staff', s.id)), className: "text-rose-500 font-black text-sm uppercase px-4 py-2 hover:bg-rose-500/10 rounded-xl" }, "Delete")
-                            )
-                        )))
-                    )
-                )
-            );
-        }
-
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(React.createElement(App));
-    </script>
-</head>
-<body>
-    <div id="root"></div>
-</body>
-</html>
+export default App;
