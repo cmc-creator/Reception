@@ -1,7 +1,7 @@
 # Firebase Configuration Setup
 
 ## Issue
-The Reception Calendar app requires a valid Firebase API key to function properly. Currently, a placeholder key is in use which may not work with your Firebase project.
+The Reception Calendar app requires a valid Firebase API key to function properly. The code currently contains an API key that may not be configured correctly for your Firebase project.
 
 ## How to Fix
 

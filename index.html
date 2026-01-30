@@ -65,6 +65,7 @@
             auth = firebase.auth();
         } catch (error) {
             console.error("Firebase initialization error:", error);
+            const escapeHtml = (str) => String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
             document.body.innerHTML = `
                 <div style="display: flex; align-items: center; justify-content: center; height: 100vh; background: #000; color: #fff; flex-direction: column; padding: 40px; text-align: center; font-family: 'Inter', sans-serif;">
                     <div style="max-width: 600px;">
@@ -83,12 +84,12 @@
                             </ol>
                         </div>
                         <p style="color: #888; font-size: 12px; margin-top: 20px;">
-                            Error: ${error.message}
+                            Error: ${escapeHtml(error.message)}
                         </p>
                     </div>
                 </div>
             `;
-            throw error;
+            return; // Stop execution but allow error message to display
         }
 
         // --- REPORT FIELDS ---
