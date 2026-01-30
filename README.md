@@ -73,15 +73,40 @@ localStorage.setItem('firebase_config', JSON.stringify({
 4. Under the **General** tab, scroll down to **Your apps**
 5. Copy your web app configuration
 
+### Configuration Priority
+
+The app loads Firebase configuration in the following priority order:
+
+1. `window.__firebase_config` (if set before the app loads)
+2. `localStorage.getItem('firebase_config')` (if available)
+3. Bundled default configuration (fallback, may have empty API key)
+
+All configuration sources are protected with JSON parsing error guards to prevent runtime failures.
+
 ### Offline/Demo Mode
 
-If Firebase is not configured or the connection fails, the application will automatically offer to run in **Demo Mode**. This displays sample data including:
+If Firebase is not configured, the anonymous authentication fails, or Firestore is unreachable/disabled, the application will **automatically enable Demo Mode**. This ensures the UI is never blank and provides:
 
-- Four demo staff members with scheduled shifts
-- Sample chat messages
-- A demo alert banner
+- **Four demo staff members** with scheduled shifts for the current month
+- **Sample chat messages** explaining the demo mode
+- **Demo report fields** with sample data
+- **Demo alert banner** indicating offline status
 
-Demo mode is view-only and does not persist any changes.
+**Demo mode features:**
+- ✅ Browse the calendar interface with sample shifts
+- ✅ View all UI components and layout
+- ✅ Navigate between months
+- ✅ Print/export the calendar
+- ❌ Cannot create, edit, or delete data (all modifications are blocked)
+- ❌ No data persistence or Firebase synchronization
+
+The demo mode activates automatically in these scenarios:
+- Firebase API key is missing or invalid
+- Anonymous authentication fails
+- Cloud Firestore API is disabled
+- Network connectivity issues prevent Firebase access
+
+**To exit demo mode:** Configure Firebase credentials properly and refresh the browser.
 
 ## Admin Features
 
