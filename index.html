@@ -61,36 +61,36 @@
         const IconTerminal = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>;
 
         // --- FIREBASE CORE CONFIG ---
-        // Allow config injection via window.__firebase_config or localStorage
-        const defaultConfig = {
-            apiKey: "AIzaSyCYraZ_M0NknCg6lgdncSpucHfgPOMqBi8",
-            authDomain: "reception-calendar-1.firebaseapp.com",
-            projectId: "reception-calendar-1",
-            storageBucket: "reception-calendar-1.appspot.com",
-            messagingSenderId: "613158953901",
-            appId: "1:613158953901:web:ed3f0a6cc4cb23f65df724"
-            // measurementId: "G-XXXXXXXXXX" // Optional: Uncomment and set your Google Analytics measurement ID
-        };
-        
-        let firebaseConfig = defaultConfig;
-        
-        // Check for config injection via window.__firebase_config
-        if (window.__firebase_config) {
-            try {
+        // Allow Firebase config to be injected via window.__firebase_config or localStorage
+        let firebaseConfig;
+        try {
+            if (window.__firebase_config) {
                 firebaseConfig = typeof window.__firebase_config === 'string' 
                     ? JSON.parse(window.__firebase_config) 
                     : window.__firebase_config;
-            } catch (e) {
-                console.warn("Failed to parse window.__firebase_config, using defaults", e);
+            } else if (localStorage.getItem('firebase_config')) {
+                firebaseConfig = JSON.parse(localStorage.getItem('firebase_config'));
+            } else {
+                // Fallback to default config (without API key for security)
+                firebaseConfig = {
+                    apiKey: "",
+                    authDomain: "reception-calendar-1.firebaseapp.com",
+                    projectId: "reception-calendar-1",
+                    storageBucket: "reception-calendar-1.appspot.com",
+                    messagingSenderId: "613158953901",
+                    appId: "1:613158953901:web:ed3f0a6cc4cb23f65df724"
+                };
             }
-        } 
-        // Check for config in localStorage
-        else if (localStorage.getItem('firebaseConfig')) {
-            try {
-                firebaseConfig = JSON.parse(localStorage.getItem('firebaseConfig'));
-            } catch (e) {
-                console.warn("Failed to parse localStorage firebaseConfig, using defaults", e);
-            }
+        } catch (e) {
+            console.error("Firebase config parsing error:", e);
+            firebaseConfig = {
+                apiKey: "",
+                authDomain: "reception-calendar-1.firebaseapp.com",
+                projectId: "reception-calendar-1",
+                storageBucket: "reception-calendar-1.appspot.com",
+                messagingSenderId: "613158953901",
+                appId: "1:613158953901:web:ed3f0a6cc4cb23f65df724"
+            };
         }
         
         const activeAppId = "destiny-springs-hub";
@@ -107,12 +107,53 @@
             { id: 'aoc', label: 'AOC Status' }
         ];
 
+        // --- DEMO/OFFLINE FALLBACK DATA ---
+        const DEMO_STAFF = {
+            'demo-karen': { id: 'demo-karen', name: 'Karen (Demo)', bg: 'bg-cyan-600/80' },
+            'demo-izzy': { id: 'demo-izzy', name: 'Izzy (Demo)', bg: 'bg-rose-600/80' },
+            'demo-annalissia': { id: 'demo-annalissia', name: 'Annalissia (Demo)', bg: 'bg-fuchsia-600/80' },
+            'demo-hal': { id: 'demo-hal', name: 'Hal (Demo)', bg: 'bg-blue-600/80' }
+        };
+
+        const DEMO_MESSAGES = [
+            { id: 'demo-1', text: 'System running in demo mode', user: 'SYS', createdAt: Date.now() - 3000 },
+            { id: 'demo-2', text: 'Sample message from reception desk', user: 'DEMO', createdAt: Date.now() - 2000 },
+            { id: 'demo-3', text: 'Configure Firebase to enable live data', user: 'INFO', createdAt: Date.now() - 1000 }
+        ];
+
+        function generateDemoShifts() {
+            const shifts = {};
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            
+            for (let d = 1; d <= daysInMonth; d++) {
+                const date = new Date(year, month, d);
+                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                const dow = date.getDay();
+                
+                // Create sample shifts based on day of week
+                if (dow === 1 || dow === 3) { // Mon, Wed
+                    shifts[dateKey] = [{ id: `demo-shift-${d}-1`, date: dateKey, empId: 'demo-karen', time: '08:00', confirmed: true }];
+                } else if (dow === 2 || dow === 4 || dow === 5) { // Tue, Thu, Fri
+                    shifts[dateKey] = [{ id: `demo-shift-${d}-2`, date: dateKey, empId: 'demo-izzy', time: '08:00', confirmed: true }];
+                } else if (dow === 0) { // Sunday
+                    shifts[dateKey] = [
+                        { id: `demo-shift-${d}-3`, date: dateKey, empId: 'demo-hal', time: '16:00', confirmed: true },
+                        { id: `demo-shift-${d}-4`, date: dateKey, empId: 'demo-annalissia', time: '08:00', confirmed: true }
+                    ];
+                }
+            }
+            return shifts;
+        }
+
         function App() {
             // --- Matrix State ---
             const [user, setUser] = useState(null);
             const [apiDisabled, setApiDisabled] = useState(false);
             const [handshakeFailed, setHandshakeFailed] = useState(false);
-            const [demoMode, setDemoMode] = useState(false);
+            const [isOfflineMode, setIsOfflineMode] = useState(false);
             const [currentDate, setCurrentDate] = useState(() => {
                 const now = new Date();
                 return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -132,6 +173,22 @@
             const [newStaffName, setNewStaffName] = useState('');
             const chatEndRef = useRef(null);
 
+            // --- Initialize Demo Data Function ---
+            function initializeDemoMode() {
+                setIsOfflineMode(true);
+                setEvents(generateDemoShifts());
+                setStaff(DEMO_STAFF);
+                setMessages(DEMO_MESSAGES);
+                setGlobalAlert('OFFLINE DEMO MODE - Configure Firebase to enable live data');
+            }
+
+            // --- Initialize Demo Data on Offline Mode ---
+            useEffect(() => {
+                if (isOfflineMode && Object.keys(staff).length === 0) {
+                    initializeDemoMode();
+                }
+            }, [isOfflineMode]);
+
             // --- Robust Error Interceptor ---
             function catchSystemError(e) {
                 console.error("Matrix Logic Error Interceptor:", e);
@@ -143,6 +200,7 @@
                     msg.includes('disabled') || 
                     msg.includes('could not reach cloud firestore backend')) {
                     setApiDisabled(true);
+                    setIsOfflineMode(true);
                 }
             }
 
@@ -208,8 +266,13 @@
 
             // --- Admin Master Reset Pattern ---
             async function handleMasterReset() {
-                if (!user || demoMode) return;
-                if (!confirm("ADMIN MASTER RESET: Restore personnel Karen, Izzy, Annalissia, and Hal and force February Baseline schedule?")) return;
+                if (!user) return;
+                
+                const now = new Date();
+                const currentMonth = now.toLocaleString('default', { month: 'long' });
+                const currentYear = now.getFullYear();
+                
+                if (!confirm(`ADMIN MASTER RESET: Restore personnel Karen, Izzy, Annalissia, and Hal and force ${currentMonth} ${currentYear} Baseline schedule?`)) return;
                 
                 try {
                     const batch = db.batch();
@@ -226,9 +289,13 @@
                         batch.set(baseRef.collection('staff').doc(m.id), { ...m, createdAt: Date.now() }, { merge: true });
                     });
 
-                    for (let d = 1; d <= 28; d++) {
-                        const dk = `2026-02-${String(d).padStart(2, '0')}`;
-                        const dow = new Date(2026, 1, d).getDay();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dk = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const dow = new Date(year, month, d).getDay();
                         const shiftRef = baseRef.collection('shifts').doc();
                         
                         if (dow === 1 || dow === 3) { // Mon, Wed
@@ -254,9 +321,7 @@
                         console.error("Firebase handshake failed, activating demo mode", e);
                         catchSystemError(e);
                         setHandshakeFailed(true);
-                        setDemoMode(true);
-                        setUser({ uid: 'demo-user-1234' }); // Set a demo user with proper format
-                        seedDemoData(); // Seed demo data immediately
+                        setIsOfflineMode(true);
                     }
                 };
                 establishHandshake();
@@ -267,7 +332,7 @@
             }, [demoMode]); // Added demoMode to dependency array
 
             useEffect(() => {
-                if (!user || demoMode) return; // Don't set up listeners in demo mode
+                if (!user || isOfflineMode) return;
                 const base = db.collection('artifacts').doc(activeAppId).collection('public').doc('data');
 
                 const unsubShifts = base.collection('shifts').onSnapshot(snap => {
@@ -293,14 +358,14 @@
                 });
 
                 return () => { unsubShifts(); unsubStaff(); unsubMsgs(); unsubAlert(); };
-            }, [user, demoMode]);
+            }, [user, isOfflineMode]);
 
             useEffect(() => {
-                if (!user || !selectedDate || demoMode) return; // Don't set up listeners in demo mode
+                if (!user || !selectedDate || isOfflineMode) return;
                 const unsub = db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('dailyReports').doc(selectedDate)
                     .onSnapshot(snap => setReportData(snap.data() || {}), catchSystemError);
                 return () => unsub();
-            }, [user, selectedDate, demoMode]);
+            }, [user, selectedDate, isOfflineMode]);
 
             // --- UI Elements ---
             const calendarMatrix = useMemo(() => {
@@ -318,13 +383,13 @@
                         <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[180px] p-3 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-inner' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
                             <div className="flex justify-between items-start">
                                 <span className={`text-xl font-black tracking-tighter ${selectedDate === dk ? 'text-cyan-400' : 'text-slate-600'}`}>{d}</span>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 opacity-20 hover:opacity-100 transition-opacity"><IconPlus /></button>
+                                {!isOfflineMode && <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 opacity-20 hover:opacity-100 transition-opacity"><IconPlus /></button>}
                             </div>
                             <div className="space-y-2 mt-4">
                                 {dayShifts.length === 0 ? <div className="text-[10px] font-black text-rose-500 animate-pulse uppercase flex items-center gap-1 mt-2 text-left font-mono italic"><IconAlert /> Needs Coverage</div> : 
                                     dayShifts.map(s => (
-                                        <div key={s.id} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
-                                            className={`text-[13px] p-2 rounded-xl font-bold truncate text-white ${staff[s.empId]?.bg || 'bg-slate-700'} uppercase flex items-center justify-between text-left shadow-2xl border border-white/10 group-hover:scale-105 transition-transform`}>
+                                        <div key={s.id} onClick={(e) => { if (!isOfflineMode) { e.stopPropagation(); setEditingShift(s); } }} 
+                                            className={`text-[13px] p-2 rounded-xl font-bold truncate text-white ${staff[s.empId]?.bg || 'bg-slate-700'} uppercase flex items-center justify-between text-left shadow-2xl border border-white/10 ${isOfflineMode ? '' : 'group-hover:scale-105 transition-transform cursor-pointer'}`}>
                                             <span>{staff[s.empId]?.name || '...'}</span>
                                             <span className="opacity-50 text-[10px] font-mono shrink-0">{s.time}</span>
                                         </div>
@@ -335,48 +400,66 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff]);
+            }, [currentDate, events, selectedDate, staff, isOfflineMode]);
 
             // --- API DISABLED DASHBOARD ---
-            if (apiDisabled && !demoMode) return (
-                <div className="h-screen bg-black flex flex-col items-center justify-center p-10 text-center gap-8">
-                    <div className="text-rose-500 font-black text-5xl alert-pulse uppercase tracking-[0.3em] holo-text">Protocol_Blocked</div>
-                    <div className="glass-panel p-10 border border-rose-500/30 max-w-2xl text-left shadow-2xl rounded-[2rem]">
-                        <p className="text-rose-400 font-black text-lg mb-8 uppercase tracking-widest flex items-center gap-3"><IconAlert /> Matrix Database Offline</p>
-                        <p className="text-sm text-slate-300 leading-relaxed mb-6 italic">The Cloud Firestore API is disabled for project: <span className="font-mono text-white underline">reception-calendar-1</span>. Follow these steps to restore the signal:</p>
-                        <div className="space-y-6 text-sm text-slate-200">
-                            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                                <p className="font-black text-cyan-400 mb-2 uppercase text-[10px] tracking-widest font-bold">1. Open Console Link:</p>
-                                <a href="https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=reception-calendar-1" target="_blank" className="text-xs font-mono text-white underline break-all">https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=reception-calendar-1</a>
+            if (apiDisabled || handshakeFailed) {
+                // If already in offline mode, skip the error screen and show the app with demo data
+                if (isOfflineMode && (Object.keys(staff).length > 0 || Object.keys(events).length > 0)) {
+                    // Continue to render the main app below
+                } else {
+                    return (
+                        <div className="h-screen bg-black flex flex-col items-center justify-center p-10 text-center gap-8">
+                            <div className="text-rose-500 font-black text-5xl alert-pulse uppercase tracking-[0.3em] holo-text">Protocol_Blocked</div>
+                            <div className="glass-panel p-10 border border-rose-500/30 max-w-2xl text-left shadow-2xl rounded-[2rem]">
+                                <p className="text-rose-400 font-black text-lg mb-8 uppercase tracking-widest flex items-center gap-3"><IconAlert /> Matrix Database Offline</p>
+                                <p className="text-sm text-slate-300 leading-relaxed mb-6 italic">The Cloud Firestore API is disabled for project: <span className="font-mono text-white underline">reception-calendar-1</span>. Follow these steps to restore the signal:</p>
+                                <div className="space-y-6 text-sm text-slate-200">
+                                    <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                                        <p className="font-black text-cyan-400 mb-2 uppercase text-[10px] tracking-widest font-bold">1. Open Console Link:</p>
+                                        <a href="https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=reception-calendar-1" target="_blank" className="text-xs font-mono text-white underline break-all">https://console.developers.google.com/apis/api/firestore.googleapis.com/overview?project=reception-calendar-1</a>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                                        <p className="font-black text-cyan-400 mb-2 uppercase text-[10px] tracking-widest font-bold">2. Enable Database API:</p>
+                                        <p>Click the big blue <span className="bg-blue-600 px-3 py-1 rounded text-[10px] font-black uppercase text-white shadow-lg font-bold tracking-widest">Enable</span> button on the Google page.</p>
+                                    </div>
+                                    <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                                        <p className="font-black text-cyan-400 mb-2 uppercase text-[10px] tracking-widest font-bold">3. Matrix Re-Sync:</p>
+                                        <p>Wait 60 seconds after enabling, return here, and refresh the browser page.</p>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                                <p className="font-black text-cyan-400 mb-2 uppercase text-[10px] tracking-widest font-bold">2. Enable Database API:</p>
-                                <p>Click the big blue <span className="bg-blue-600 px-3 py-1 rounded text-[10px] font-black uppercase text-white shadow-lg font-bold tracking-widest">Enable</span> button on the Google page.</p>
-                            </div>
-                            <div className="bg-white/5 p-4 rounded-lg border border-white/10">
-                                <p className="font-black text-cyan-400 mb-2 uppercase text-[10px] tracking-widest font-bold">3. Matrix Re-Sync:</p>
-                                <p>Wait 60 seconds after enabling, return here, and refresh the browser page.</p>
+                            <div className="flex gap-4">
+                                <button onClick={() => window.location.reload()} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">Retry Handshake</button>
+                                <button onClick={initializeDemoMode} className="bg-cyan-600 text-white px-12 py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">View Demo Mode</button>
                             </div>
                         </div>
-                    </div>
-                    <button onClick={() => window.location.reload()} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">Retry Handshake</button>
-                </div>
-            );
+                    );
+                }
+            }
 
-            if (!user) return <div className="h-screen bg-black flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-widest text-center gap-4">
+            if (!user && !isOfflineMode) return <div className="h-screen bg-black flex flex-col items-center justify-center text-cyan-400 font-black animate-pulse uppercase tracking-widest text-center gap-4">
                 <div className="text-4xl holo-text tracking-[0.2em]">establishing_link...</div>
                 <div className="text-[10px] opacity-40">Matrix Core Handshake Active</div>
             </div>;
 
             return (
                 <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
+                    {/* OFFLINE MODE BANNER */}
+                    {isOfflineMode && (
+                        <div className="fixed top-0 left-0 right-0 z-[700] bg-amber-600/90 backdrop-blur-sm border-b border-amber-400 py-2 px-6 flex items-center justify-center gap-3 text-black font-black text-xs uppercase tracking-widest no-print">
+                            <IconAlert />
+                            <span>Demo Mode Active - Viewing Sample Data Only</span>
+                            <button onClick={() => window.location.reload()} className="ml-4 bg-black text-amber-400 px-4 py-1 rounded-lg hover:bg-amber-900 transition-colors">Retry Connection</button>
+                        </div>
+                    )}
                     {/* NAV RAIL */}
                     <nav className="no-print w-16 bg-[#050505] border-r border-white/5 flex flex-col items-center py-8 gap-10">
                         <div className="text-cyan-400 font-black text-xl holo-text">DS</div>
-                        <button onClick={handleMasterReset} className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 hover:scale-110 transition-all shadow-inner" title="Admin Master Reset"><IconSync /></button>
-                        <button onClick={() => setIsPersonnelModalOpen(true)} className="p-3 bg-fuchsia-500/10 rounded-xl border border-fuchsia-500/30 hover:scale-110 transition-all" title="Personnel Manifest"><IconPersonnel /></button>
+                        <button onClick={handleMasterReset} disabled={isOfflineMode} className={`p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 transition-all shadow-inner ${isOfflineMode ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`} title="Admin Master Reset"><IconSync /></button>
+                        <button onClick={() => setIsPersonnelModalOpen(true)} disabled={isOfflineMode} className={`p-3 bg-fuchsia-500/10 rounded-xl border border-fuchsia-500/30 transition-all ${isOfflineMode ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`} title="Personnel Manifest"><IconPersonnel /></button>
                         <div className="mt-auto flex flex-col items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full status-pulse ${user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full status-pulse ${isOfflineMode ? 'bg-amber-500 shadow-[0_0_10px_#f59e0b]' : user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500'}`} title={isOfflineMode ? 'Offline Demo Mode' : user ? 'Connected' : 'Connecting...'} />
                             <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest font-mono">Protocol</div>
                         </div>
                     </nav>
@@ -384,7 +467,7 @@
                     <div className="flex-1 flex flex-col">
                         <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
                             <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
-                            <input value={globalAlert} onChange={e => { setGlobalAlert(e.target.value); if (!demoMode) db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('alerts').doc('current').set({ text: String(e.target.value) }); }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
+                            <input value={globalAlert} onChange={e => { if (!isOfflineMode) { setGlobalAlert(e.target.value); db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('alerts').doc('current').set({ text: String(e.target.value) }); } }} disabled={isOfflineMode} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900 disabled:opacity-60" placeholder={isOfflineMode ? "Offline - Demo Mode" : "Broadcast immediate hub directive..."} />
                         </header>
 
                         <div className="flex-1 flex overflow-hidden">
@@ -398,7 +481,7 @@
                                     {REPORT_FIELDS.map(f => (
                                         <div key={f.id} className="glass-panel neon-fuchsia p-3 text-left font-bold">
                                             <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-1 block flex items-center gap-2 font-bold font-mono"><IconActivity /> {f.label}</label>
-                                            <textarea value={String(reportData[f.id] || '')} onChange={e => { if(!user || demoMode)return; db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('dailyReports').doc(selectedDate).set({ [f.id]: e.target.value }, { merge: true }); }} className="w-full bg-transparent border-none text-xs text-white h-14 outline-none resize-none font-bold" placeholder="..." />
+                                            <textarea value={String(reportData[f.id] || '')} onChange={e => { if(!user || isOfflineMode)return; db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('dailyReports').doc(selectedDate).set({ [f.id]: e.target.value }, { merge: true }); }} disabled={isOfflineMode} className="w-full bg-transparent border-none text-xs text-white h-14 outline-none resize-none font-bold disabled:opacity-60" placeholder={isOfflineMode ? "Demo mode" : "..."} />
                                         </div>
                                     ))}
                                 </div>
@@ -408,9 +491,9 @@
                                         {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
-                                    <form onSubmit={e => { e.preventDefault(); if (chatInput.trim() && !demoMode) { db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('messages').add({ text: chatInput, createdAt: Date.now(), user: user.uid.slice(-4) }); } setChatInput(''); }} className="flex gap-1 shrink-0 pt-2 text-left">
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
-                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">OK</button>
+                                    <form onSubmit={e => { e.preventDefault(); if (!isOfflineMode && chatInput.trim() && user) { db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('messages').add({ text: chatInput, createdAt: Date.now(), user: user.uid.slice(-4) }); setChatInput(''); } }} className="flex gap-1 shrink-0 pt-2 text-left">
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} disabled={isOfflineMode} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold disabled:opacity-60" placeholder={isOfflineMode ? "Demo mode" : "Broadcast..."} />
+                                        <button type="submit" disabled={isOfflineMode} className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest disabled:opacity-30 disabled:cursor-not-allowed">OK</button>
                                     </form>
                                 </div>
                             </aside>
