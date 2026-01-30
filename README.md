@@ -16,8 +16,8 @@ You can inject your Firebase configuration in two ways:
     projectId: "your-project-id",
     storageBucket: "your-project.appspot.com",
     messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID",
-    measurementId: "G-XXXXXXXXXX" // Optional: Google Analytics
+    appId: "YOUR_APP_ID"
+    // measurementId: "G-XXXXXXXXXX" // Optional: Only if using Google Analytics
   };
 </script>
 ```
@@ -30,8 +30,8 @@ localStorage.setItem('firebaseConfig', JSON.stringify({
   projectId: "your-project-id",
   storageBucket: "your-project.appspot.com",
   messagingSenderId: "YOUR_SENDER_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "G-XXXXXXXXXX" // Optional
+  appId: "YOUR_APP_ID"
+  // measurementId: "G-XXXXXXXXXX" // Optional: Only if using Google Analytics
 }));
 ```
 
