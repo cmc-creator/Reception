@@ -279,6 +279,7 @@
                             }
                         }, [staff]);
             // --- Application State ---
+            // Always default to the current month on load
             const [currentDate, setCurrentDate] = useState(() => {
                 const now = new Date();
                 return new Date(now.getFullYear(), now.getMonth(), 1);
