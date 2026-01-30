@@ -1,52 +1,10 @@
+<!-- Content of the index.html file from commit ee41b29786c1e3576967f5ecc3c22fa251edd5c8 -->
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calendar App</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@^2.0/dist/tailwind.min.css" rel="stylesheet">
-    <script src="https://www.gstatic.com/firebasejs/9.0.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.0.1/firebase-firestore.js"></script>
-    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+    <title>Index Page</title>
 </head>
-<body class="bg-gray-100">
-    <div id="app" class="container mx-auto p-5">
-        <div class="calendar grid grid-cols-7 gap-4" style="backdrop-filter: blur(10px);">
-            <!-- Calendar Cells -->
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 1</div>
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 2</div>
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 3</div>
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 4</div>
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 5</div>
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 6</div>
-            <div class="bg-white min-h-[160px] p-4 rounded-lg shadow-lg">Cell 7</div>
-        </div>
-        <div class="staff-badges mt-5">
-            <div class="bg-blue-500 text-white text-base p-2 rounded">Staff 1</div>
-            <div class="bg-blue-500 text-white text-base p-2 rounded">Staff 2</div>
-        </div>
-        <div class="chat-panel bg-gray-200 h-64 p-4 rounded-lg shadow-lg mt-5">
-            <p>Chat Panel</p>
-        </div>
-    </div>
-    <script>
-        const firebaseConfig = {
-            // Your Firebase configuration
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        function listenToData() {
-            db.collection('your-collection-name').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    if (change.type === 'added') {
-                        console.log('New data: ', change.doc.data());
-                    }
-                });
-            });
-        }
-        listenToData();
-    </script>
+<body>
+    <h1>Welcome to the CMC Creator!</h1>
 </body>
 </html>
