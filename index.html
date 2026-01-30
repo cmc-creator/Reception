@@ -107,47 +107,6 @@
             { id: 'aoc', label: 'AOC Status' }
         ];
 
-        // --- DEMO/OFFLINE FALLBACK DATA ---
-        const DEMO_STAFF = {
-            'demo-karen': { id: 'demo-karen', name: 'Karen (Demo)', bg: 'bg-cyan-600/80' },
-            'demo-izzy': { id: 'demo-izzy', name: 'Izzy (Demo)', bg: 'bg-rose-600/80' },
-            'demo-annalissia': { id: 'demo-annalissia', name: 'Annalissia (Demo)', bg: 'bg-fuchsia-600/80' },
-            'demo-hal': { id: 'demo-hal', name: 'Hal (Demo)', bg: 'bg-blue-600/80' }
-        };
-
-        const DEMO_MESSAGES = [
-            { id: 'demo-1', text: 'System running in demo mode', user: 'SYS', createdAt: Date.now() - 3000 },
-            { id: 'demo-2', text: 'Sample message from reception desk', user: 'DEMO', createdAt: Date.now() - 2000 },
-            { id: 'demo-3', text: 'Configure Firebase to enable live data', user: 'INFO', createdAt: Date.now() - 1000 }
-        ];
-
-        function generateDemoShifts() {
-            const shifts = {};
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = now.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            
-            for (let d = 1; d <= daysInMonth; d++) {
-                const date = new Date(year, month, d);
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dow = date.getDay();
-                
-                // Create sample shifts based on day of week
-                if (dow === 1 || dow === 3) { // Mon, Wed
-                    shifts[dateKey] = [{ id: `demo-shift-${d}-1`, date: dateKey, empId: 'demo-karen', time: '08:00', confirmed: true }];
-                } else if (dow === 2 || dow === 4 || dow === 5) { // Tue, Thu, Fri
-                    shifts[dateKey] = [{ id: `demo-shift-${d}-2`, date: dateKey, empId: 'demo-izzy', time: '08:00', confirmed: true }];
-                } else if (dow === 0) { // Sunday
-                    shifts[dateKey] = [
-                        { id: `demo-shift-${d}-3`, date: dateKey, empId: 'demo-hal', time: '16:00', confirmed: true },
-                        { id: `demo-shift-${d}-4`, date: dateKey, empId: 'demo-annalissia', time: '08:00', confirmed: true }
-                    ];
-                }
-            }
-            return shifts;
-        }
-
         function App() {
             // --- Matrix State ---
             const [user, setUser] = useState(null);
@@ -173,19 +132,10 @@
             const [newStaffName, setNewStaffName] = useState('');
             const chatEndRef = useRef(null);
 
-            // --- Initialize Demo Data Function ---
-            function initializeDemoMode() {
-                setIsOfflineMode(true);
-                setEvents(generateDemoShifts());
-                setStaff(DEMO_STAFF);
-                setMessages(DEMO_MESSAGES);
-                setGlobalAlert('OFFLINE DEMO MODE - Configure Firebase to enable live data');
-            }
-
-            // --- Initialize Demo Data on Offline Mode ---
+            // --- Initialize Demo Data on Offline Mode (Safety Net) ---
             useEffect(() => {
                 if (isOfflineMode && Object.keys(staff).length === 0) {
-                    initializeDemoMode();
+                    seedDemoData();
                 }
             }, [isOfflineMode]);
 
@@ -327,7 +277,6 @@
                         setUser(credential.user);
                     } catch (e) { 
                         console.error("Firebase handshake failed, activating demo mode", e);
-                        catchSystemError(e);
                         setHandshakeFailed(true);
                         setIsOfflineMode(true);
                         // Automatically seed demo data when Firebase fails
