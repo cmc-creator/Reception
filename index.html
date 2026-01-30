@@ -201,7 +201,12 @@
             // --- Admin Master Reset Pattern ---
             async function handleMasterReset() {
                 if (!user) return;
-                if (!confirm("ADMIN MASTER RESET: Restore personnel Karen, Izzy, Annalissia, and Hal and force February Baseline schedule?")) return;
+                
+                const now = new Date();
+                const currentMonth = now.toLocaleString('default', { month: 'long' });
+                const currentYear = now.getFullYear();
+                
+                if (!confirm(`ADMIN MASTER RESET: Restore personnel Karen, Izzy, Annalissia, and Hal and force ${currentMonth} ${currentYear} Baseline schedule?`)) return;
                 
                 try {
                     const batch = db.batch();
@@ -218,9 +223,13 @@
                         batch.set(baseRef.collection('staff').doc(m.id), { ...m, createdAt: Date.now() }, { merge: true });
                     });
 
-                    for (let d = 1; d <= 28; d++) {
-                        const dk = `2026-02-${String(d).padStart(2, '0')}`;
-                        const dow = new Date(2026, 1, d).getDay();
+                    const year = now.getFullYear();
+                    const month = now.getMonth();
+                    const daysInMonth = new Date(year, month + 1, 0).getDate();
+                    
+                    for (let d = 1; d <= daysInMonth; d++) {
+                        const dk = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                        const dow = new Date(year, month, d).getDay();
                         const shiftRef = baseRef.collection('shifts').doc();
                         
                         if (dow === 1 || dow === 3) { // Mon, Wed
