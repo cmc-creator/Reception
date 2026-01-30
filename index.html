@@ -201,11 +201,19 @@
                     msg.includes('could not reach cloud firestore backend')) {
                     setApiDisabled(true);
                     setIsOfflineMode(true);
+                    // Automatically seed demo data when Firebase errors occur
+                    seedDemoData();
                 }
             }
 
             // --- Demo Mode Data Seeding ---
             function seedDemoData() {
+                // Prevent re-seeding if data already exists
+                if (Object.keys(staff).length > 0 && Object.keys(events).length > 0) {
+                    console.log("Demo data already seeded, skipping...");
+                    return;
+                }
+                
                 console.log("Seeding demo data for offline mode...");
                 
                 // Demo staff
