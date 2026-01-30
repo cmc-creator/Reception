@@ -173,13 +173,19 @@
             const [newStaffName, setNewStaffName] = useState('');
             const chatEndRef = useRef(null);
 
+            // --- Initialize Demo Data Function ---
+            function initializeDemoMode() {
+                setIsOfflineMode(true);
+                setEvents(generateDemoShifts());
+                setStaff(DEMO_STAFF);
+                setMessages(DEMO_MESSAGES);
+                setGlobalAlert('OFFLINE DEMO MODE - Configure Firebase to enable live data');
+            }
+
             // --- Initialize Demo Data on Offline Mode ---
             useEffect(() => {
-                if (isOfflineMode) {
-                    setEvents(generateDemoShifts());
-                    setStaff(DEMO_STAFF);
-                    setMessages(DEMO_MESSAGES);
-                    setGlobalAlert('OFFLINE DEMO MODE - Configure Firebase to enable live data');
+                if (isOfflineMode && Object.keys(staff).length === 0) {
+                    initializeDemoMode();
                 }
             }, [isOfflineMode]);
 
@@ -263,7 +269,7 @@
             }, []);
 
             useEffect(() => {
-                if (!user) return;
+                if (!user || isOfflineMode) return;
                 const base = db.collection('artifacts').doc(activeAppId).collection('public').doc('data');
 
                 const unsubShifts = base.collection('shifts').onSnapshot(snap => {
@@ -289,14 +295,14 @@
                 });
 
                 return () => { unsubShifts(); unsubStaff(); unsubMsgs(); unsubAlert(); };
-            }, [user]);
+            }, [user, isOfflineMode]);
 
             useEffect(() => {
-                if (!user || !selectedDate) return;
+                if (!user || !selectedDate || isOfflineMode) return;
                 const unsub = db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('dailyReports').doc(selectedDate)
                     .onSnapshot(snap => setReportData(snap.data() || {}), catchSystemError);
                 return () => unsub();
-            }, [user, selectedDate]);
+            }, [user, selectedDate, isOfflineMode]);
 
             // --- UI Elements ---
             const calendarMatrix = useMemo(() => {
@@ -331,7 +337,7 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff]);
+            }, [currentDate, events, selectedDate, staff, isOfflineMode]);
 
             // --- API DISABLED DASHBOARD ---
             if (apiDisabled || handshakeFailed) {
@@ -362,7 +368,7 @@
                             </div>
                             <div className="flex gap-4">
                                 <button onClick={() => window.location.reload()} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">Retry Handshake</button>
-                                <button onClick={() => { setIsOfflineMode(true); setEvents(generateDemoShifts()); setStaff(DEMO_STAFF); setMessages(DEMO_MESSAGES); setGlobalAlert('OFFLINE DEMO MODE - Configure Firebase to enable live data'); }} className="bg-cyan-600 text-white px-12 py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">View Demo Mode</button>
+                                <button onClick={initializeDemoMode} className="bg-cyan-600 text-white px-12 py-4 rounded-2xl font-black uppercase text-xs shadow-xl transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">View Demo Mode</button>
                             </div>
                         </div>
                     );
@@ -390,7 +396,7 @@
                         <button onClick={handleMasterReset} disabled={isOfflineMode} className={`p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 transition-all shadow-inner ${isOfflineMode ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`} title="Admin Master Reset"><IconSync /></button>
                         <button onClick={() => setIsPersonnelModalOpen(true)} disabled={isOfflineMode} className={`p-3 bg-fuchsia-500/10 rounded-xl border border-fuchsia-500/30 transition-all ${isOfflineMode ? 'opacity-30 cursor-not-allowed' : 'hover:scale-110'}`} title="Personnel Manifest"><IconPersonnel /></button>
                         <div className="mt-auto flex flex-col items-center gap-3">
-                            <div className={`w-2.5 h-2.5 rounded-full status-pulse ${user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500'}`} />
+                            <div className={`w-2.5 h-2.5 rounded-full status-pulse ${isOfflineMode ? 'bg-amber-500 shadow-[0_0_10px_#f59e0b]' : user ? 'bg-emerald-500 shadow-[0_0_10px_#10b981]' : 'bg-amber-500'}`} title={isOfflineMode ? 'Offline Demo Mode' : user ? 'Connected' : 'Connecting...'} />
                             <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest font-mono">Protocol</div>
                         </div>
                     </nav>
@@ -422,7 +428,7 @@
                                         {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
-                                    <form onSubmit={e => { e.preventDefault(); if (!isOfflineMode && chatInput.trim()) { db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('messages').add({ text: chatInput, createdAt: Date.now(), user: user.uid.slice(-4) }); setChatInput(''); } }} className="flex gap-1 shrink-0 pt-2 text-left">
+                                    <form onSubmit={e => { e.preventDefault(); if (!isOfflineMode && chatInput.trim() && user) { db.collection('artifacts').doc(activeAppId).collection('public').doc('data').collection('messages').add({ text: chatInput, createdAt: Date.now(), user: user.uid.slice(-4) }); setChatInput(''); } }} className="flex gap-1 shrink-0 pt-2 text-left">
                                         <input value={chatInput} onChange={e => setChatInput(e.target.value)} disabled={isOfflineMode} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold disabled:opacity-60" placeholder={isOfflineMode ? "Demo mode" : "Broadcast..."} />
                                         <button type="submit" disabled={isOfflineMode} className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest disabled:opacity-30 disabled:cursor-not-allowed">OK</button>
                                     </form>

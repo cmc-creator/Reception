@@ -35,7 +35,7 @@ Add a script tag before loading the application to inject your Firebase configur
 </script>
 ```
 
-Alternatively, you can provide the configuration as a JSON string:
+**Note**: You can also provide the configuration as a JSON string if needed for specific deployment scenarios:
 
 ```html
 <script>
