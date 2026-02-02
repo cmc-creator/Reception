@@ -2,6 +2,8 @@
 
 A fully offline staff calendar for managing schedules, daily reports, and team communications. All data is stored locally in your browser using localStorage.
 
+> **🔧 Having issues?** See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for quick help with common problems.
+
 
 ## Features
 
@@ -126,4 +128,7 @@ If you're editing this project:
 
 3. **Remember**: Saving files (Ctrl+S) is NOT the same as committing to Git!
 
-📖 See [SYNCING_VS_CODE_CHANGES.md](./SYNCING_VS_CODE_CHANGES.md) for detailed Git workflow guidance.
+📖 **Documentation:**
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Quick checklist for common issues
+- [SYNCING_VS_CODE_CHANGES.md](./SYNCING_VS_CODE_CHANGES.md) - Detailed Git workflow guidance
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - How GitHub Pages deployment works
