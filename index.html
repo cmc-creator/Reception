@@ -478,9 +478,9 @@
 
                     // --- TOAST NOTIFICATION STATE ---
                     const [toasts, setToasts] = useState([]);
-                    function showNotification(msg, type = 'info') {
+                    function showNotification(msg) {
                         const id = Date.now();
-                        setToasts(t => [...t, { id, msg, type }]);
+                        setToasts(t => [...t, { id, msg }]);
                         // Auto-dismiss after 4 seconds
                         setTimeout(() => {
                             setToasts(t => t.filter(toast => toast.id !== id));
@@ -493,7 +493,7 @@
                     // --- SWAP NOTIFICATIONS ---
                     useEffect(() => {
                         if (!user) return;
-                        db.collection('swaps').where('to', '==', user.uid).onSnapshot(snap => {
+                        const unsubscribe = db.collection('swaps').where('to', '==', user.uid).onSnapshot(snap => {
                             snap.docs.forEach(doc => {
                                 const swap = doc.data();
                                 if (swap.status === 'approved') {
@@ -503,6 +503,7 @@
                                 }
                             });
                         });
+                        return () => unsubscribe();
                     }, [user]);
 
                     // --- ANALYTICS ---
