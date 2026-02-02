@@ -91,3 +91,24 @@ Your data persists across browser sessions as long as you:
 - No build process required
 - No backend server needed
 - No external API calls
+
+## Development Workflow
+
+If you're editing this project:
+
+1. **Always commit your changes** after editing:
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   git push
+   ```
+
+2. **In VS Code**:
+   - Use the Source Control panel (Ctrl+Shift+G / Cmd+Shift+G)
+   - Stage changed files with the `+` button
+   - Enter a commit message and click the checkmark
+   - Click the sync button to push to GitHub
+
+3. **Remember**: Saving files (Ctrl+S) is NOT the same as committing to Git!
+
+📖 See [SYNCING_VS_CODE_CHANGES.md](./SYNCING_VS_CODE_CHANGES.md) for detailed Git workflow guidance.
