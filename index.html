@@ -1,3 +1,27 @@
+useEffect(() => {
+                    if (!user) return;
+                    db.collection('swaps').where('to', '==', user.uid).onSnapshot(snap => {
+                        snap.docs.forEach(doc => {
+                            const swap = doc.data();
+                            if (swap.status === 'approved') {
+                                showNotification(`Your swap request for ${swap.shift.start} - ${swap.shift.end} on ${swap.date} was approved.`);
+                            } else if (swap.status === 'denied') {
+                                showNotification(`Your swap request for ${swap.shift.start} - ${swap.shift.end} on ${swap.date} was denied.`);
+                            }
+                        });
+                    });
+                }, [user]);
+        // --- NOTIFICATION STATE ---
+        const [notifications, setNotifications] = useState([]);
+        function showNotification(msg) {
+            setNotifications(n => [...n, { id: Date.now(), msg }]);
+        }
+        {/* Notification Banner */}
+        <div className="fixed top-2 right-2 z-[2000] flex flex-col gap-2 items-end">
+            {notifications.slice(-3).map(n => (
+                <div key={n.id} className="bg-cyan-600 text-white px-4 py-2 rounded shadow font-bold text-xs animate-pulse">{n.msg}</div>
+            ))}
+        </div>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -445,6 +469,20 @@
                         return () => unsub();
                     }, []);
 
+                    // --- ROLE-BASED ACCESS ---
+                    const [userRole, setUserRole] = useState('staff');
+                    useEffect(() => {
+                        if (!user) return;
+                        db.collection('userroles').doc(user.uid).get().then(doc => {
+                            if (doc.exists) setUserRole(doc.data().role || 'staff');
+                        });
+                    }, [user]);
+                    function setRoleForUser(uid, role) {
+                        db.collection('userroles').doc(uid).set({ role }, { merge: true });
+                    }
+                    const isAdmin = userRole === 'admin';
+                    const isManager = userRole === 'manager';
+
                     async function handleAuth(e) {
                         e.preventDefault();
                         setAuthError('');
@@ -632,6 +670,11 @@
                                             <div className="flex items-center justify-between">
                                                 <span>{staff[s.empId]?.name || '...'}</span>
                                                 <span className="opacity-50 text-[10px] font-mono shrink-0">{s.start && s.end ? `${s.start} - ${s.end}` : (s.start || s.time || '')}</span>
+                                                {user && user.uid === s.empId && (
+                                                    <button className="ml-2 bg-fuchsia-600 text-white rounded px-2 py-1 text-[10px] font-bold hover:bg-fuchsia-400" onClick={e => { e.stopPropagation(); setSwapRequest({ shift: s, date: dk }); }}>
+                                                        Request Swap
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
                                     ))
@@ -641,260 +684,335 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch]);
+            });
+            // --- SHIFT SWAP STATE ---
+            const [swapRequest, setSwapRequest] = useState(null);
+            const [swapTarget, setSwapTarget] = useState('');
+            const [pendingSwaps, setPendingSwaps] = useState([]);
+            useEffect(() => {
+                db.collection('swaps').onSnapshot(snap => {
+                    setPendingSwaps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+                });
+            }, []);
+            function submitSwapRequest() {
+                if (!swapRequest || !swapTarget) return;
+                db.collection('swaps').add({
+                    from: user.uid,
+                    to: swapTarget,
+                    shift: swapRequest.shift,
+                    date: swapRequest.date,
+                    status: 'pending',
+                    createdAt: Date.now()
+                });
+                setSwapRequest(null);
+                setSwapTarget('');
+            }
+            function handleSwapDecision(swapId, approve) {
+                const swap = pendingSwaps.find(s => s.id === swapId);
+                if (!swap) return;
+                if (approve) {
+                    // Update shift owner
+                    const updatedEvents = { ...events };
+                    const shifts = updatedEvents[swap.date] || [];
+                    const idx = shifts.findIndex(s => s.id === swap.shift.id);
+                    if (idx !== -1) {
+                        shifts[idx].empId = swap.to;
+                        updatedEvents[swap.date] = shifts;
+                        setEvents(updatedEvents);
+                        saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
+                    }
+                }
+                db.collection('swaps').doc(swapId).update({ status: approve ? 'approved' : 'denied' });
+            }
+            {/* Swap Request Modal */}
+            {swapRequest && (
+                <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
+                    <div className="glass-panel neon-fuchsia p-8 w-full max-w-xs flex flex-col gap-6">
+                        <h2 className="text-xl font-black text-fuchsia-400 uppercase tracking-tighter mb-2">Request Shift Swap</h2>
+                        <div className="mb-2 text-xs">Select staff to swap with:</div>
+                        <select value={swapTarget} onChange={e => setSwapTarget(e.target.value)} className="bg-black border border-fuchsia-500/30 rounded-xl p-2 text-white font-bold">
+                            <option value="">Select...</option>
+                            {Object.entries(staff).filter(([id]) => id !== user.uid).map(([id, s]) => (
+                                <option key={id} value={id}>{s.name}</option>
+                            ))}
+                        </select>
+                        <button onClick={submitSwapRequest} className="bg-fuchsia-600 text-white rounded px-3 py-1 font-bold text-xs hover:bg-fuchsia-400 transition-all mt-2">Submit Request</button>
+                        <button onClick={() => setSwapRequest(null)} className="bg-slate-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-slate-600 transition-all mt-2">Cancel</button>
+                    </div>
+                </div>
+            )}
 
-            if (!user) {
-                return (
-                    <div className="flex h-screen w-screen items-center justify-center bg-black text-xs">
-                        <div className="glass-panel neon-blue p-10 w-full max-w-xs flex flex-col gap-6 items-center">
-                            <h2 className="text-2xl font-black text-cyan-400 uppercase tracking-tighter">Reception Login</h2>
-                            <form onSubmit={handleAuth} className="flex flex-col gap-3 w-full">
-                                <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" className="bg-black border border-cyan-500/30 rounded-xl p-3 text-white font-bold" required />
-                                <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password" className="bg-black border border-cyan-500/30 rounded-xl p-3 text-white font-bold" required />
-                                {authError && <div className="text-rose-500 text-xs font-bold">{authError}</div>}
-                                <button type="submit" className="fancy-btn py-3 mt-2 font-black uppercase">{authMode === 'login' ? 'Login' : 'Register'}</button>
-                            </form>
-                            <button onClick={handleGoogle} className="bg-white text-black rounded-xl px-4 py-2 font-black shadow hover:bg-cyan-100 transition-all">Sign in with Google</button>
-                            <div className="text-xs text-slate-400 mt-2">
-                                {authMode === 'login' ? (
-                                    <>No account? <button className="underline text-cyan-400" onClick={() => setAuthMode('register')}>Register</button></>
-                                ) : (
-                                    <>Already have an account? <button className="underline text-cyan-400" onClick={() => setAuthMode('login')}>Login</button></>
-                                )}
+            {/* Admin Swap Panel */}
+            {isAdminAuth && (
+                <div className="fixed right-0 top-0 z-[1100] w-80 bg-black/90 p-4 text-white shadow-xl">
+                    <h3 className="text-lg font-black text-fuchsia-400 mb-4">Pending Swap Requests</h3>
+                    {pendingSwaps.filter(s => s.status === 'pending').length === 0 ? (
+                        <div className="text-xs text-slate-400">No pending requests.</div>
+                    ) : (
+                        pendingSwaps.filter(s => s.status === 'pending').map(swap => (
+                            <div key={swap.id} className="mb-3 p-2 rounded bg-fuchsia-900/30">
+                                <div className="font-bold text-xs mb-1">{staff[swap.from]?.name} → {staff[swap.to]?.name}</div>
+                                <div className="text-xs mb-1">Shift: {swap.shift.start} - {swap.shift.end} ({swap.date})</div>
+                                <button onClick={() => handleSwapDecision(swap.id, true)} className="bg-cyan-600 text-white rounded px-2 py-1 text-xs font-bold mr-2">Approve</button>
+                                <button onClick={() => handleSwapDecision(swap.id, false)} className="bg-rose-600 text-white rounded px-2 py-1 text-xs font-bold">Deny</button>
                             </div>
+                        ))
+                    )}
+                </div>
+            )}
+        }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch]);
+
+        if (!user) {
+            return (
+                <div className="flex h-screen w-screen items-center justify-center bg-black text-xs">
+                    <div className="glass-panel neon-blue p-10 w-full max-w-xs flex flex-col gap-6 items-center">
+                        <h2 className="text-2xl font-black text-cyan-400 uppercase tracking-tighter">Reception Login</h2>
+                        <form onSubmit={handleAuth} className="flex flex-col gap-3 w-full">
+                            <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" className="bg-black border border-cyan-500/30 rounded-xl p-3 text-white font-bold" required />
+                            <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password" className="bg-black border border-cyan-500/30 rounded-xl p-3 text-white font-bold" required />
+                            {authError && <div className="text-rose-500 text-xs font-bold">{authError}</div>}
+                            <button type="submit" className="fancy-btn py-3 mt-2 font-black uppercase">{authMode === 'login' ? 'Login' : 'Register'}</button>
+                        </form>
+                        <button onClick={handleGoogle} className="bg-white text-black rounded-xl px-4 py-2 font-black shadow hover:bg-cyan-100 transition-all">Sign in with Google</button>
+                        <div className="text-xs text-slate-400 mt-2">
+                            {authMode === 'login' ? (
+                                <>No account? <button className="underline text-cyan-400" onClick={() => setAuthMode('register')}>Register</button></>
+                            ) : (
+                                <>Already have an account? <button className="underline text-cyan-400" onClick={() => setAuthMode('login')}>Login</button></>
+                            )}
                         </div>
                     </div>
-                );
-            }
-            return (
-                <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
-                    {/* NAV RAIL */}
-                    <nav className="no-print w-16 bg-[#050505] border-r border-white/5 flex flex-col items-center py-8 gap-10">
-                        <div className="text-cyan-400 font-black text-xl holo-text">DS</div>
-                        <button onClick={handleMasterReset} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Admin Master Reset"><IconSync /></button>
-                        <button onClick={saveBaseline} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Save Baseline for Month">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                        </button>
-                        <button onClick={restoreBaseline} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Restore Baseline for Month">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                        </button>
-                        <button onClick={() => setIsPersonnelModalOpen(true)} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Personnel Manifest"><IconPersonnel /></button>
-                        <div className="mt-auto flex flex-col items-center gap-3">
-                            <div className="w-2.5 h-2.5 rounded-full status-pulse bg-emerald-500 shadow-[0_0_10px_#10b981]" title="Local Storage Ready" />
-                            <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest font-mono">Protocol</div>
-                        </div>
-                    </nav>
+                </div>
+            );
+        }
+        return (
+            <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
+                {/* NAV RAIL */}
+                <nav className="no-print w-16 bg-[#050505] border-r border-white/5 flex flex-col items-center py-8 gap-10">
+                    <div className="text-cyan-400 font-black text-xl holo-text">DS</div>
+                    <button onClick={handleMasterReset} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Admin Master Reset"><IconSync /></button>
+                    <button onClick={saveBaseline} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Save Baseline for Month">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    </button>
+                    <button onClick={restoreBaseline} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Restore Baseline for Month">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                    </button>
+                    <button onClick={() => setIsPersonnelModalOpen(true)} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Personnel Manifest"><IconPersonnel /></button>
+                    <div className="mt-auto flex flex-col items-center gap-3">
+                        <div className="w-2.5 h-2.5 rounded-full status-pulse bg-emerald-500 shadow-[0_0_10px_#10b981]" title="Local Storage Ready" />
+                        <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest font-mono">Protocol</div>
+                    </div>
+                </nav>
 
-                    <div className="flex-1 flex flex-col">
-                        <div className="no-print flex items-center justify-end gap-4 px-6 py-2 bg-transparent">
-                            <span className="text-cyan-400 font-bold text-xs">{user.email}</span>
-                            <button onClick={() => setShowPrefs(true)} className="bg-cyan-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-cyan-400 transition-all">Preferences</button>
-                            <button onClick={handleLogout} className="bg-rose-500 text-white rounded px-3 py-1 font-bold text-xs hover:bg-rose-400 transition-all">Logout</button>
-                        </div>
+                <div className="flex-1 flex flex-col">
+                    <div className="no-print flex items-center justify-end gap-4 px-6 py-2 bg-transparent">
+                        <span className="text-cyan-400 font-bold text-xs">{user.email}</span>
+                        <button onClick={() => setShowPrefs(true)} className="bg-cyan-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-cyan-400 transition-all">Preferences</button>
+                        <button onClick={handleLogout} className="bg-rose-500 text-white rounded px-3 py-1 font-bold text-xs hover:bg-rose-400 transition-all">Logout</button>
+                    </div>
 
-                        {/* Preferences Modal */}
-                        {showPrefs && (
-                            <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
-                                <div className="glass-panel neon-blue p-8 w-full max-w-xs flex flex-col gap-6">
-                                    <h2 className="text-xl font-black text-cyan-400 uppercase tracking-tighter mb-2">Preferences</h2>
-                                    <div className="flex flex-col gap-3">
-                                        <label className="font-bold text-xs text-cyan-400">Theme</label>
-                                        <select value={theme} onChange={e => { setTheme(e.target.value); savePrefs(e.target.value, notifyEnabled); }} className="bg-black border border-cyan-500/30 rounded-xl p-2 text-white font-bold">
-                                            <option value="dark">Dark</option>
-                                            <option value="light">Light</option>
-                                        </select>
-                                        <label className="font-bold text-xs text-cyan-400 mt-4">Notifications</label>
-                                        <div className="flex items-center gap-2">
-                                            <input type="checkbox" checked={notifyEnabled} onChange={e => { setNotifyEnabled(e.target.checked); savePrefs(theme, e.target.checked); }} />
-                                            <span className="text-xs">Enable notifications</span>
-                                        </div>
+                    {/* Preferences Modal */}
+                    {showPrefs && (
+                        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
+                            <div className="glass-panel neon-blue p-8 w-full max-w-xs flex flex-col gap-6">
+                                <h2 className="text-xl font-black text-cyan-400 uppercase tracking-tighter mb-2">Preferences</h2>
+                                <div className="flex flex-col gap-3">
+                                    <label className="font-bold text-xs text-cyan-400">Theme</label>
+                                    <select value={theme} onChange={e => { setTheme(e.target.value); savePrefs(e.target.value, notifyEnabled); }} className="bg-black border border-cyan-500/30 rounded-xl p-2 text-white font-bold">
+                                        <option value="dark">Dark</option>
+                                        <option value="light">Light</option>
+                                    </select>
+                                    <label className="font-bold text-xs text-cyan-400 mt-4">Notifications</label>
+                                    <div className="flex items-center gap-2">
+                                        <input type="checkbox" checked={notifyEnabled} onChange={e => { setNotifyEnabled(e.target.checked); savePrefs(theme, e.target.checked); }} />
+                                        <span className="text-xs">Enable notifications</span>
                                     </div>
-                                    <button onClick={() => setShowPrefs(false)} className="bg-cyan-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-cyan-400 transition-all mt-4">Close</button>
                                 </div>
+                                <button onClick={() => setShowPrefs(false)} className="bg-cyan-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-cyan-400 transition-all mt-4">Close</button>
                             </div>
-                        )}
-                        <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
-                            <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
-                            <input value={globalAlert} onChange={e => { 
-                                const newAlert = String(e.target.value);
-                                setGlobalAlert(newAlert);
-                                saveToStorage(STORAGE_KEYS.ALERT, newAlert);
-                            }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
-                            <button className="fancy-btn ml-4" onClick={() => {
-                                const newTheme = theme === 'dark' ? 'light' : 'dark';
-                                setTheme(newTheme);
-                                localStorage.setItem('reception_theme', newTheme);
-                            }}>
-                                Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode
-                            </button>
-                        </header>
+                        </div>
+                    )}
+                    <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
+                        <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
+                        <input value={globalAlert} onChange={e => { 
+                            const newAlert = String(e.target.value);
+                            setGlobalAlert(newAlert);
+                            saveToStorage(STORAGE_KEYS.ALERT, newAlert);
+                        }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
+                        <button className="fancy-btn ml-4" onClick={() => {
+                            const newTheme = theme === 'dark' ? 'light' : 'dark';
+                            setTheme(newTheme);
+                            localStorage.setItem('reception_theme', newTheme);
+                        }}>
+                            Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode
+                        </button>
+                    </header>
 
-                        <div className="flex-1 flex overflow-hidden">
-                            {/* SIDEBAR LOGS */}
-                            <aside className="no-print w-80 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
-                                <header className="text-left mb-2 text-white font-black flex items-center justify-between">
-                                    <div>
-                                        <h1 className="text-lg tracking-tighter holo-text uppercase">Shift Report</h1>
-                                        <div className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest font-mono">{selectedDate}</div>
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* SIDEBAR LOGS */}
+                        <aside className="no-print w-80 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
+                            <header className="text-left mb-2 text-white font-black flex items-center justify-between">
+                                <div>
+                                    <h1 className="text-lg tracking-tighter holo-text uppercase">Shift Report</h1>
+                                    <div className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest font-mono">{selectedDate}</div>
+                                </div>
+                                <button
+                                    className="ml-2 bg-cyan-600 hover:bg-cyan-400 text-white rounded px-3 py-1 text-xs font-bold shadow"
+                                    title="Download PDF"
+                                    onClick={() => {
+                                        const { jsPDF } = window.jspdf;
+                                        const doc = new jsPDF();
+                                        doc.setFontSize(18);
+                                        doc.text('Shift Report', 14, 18);
+                                        doc.setFontSize(12);
+                                        doc.text(`Date: ${selectedDate}`, 14, 28);
+                                        let y = 38;
+                                        REPORT_FIELDS.forEach(f => {
+                                            doc.setFont(undefined, 'bold');
+                                            doc.text(f.label + ':', 14, y);
+                                            doc.setFont(undefined, 'normal');
+                                            const val = (reportData && reportData[f.id]) ? String(reportData[f.id]) : '';
+                                            doc.text(val, 30, y);
+                                            y += 12;
+                                        });
+                                        doc.save(`shift_report_${selectedDate}.pdf`);
+                                    }}
+                                >Download PDF</button>
+                            </header>
+                            <div className="space-y-3">
+                                {REPORT_FIELDS.map(f => (
+                                    <div key={f.id} className="glass-panel neon-fuchsia p-3 text-left font-bold">
+                                        <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-1 block flex items-center gap-2 font-bold font-mono"><IconActivity /> {f.label}</label>
+                                        <textarea value={String(reportData[f.id] || '')} onChange={e => {
+                                            const newReportData = { ...reportData, [f.id]: e.target.value };
+                                            setReportData(newReportData);
+                                            const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
+                                            allReports[selectedDate] = newReportData;
+                                            saveToStorage(STORAGE_KEYS.REPORTS, allReports);
+                                        }} className="w-full bg-transparent border-none text-xs text-white h-14 outline-none resize-none font-bold" placeholder="..." />
                                     </div>
-                                    <button
-                                        className="ml-2 bg-cyan-600 hover:bg-cyan-400 text-white rounded px-3 py-1 text-xs font-bold shadow"
-                                        title="Download PDF"
-                                        onClick={() => {
-                                            const { jsPDF } = window.jspdf;
-                                            const doc = new jsPDF();
-                                            doc.setFontSize(18);
-                                            doc.text('Shift Report', 14, 18);
-                                            doc.setFontSize(12);
-                                            doc.text(`Date: ${selectedDate}`, 14, 28);
-                                            let y = 38;
-                                            REPORT_FIELDS.forEach(f => {
-                                                doc.setFont(undefined, 'bold');
-                                                doc.text(f.label + ':', 14, y);
-                                                doc.setFont(undefined, 'normal');
-                                                const val = (reportData && reportData[f.id]) ? String(reportData[f.id]) : '';
-                                                doc.text(val, 30, y);
-                                                y += 12;
-                                            });
-                                            doc.save(`shift_report_${selectedDate}.pdf`);
-                                        }}
-                                    >Download PDF</button>
-                                </header>
-                                <div className="space-y-3">
-                                    {REPORT_FIELDS.map(f => (
-                                        <div key={f.id} className="glass-panel neon-fuchsia p-3 text-left font-bold">
-                                            <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-1 block flex items-center gap-2 font-bold font-mono"><IconActivity /> {f.label}</label>
-                                            <textarea value={String(reportData[f.id] || '')} onChange={e => {
-                                                const newReportData = { ...reportData, [f.id]: e.target.value };
-                                                setReportData(newReportData);
-                                                const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
-                                                allReports[selectedDate] = newReportData;
-                                                saveToStorage(STORAGE_KEYS.REPORTS, allReports);
-                                            }} className="w-full bg-transparent border-none text-xs text-white h-14 outline-none resize-none font-bold" placeholder="..." />
+                                ))}
+                            </div>
+                            <div className="glass-panel neon-blue p-3 rounded-lg mt-4 text-left flex flex-col">
+                                <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconActivity className="inline mr-2"/>Daily Checklist</label>
+                                <div className="flex flex-col gap-1 mb-2">
+                                    {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
+                                    {checklist.map((item, idx) => (
+                                        <div key={idx} className="flex items-center gap-2 group">
+                                            <input type="checkbox" checked={!!item.checked} onChange={e => {
+                                                const updated = checklist.map((it, i) => i === idx ? { ...it, checked: !it.checked } : it);
+                                                setChecklist(updated);
+                                                saveToStorage('reception_checklist_' + selectedDate, updated);
+                                            }} />
+                                            <span className={`text-[11px] flex-1 ${item.checked ? 'line-through text-slate-500' : ''}`}>{item.text}</span>
+                                            <button onClick={() => {
+                                                const updated = checklist.filter((_, i) => i !== idx);
+                                                setChecklist(updated);
+                                                saveToStorage('reception_checklist_' + selectedDate, updated);
+                                            }} className="text-rose-400 text-xs font-bold opacity-60 hover:opacity-100">&times;</button>
                                         </div>
                                     ))}
                                 </div>
-                                <div className="glass-panel neon-blue p-3 rounded-lg mt-4 text-left flex flex-col">
-                                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconActivity className="inline mr-2"/>Daily Checklist</label>
-                                    <div className="flex flex-col gap-1 mb-2">
-                                        {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
-                                        {checklist.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-2 group">
-                                                <input type="checkbox" checked={!!item.checked} onChange={e => {
-                                                    const updated = checklist.map((it, i) => i === idx ? { ...it, checked: !it.checked } : it);
-                                                    setChecklist(updated);
-                                                    saveToStorage('reception_checklist_' + selectedDate, updated);
-                                                }} />
-                                                <span className={`text-[11px] flex-1 ${item.checked ? 'line-through text-slate-500' : ''}`}>{item.text}</span>
-                                                <button onClick={() => {
-                                                    const updated = checklist.filter((_, i) => i !== idx);
-                                                    setChecklist(updated);
-                                                    saveToStorage('reception_checklist_' + selectedDate, updated);
-                                                }} className="text-rose-400 text-xs font-bold opacity-60 hover:opacity-100">&times;</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <form onSubmit={e => {
-                                        e.preventDefault();
-                                        if (!newChecklistItem.trim()) return;
-                                        const updated = [...checklist, { text: newChecklistItem, checked: false }];
-                                        setChecklist(updated);
-                                        saveToStorage('reception_checklist_' + selectedDate, updated);
-                                        setNewChecklistItem('');
-                                    }} className="flex gap-1 mb-2">
-                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Add task..." />
-                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">Add</button>
-                                    </form>
+                                <form onSubmit={e => {
+                                    e.preventDefault();
+                                    if (!newChecklistItem.trim()) return;
+                                    const updated = [...checklist, { text: newChecklistItem, checked: false }];
+                                    setChecklist(updated);
+                                    saveToStorage('reception_checklist_' + selectedDate, updated);
+                                    setNewChecklistItem('');
+                                }} className="flex gap-1 mb-2">
+                                    <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Add task..." />
+                                    <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">Add</button>
+                                </form>
+                            </div>
+                            <div className="glass-panel neon-blue p-3 rounded-lg mt-auto text-left flex flex-col h-48">
+                                <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
+                                <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
+                                    {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
+                                    <div ref={chatEndRef} />
                                 </div>
-                                <div className="glass-panel neon-blue p-3 rounded-lg mt-auto text-left flex flex-col h-48">
-                                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
-                                    <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
-                                        {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
-                                        <div ref={chatEndRef} />
-                                    </div>
-                                    <form onSubmit={e => { 
-                                        e.preventDefault(); 
-                                        if (chatInput.trim()) { 
-                                            const newMessage = { 
-                                                id: `msg-${Date.now()}`, 
-                                                text: chatInput, 
-                                                createdAt: Date.now(), 
-                                                user: 'USER' 
-                                            };
-                                            const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-                                            setMessages(updatedMessages);
-                                            saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
-                                            setChatInput('');
-                                            setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-                                        }
-                                    }} className="flex gap-1 shrink-0 pt-2 text-left">
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
-                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">OK</button>
-                                    </form>
-                                </div>
-                            </aside>
+                                <form onSubmit={e => { 
+                                    e.preventDefault(); 
+                                    if (chatInput.trim()) { 
+                                        const newMessage = { 
+                                            id: `msg-${Date.now()}`, 
+                                            text: chatInput, 
+                                            createdAt: Date.now(), 
+                                            user: 'USER' 
+                                        };
+                                        const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+                                        setMessages(updatedMessages);
+                                        saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
+                                        setChatInput('');
+                                        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+                                    }
+                                }} className="flex gap-1 shrink-0 pt-2 text-left">
+                                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
+                                    <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">OK</button>
+                                </form>
+                            </div>
+                        </aside>
 
-                            {/* MAIN GRID */}
-                            <main className="flex-1 p-8 overflow-y-auto no-scrollbar text-center font-bold">
-                                <div className="flex justify-between items-end mb-8 no-print text-left font-bold">
-                                    <div className="text-white">
-                                        <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] font-black">
-                                            {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                                        </h2>
-                                        <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
-                                    </div>
-                                    <div className="flex gap-4 items-center">
-                                        <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2 w-48" />
-                                        <div className="flex bg-white/5 rounded-xl border border-white/10 p-1 text-white font-bold">
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5 uppercase font-bold text-[10px]"><IconChevronL /></button>
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
-                                        </div>
-                                        <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2">
-                                            <option value="all">All</option>
-                                            <option value="confirmed">Confirmed</option>
-                                            <option value="pending">Pending</option>
-                                        </select>
-                                        <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all font-bold">Export Matrix</button>
-                                        <button
-                                            onClick={() => {
-                                                // Gather all shifts for the current month
-                                                const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
-                                                const total = new Date(yIdx, mIdx + 1, 0).getDate();
-                                                let rows = [['Date','Employee','Start','End','Status','Note']];
-                                                for (let d = 1; d <= total; d++) {
-                                                    const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                                                    const dayShifts = events[dk] || [];
-                                                    dayShifts.forEach(s => {
-                                                        rows.push([
-                                                            dk,
-                                                            staff[s.empId]?.name || s.empId,
-                                                            s.start || s.time || '',
-                                                            s.end || '',
-                                                            s.confirmed ? 'Confirmed' : 'Pending',
-                                                            s.note ? s.note.replace(/\n/g, ' ') : ''
-                                                        ]);
-                                                    });
-                                                }
-                                                const csv = rows.map(r => r.map(x => '"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
-                                                const blob = new Blob([csv], { type: 'text/csv' });
-                                                const url = URL.createObjectURL(blob);
-                                                const a = document.createElement('a');
-                                                a.href = url;
-                                                a.download = `reception_shifts_${yIdx}_${String(mIdx+1).padStart(2,'0')}.csv`;
-                                                document.body.appendChild(a);
-                                                a.click();
-                                                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                                            }}
-                                            className="bg-cyan-700 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-cyan-500 transition-all font-bold"
-                                        >Export CSV</button>
-                                    </div>
+                        {/* MAIN GRID */}
+                        <main className="flex-1 p-8 overflow-y-auto no-scrollbar text-center font-bold">
+                            <div className="flex justify-between items-end mb-8 no-print text-left font-bold">
+                                <div className="text-white">
+                                    <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] font-black">
+                                        {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                                    </h2>
+                                    <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
                                 </div>
-                                <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl font-bold">
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-cyan-400/60 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">{d}</div>)}
-                                    {calendarMatrix}
+                                <div className="flex gap-4 items-center">
+                                    <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2 w-48" />
+                                    <div className="flex bg-white/5 rounded-xl border border-white/10 p-1 text-white font-bold">
+                                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5 uppercase font-bold text-[10px]"><IconChevronL /></button>
+                                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
+                                    </div>
+                                    <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2">
+                                        <option value="all">All</option>
+                                        <option value="confirmed">Confirmed</option>
+                                        <option value="pending">Pending</option>
+                                    </select>
+                                    <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all font-bold">Export Matrix</button>
+                                    <button
+                                        onClick={() => {
+                                            // Gather all shifts for the current month
+                                            const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                                            const total = new Date(yIdx, mIdx + 1, 0).getDate();
+                                            let rows = [['Date','Employee','Start','End','Status','Note']];
+                                            for (let d = 1; d <= total; d++) {
+                                                const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                                const dayShifts = events[dk] || [];
+                                                dayShifts.forEach(s => {
+                                                    rows.push([
+                                                        dk,
+                                                        staff[s.empId]?.name || s.empId,
+                                                        s.start || s.time || '',
+                                                        s.end || '',
+                                                        s.confirmed ? 'Confirmed' : 'Pending',
+                                                        s.note ? s.note.replace(/\n/g, ' ') : ''
+                                                    ]);
+                                                });
+                                            }
+                                            const csv = rows.map(r => r.map(x => '"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+                                            const blob = new Blob([csv], { type: 'text/csv' });
+                                            const url = URL.createObjectURL(blob);
+                                            const a = document.createElement('a');
+                                            a.href = url;
+                                            a.download = `reception_shifts_${yIdx}_${String(mIdx+1).padStart(2,'0')}.csv`;
+                                            document.body.appendChild(a);
+                                            a.click();
+                                            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                                        }}
+                                        className="bg-cyan-700 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-cyan-500 transition-all font-bold"
+                                    >Export CSV</button>
                                 </div>
-                            </main>
-                        </div>
+                            </div>
+                            <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl font-bold">
+                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-cyan-400/60 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">{d}</div>)}
+                                {calendarMatrix}
+                            </div>
+                        </main>
                     </div>
 
                     {/* MODAL: PERSONNEL */}
@@ -986,6 +1104,7 @@
                                 {window.selectedAddEmpId && (
                                     <form onSubmit={e => {
                                         e.preventDefault();
+                                        const recurring = window.selectedRecurring || 'none';
                                         const newShift = {
                                             id: `shift-${Date.now()}`,
                                             date: selectedDate,
@@ -993,11 +1112,34 @@
                                             start: window.selectedAddStart || '08:00',
                                             end: window.selectedAddEnd || '20:00',
                                             confirmed: true,
-                                            createdAt: Date.now()
+                                            createdAt: Date.now(),
+                                            recurring
                                         };
                                         const updatedEvents = { ...events };
-                                        if (!updatedEvents[selectedDate]) updatedEvents[selectedDate] = [];
-                                        updatedEvents[selectedDate].push(newShift);
+                                        function addShift(dateStr) {
+                                            if (!updatedEvents[dateStr]) updatedEvents[dateStr] = [];
+                                            updatedEvents[dateStr].push({ ...newShift, date: dateStr, id: `shift-${Date.now()}-${dateStr}` });
+                                        }
+                                        if (recurring === 'none') {
+                                            addShift(selectedDate);
+                                        } else {
+                                            // Add shift for selectedDate and future dates in month
+                                            const baseDate = new Date(selectedDate);
+                                            const year = baseDate.getFullYear();
+                                            const month = baseDate.getMonth();
+                                            const dayOfWeek = baseDate.getDay();
+                                            const daysInMonth = new Date(year, month + 1, 0).getDate();
+                                            for (let d = baseDate.getDate(); d <= daysInMonth; d++) {
+                                                const dateObj = new Date(year, month, d);
+                                                if (
+                                                    (recurring === 'daily') ||
+                                                    (recurring === 'weekly' && dateObj.getDay() === dayOfWeek)
+                                                ) {
+                                                    const dateStr = dateObj.toISOString().split('T')[0];
+                                                    addShift(dateStr);
+                                                }
+                                            }
+                                        }
                                         setEvents(updatedEvents);
                                         saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
                                         setIsAddModalOpen(false);
@@ -1006,6 +1148,7 @@
                                         window.selectedAddEmpBg = null;
                                         window.selectedAddStart = null;
                                         window.selectedAddEnd = null;
+                                        window.selectedRecurring = null;
                                     }} className="space-y-6">
                                         <div className="mb-4 flex items-center gap-3">
                                             <div className={`w-4 h-4 rounded-full ${window.selectedAddEmpBg || 'bg-slate-700'} shadow-white/20`} />
@@ -1015,6 +1158,12 @@
                                         <input type="time" value={window.selectedAddStart || '08:00'} onChange={e => { window.selectedAddStart = e.target.value; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="w-full bg-black border border-cyan-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black" required />
                                         <label className="block text-xs text-cyan-400 font-bold mb-1">End Time</label>
                                         <input type="time" value={window.selectedAddEnd || '20:00'} onChange={e => { window.selectedAddEnd = e.target.value; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="w-full bg-black border border-cyan-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black" required />
+                                        <label className="block text-xs text-cyan-400 font-bold mb-1">Recurring</label>
+                                        <select value={window.selectedRecurring || 'none'} onChange={e => { window.selectedRecurring = e.target.value; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="w-full bg-black border border-cyan-500/40 rounded-xl p-2 text-center text-lg text-white outline-none shadow-inner font-bold mb-4">
+                                            <option value="none">No Repeat</option>
+                                            <option value="daily">Every Day (this month)</option>
+                                            <option value="weekly">Every Weekday (this month)</option>
+                                        </select>
                                         <div className="flex gap-3 mt-6">
                                             <button type="submit" className="flex-1 bg-cyan-600 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg transition-all hover:bg-cyan-500 font-bold tracking-widest">Assign Shift</button>
                                             <button type="button" onClick={() => { window.selectedAddEmpId = null; window.selectedAddEmpName = null; window.selectedAddEmpBg = null; window.selectedAddStart = null; window.selectedAddEnd = null; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="flex-1 bg-slate-700 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg transition-all hover:bg-slate-600 font-bold tracking-widest">Back</button>
@@ -1089,6 +1238,46 @@
                                     </div>
                                 </form>
                             </div>
+                        </div>
+                    )}
+
+                    {/* Admin Panel: Audit Log & Role Editor */}
+                    {(isAdmin || isAdminAuth) && (
+                        <div className="fixed left-0 top-0 z-[1200] w-96 bg-black/90 p-4 text-white shadow-xl overflow-y-auto max-h-screen">
+                            <h3 className="text-lg font-black text-cyan-400 mb-4">Admin Panel</h3>
+                            
+                            {/* Role Editor */}
+                            <div className="mb-6 p-3 bg-fuchsia-900/20 rounded">
+                                <h4 className="text-md font-black text-fuchsia-400 mb-3">User Roles</h4>
+                                {Object.entries(staff).map(([id, s]) => (
+                                    <div key={id} className="mb-2 flex items-center justify-between">
+                                        <span className="text-xs">{s.name}</span>
+                                        <select 
+                                            defaultValue="staff" 
+                                            onChange={e => setRoleForUser(id, e.target.value)} 
+                                            className="bg-black border border-cyan-500/30 rounded p-1 text-xs text-white"
+                                        >
+                                            <option value="admin">Admin</option>
+                                            <option value="manager">Manager</option>
+                                            <option value="staff">Staff</option>
+                                        </select>
+                                    </div>
+                                ))}
+                            </div>
+                            
+                            {/* Audit Log */}
+                            <h4 className="text-md font-black text-cyan-400 mb-2">Recent Activity</h4>
+                            {typeof auditLog !== 'undefined' && auditLog.length === 0 ? (
+                                <div className="text-xs text-slate-400">No recent activity.</div>
+                            ) : typeof auditLog !== 'undefined' ? (
+                                auditLog.map((log, i) => (
+                                    <div key={i} className="mb-3 p-2 rounded bg-cyan-900/30">
+                                        <div className="font-bold text-xs mb-1">{log.user} ({log.action})</div>
+                                        <div className="text-xs mb-1">{new Date(log.timestamp).toLocaleString()}</div>
+                                        <div className="text-xs break-words max-w-full overflow-hidden">{JSON.stringify(log.details).substring(0, 100)}...</div>
+                                    </div>
+                                ))
+                            ) : null}
                         </div>
                     )}
                 </div>
