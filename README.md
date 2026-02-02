@@ -16,7 +16,22 @@ A fully offline staff calendar for managing schedules, daily reports, and team c
 
 ## Getting Started
 
+### For Users
+
 Simply open `index.html` in a modern web browser. No build step, server, or external services required!
+
+Or visit the live deployment at: **https://cmc-creator.github.io/Reception/**
+
+### For Developers
+
+This project is automatically deployed to GitHub Pages from the `main` branch. To deploy your changes:
+
+1. Make changes in your code editor
+2. Commit changes: `git commit -am "Your changes"`
+3. Push to main: `git push origin main`
+4. GitHub Pages will automatically deploy (takes 1-3 minutes)
+
+📖 See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
 
 On first load, the app automatically creates sample data including:
 - Four staff members (Karen, Izzy, Annalissia, Hal)
