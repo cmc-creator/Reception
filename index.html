@@ -27,6 +27,9 @@ useEffect(() => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Professional staff scheduling and calendar management system">
+    <meta name="theme-color" content="#06b6d4">
+    <link rel="manifest" href="/manifest.json">
     <title>Destiny Springs | Hub Matrix</title>
     <!-- System Engines -->
     <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js"></script>
@@ -483,6 +486,38 @@ useEffect(() => {
                     const isAdmin = userRole === 'admin';
                     const isManager = userRole === 'manager';
 
+                    // --- ANALYTICS ---
+                    const [showAnalytics, setShowAnalytics] = useState(false);
+                    const analytics = useMemo(() => {
+                        const stats = {};
+                        let totalHours = 0;
+                        let coverageGaps = 0;
+                        const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                        const total = new Date(yIdx, mIdx + 1, 0).getDate();
+                        
+                        Object.entries(staff).forEach(([id, s]) => {
+                            stats[id] = { name: s.name, hours: 0, shifts: 0 };
+                        });
+                        
+                        for (let d = 1; d <= total; d++) {
+                            const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            const dayShifts = events[dk] || [];
+                            if (dayShifts.length === 0) coverageGaps++;
+                            dayShifts.forEach(s => {
+                                if (s.start && s.end && stats[s.empId]) {
+                                    const start = new Date(`2000-01-01T${s.start}`);
+                                    const end = new Date(`2000-01-01T${s.end}`);
+                                    const hours = (end - start) / (1000 * 60 * 60);
+                                    stats[s.empId].hours += hours;
+                                    stats[s.empId].shifts++;
+                                    totalHours += hours;
+                                }
+                            });
+                        }
+                        
+                        return { stats, totalHours, coverageGaps, totalDays: total };
+                    }, [currentDate, events, staff]);
+
                     async function handleAuth(e) {
                         e.preventDefault();
                         setAuthError('');
@@ -507,6 +542,34 @@ useEffect(() => {
                     }
                     function handleLogout() {
                         auth.signOut();
+                    }
+
+                    // --- CALENDAR EXPORT ---
+                    function exportToCalendar() {
+                        const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                        const total = new Date(yIdx, mIdx + 1, 0).getDate();
+                        let ical = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Reception Calendar//EN\nCALSCALE:GREGORIAN\n';
+                        
+                        for (let d = 1; d <= total; d++) {
+                            const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                            const dayShifts = events[dk] || [];
+                            dayShifts.forEach(s => {
+                                const staffName = staff[s.empId]?.name || 'Staff';
+                                const dtstart = dk.replace(/-/g, '') + 'T' + (s.start || '080000').replace(/:/g, '') + '00';
+                                const dtend = dk.replace(/-/g, '') + 'T' + (s.end || '200000').replace(/:/g, '') + '00';
+                                ical += `BEGIN:VEVENT\nUID:${s.id}@reception\nDTSTART:${dtstart}\nDTEND:${dtend}\nSUMMARY:${staffName} Shift\nDESCRIPTION:${s.note || ''}\nEND:VEVENT\n`;
+                            });
+                        }
+                        
+                        ical += 'END:VCALENDAR';
+                        const blob = new Blob([ical], { type: 'text/calendar' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `reception_calendar_${yIdx}_${String(mIdx+1).padStart(2,'0')}.ics`;
+                        document.body.appendChild(a);
+                        a.click();
+                        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
                     }
                     // --- FIRESTORE SYNC HOOKS ---
                         // Load shared shifts and staff from Firestore on mount
@@ -573,6 +636,20 @@ useEffect(() => {
 
                 // Load data from localStorage
                 loadDataFromStorage();
+            }, []);
+
+            // --- Register Service Worker for Offline Support ---
+            useEffect(() => {
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.register('/sw.js')
+                        .then((registration) => {
+                            console.log('Service Worker registered:', registration);
+                            showNotification('✅ Offline mode enabled! App will work without internet.');
+                        })
+                        .catch((error) => {
+                            console.log('Service Worker registration failed:', error);
+                        });
+                }
             }, []);
 
             function loadDataFromStorage() {
@@ -974,6 +1051,10 @@ useEffect(() => {
                                         <option value="pending">Pending</option>
                                     </select>
                                     <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all font-bold">Export Matrix</button>
+                                    <button onClick={exportToCalendar} className="bg-fuchsia-500 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-fuchsia-400 transition-all font-bold">Export Calendar</button>
+                                    {(isAdmin || isManager) && (
+                                        <button onClick={() => setShowAnalytics(true)} className="bg-purple-500 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-purple-400 transition-all font-bold">Analytics</button>
+                                    )}
                                     <button
                                         onClick={() => {
                                             // Gather all shifts for the current month
@@ -1237,6 +1318,101 @@ useEffect(() => {
                                         }} className="bg-rose-600 px-8 py-4 rounded-xl text-white hover:bg-rose-500 shadow-lg font-bold">Remove</button>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Analytics Modal */}
+                    {showAnalytics && (
+                        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
+                            <div className="glass-panel neon-blue p-8 w-full max-w-2xl flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
+                                <div className="flex justify-between items-center">
+                                    <h2 className="text-2xl font-black text-cyan-400 uppercase tracking-tighter">Analytics Dashboard</h2>
+                                    <button onClick={() => setShowAnalytics(false)} className="text-3xl hover:text-white">&times;</button>
+                                </div>
+                                <div className="grid grid-cols-3 gap-4">
+                                    <div className="glass-panel p-4 text-center">
+                                        <div className="text-4xl font-black text-cyan-400">{analytics.totalHours.toFixed(1)}</div>
+                                        <div className="text-xs mt-2 text-slate-400">Total Hours</div>
+                                    </div>
+                                    <div className="glass-panel p-4 text-center">
+                                        <div className="text-4xl font-black text-fuchsia-400">{analytics.coverageGaps}</div>
+                                        <div className="text-xs mt-2 text-slate-400">Coverage Gaps</div>
+                                    </div>
+                                    <div className="glass-panel p-4 text-center">
+                                        <div className="text-4xl font-black text-purple-400">{Object.keys(analytics.stats).length}</div>
+                                        <div className="text-xs mt-2 text-slate-400">Active Staff</div>
+                                    </div>
+                                </div>
+                                <h3 className="text-lg font-black text-cyan-400 mt-4">Hours by Employee</h3>
+                                {Object.values(analytics.stats).sort((a, b) => b.hours - a.hours).map(s => (
+                                    <div key={s.name} className="flex justify-between items-center p-3 glass-panel">
+                                        <span className="font-bold">{s.name}</span>
+                                        <div className="flex gap-4">
+                                            <span className="text-cyan-400">{s.hours.toFixed(1)} hrs</span>
+                                            <span className="text-slate-400">{s.shifts} shifts</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Analytics Dashboard Modal */}
+                    {showAnalytics && (
+                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowAnalytics(false)}>
+                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                                <div className="p-6 border-b border-cyan-500/30">
+                                    <h2 className="text-2xl font-black text-cyan-400">Analytics Dashboard</h2>
+                                    <button 
+                                        onClick={() => setShowAnalytics(false)}
+                                        className="absolute top-4 right-4 text-white hover:text-cyan-400 text-2xl"
+                                    >
+                                        ×
+                                    </button>
+                                </div>
+                                
+                                <div className="p-6 space-y-6">
+                                    {/* Summary Cards */}
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-cyan-900/20 p-4 rounded-lg border border-cyan-500/30">
+                                            <div className="text-cyan-400 text-sm font-bold mb-2">Total Shifts</div>
+                                            <div className="text-3xl font-black text-white">{analytics.totalShifts}</div>
+                                        </div>
+                                        <div className="bg-fuchsia-900/20 p-4 rounded-lg border border-fuchsia-500/30">
+                                            <div className="text-fuchsia-400 text-sm font-bold mb-2">Total Hours</div>
+                                            <div className="text-3xl font-black text-white">{analytics.totalHours.toFixed(1)}</div>
+                                        </div>
+                                        <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/30">
+                                            <div className="text-yellow-400 text-sm font-bold mb-2">Coverage Gaps</div>
+                                            <div className="text-3xl font-black text-white">{analytics.coverageGaps}</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Hours by Employee */}
+                                    <div className="bg-gray-800/50 p-4 rounded-lg border border-cyan-500/20">
+                                        <h3 className="text-lg font-bold text-cyan-400 mb-3">Hours by Employee</h3>
+                                        <div className="space-y-2">
+                                            {analytics.employeeStats.map(emp => (
+                                                <div key={emp.name} className="flex items-center justify-between p-2 bg-gray-900/50 rounded">
+                                                    <span className="text-white font-semibold">{emp.name}</span>
+                                                    <div className="flex items-center gap-4">
+                                                        <span className="text-cyan-400 text-sm">{emp.shifts} shifts</span>
+                                                        <span className="text-fuchsia-400 font-bold">{emp.hours.toFixed(1)} hrs</span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Coverage Report */}
+                                    {analytics.coverageGaps > 0 && (
+                                        <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/30">
+                                            <h3 className="text-lg font-bold text-yellow-400 mb-2">⚠ Coverage Gaps Detected</h3>
+                                            <p className="text-white text-sm">There are {analytics.coverageGaps} days with less than 2 staff members scheduled. Consider adding more shifts to improve coverage.</p>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     )}

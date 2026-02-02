@@ -1,0 +1,22 @@
+{
+  "name": "Reception Calendar Scheduler",
+  "short_name": "Reception Cal",
+  "description": "Professional staff scheduling and calendar management system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#06b6d4",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%2306b6d4' width='512' height='512'/%3E%3Ctext x='256' y='320' font-size='300' text-anchor='middle' fill='white' font-family='Arial Black'%3E📅%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect fill='%2306b6d4' width='512' height='512'/%3E%3Ctext x='256' y='320' font-size='300' text-anchor='middle' fill='white' font-family='Arial Black'%3E📅%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
