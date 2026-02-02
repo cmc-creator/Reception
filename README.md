@@ -2,6 +2,8 @@
 
 A fully offline staff calendar for managing schedules, daily reports, and team communications. All data is stored locally in your browser using localStorage.
 
+> **🔧 Having issues?** See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for quick help with common problems.
+
 
 ## Features
 
@@ -16,7 +18,22 @@ A fully offline staff calendar for managing schedules, daily reports, and team c
 
 ## Getting Started
 
+### For Users
+
 Simply open `index.html` in a modern web browser. No build step, server, or external services required!
+
+Or visit the live deployment at: **https://cmc-creator.github.io/Reception/**
+
+### For Developers
+
+This project is automatically deployed to GitHub Pages from the `main` branch. To deploy your changes:
+
+1. Make changes in your code editor
+2. Commit changes: `git commit -am "Your changes"`
+3. Push to main: `git push origin main`
+4. GitHub Pages will automatically deploy (takes 1-3 minutes)
+
+📖 See [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) for detailed deployment instructions.
 
 On first load, the app automatically creates sample data including:
 - Four staff members (Karen, Izzy, Annalissia, Hal)
@@ -91,3 +108,27 @@ Your data persists across browser sessions as long as you:
 - No build process required
 - No backend server needed
 - No external API calls
+
+## Development Workflow
+
+If you're editing this project:
+
+1. **Always commit your changes** after editing:
+   ```bash
+   git add .
+   git commit -m "Description of changes"
+   git push
+   ```
+
+2. **In VS Code**:
+   - Use the Source Control panel (Ctrl+Shift+G / Cmd+Shift+G)
+   - Stage changed files with the `+` button
+   - Enter a commit message and click the checkmark
+   - Click the sync button to push to GitHub
+
+3. **Remember**: Saving files (Ctrl+S) is NOT the same as committing to Git!
+
+📖 **Documentation:**
+- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Quick checklist for common issues
+- [SYNCING_VS_CODE_CHANGES.md](./SYNCING_VS_CODE_CHANGES.md) - Detailed Git workflow guidance
+- [DEPLOYMENT_GUIDE.md](./DEPLOYMENT_GUIDE.md) - How GitHub Pages deployment works
