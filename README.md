@@ -2,6 +2,7 @@
 
 A fully offline staff calendar for managing schedules, daily reports, and team communications. All data is stored locally in your browser using localStorage.
 
+
 ## Features
 
 - Visual calendar interface with shift assignments
