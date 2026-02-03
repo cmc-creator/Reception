@@ -1,8 +1,8 @@
 // Service Worker for Offline Support
 const CACHE_NAME = 'reception-calendar-v1';
 const urlsToCache = [
-  '/',
-  '/index.html',
+  './',
+  './index.html',
   'https://unpkg.com/react@17/umd/react.production.min.js',
   'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
@@ -72,7 +72,7 @@ self.addEventListener('fetch', (event) => {
       })
       .catch(() => {
         // Return offline page or fallback
-        return caches.match('/index.html');
+        return caches.match('./index.html');
       })
   );
 });

@@ -836,9 +836,16 @@
         // Register Service Worker for offline support
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/sw.js')
-                    .then(registration => console.log('Service Worker registered:', registration))
-                    .catch(err => console.log('Service Worker registration failed:', err));
+                // Use relative path to work with GitHub Pages subdirectory deployment
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered successfully:', registration);
+                        console.log('📱 App is now installable as a PWA');
+                    })
+                    .catch(err => {
+                        console.warn('⚠️ Service Worker registration failed (PWA features unavailable):', err);
+                        // App still works without service worker, just no offline caching
+                    });
             });
         }
     </script>
