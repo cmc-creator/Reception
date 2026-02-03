@@ -683,13 +683,13 @@
                             {/* SIDEBAR LOGS */}
                             <aside className="no-print w-80 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
                                 <header className="text-left mb-2 text-white font-black">
-                                    <h1 className="text-lg tracking-tighter holo-text uppercase">Shift Report</h1>
-                                    <div className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest font-mono">{selectedDate}</div>
+                                    <h1 style={{fontSize: '1.125rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: '#b87333', textShadow: '0 0 10px rgba(184,115,51,0.5)'}}>Shift Report</h1>
+                                    <div style={{fontSize: '10px', color: '#8b5a2b', fontWeight: 900, textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.2em'}}>{selectedDate}</div>
                                 </header>
                                 <div className="space-y-3">
                                     {REPORT_FIELDS.map(f => (
-                                        <div key={f.id} className="glass-panel neon-fuchsia p-3 text-left font-bold">
-                                            <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-1 block flex items-center gap-2 font-bold font-mono"><IconActivity /> {f.label}</label>
+                                        <div key={f.id} className="glass-panel p-3 text-left font-bold">
+                                            <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconActivity /> {f.label}</label>
                                             <textarea value={String(reportData[f.id] || '')} onChange={e => {
                                                 const newReportData = { ...reportData, [f.id]: e.target.value };
                                                 setReportData(newReportData);
@@ -700,8 +700,8 @@
                                         </div>
                                     ))}
                                 </div>
-                                <div className="glass-panel neon-blue p-3 rounded-lg mt-4 text-left flex flex-col">
-                                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconActivity className="inline mr-2"/>Daily Checklist</label>
+                                <div className="glass-panel p-3 rounded-lg mt-4 text-left flex flex-col">
+                                    <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconActivity className="inline mr-2"/>Daily Checklist</label>
                                     <div className="flex flex-col gap-1 mb-2">
                                         {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
                                         {checklist.map((item, idx) => (
@@ -767,20 +767,20 @@
                                         <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] font-black">
                                             {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                                         </h2>
-                                        <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
+                                        <div style={{fontSize: '10px', fontWeight: 900, color: '#b87333', letterSpacing: '0.5em', textTransform: 'uppercase', marginTop: '4px', textShadow: '0 0 8px rgba(184,115,51,0.5)'}}>COMMAND TERMINAL</div>
                                     </div>
                                     <div className="flex gap-4 items-center">
-                                        <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2 w-48" />
-                                        <div className="flex bg-white/5 rounded-xl border border-white/10 p-1 text-white font-bold">
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5 uppercase font-bold text-[10px]"><IconChevronL /></button>
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
+                                        <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" style={{background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.5)', color: '#b87333', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 w-48 outline-none" />
+                                        <div style={{display: 'flex', background: 'linear-gradient(145deg, rgba(26,26,27,0.95), rgba(35,30,28,0.9))', border: '2px solid rgba(184,115,51,0.5)', borderRadius: '4px', padding: '4px'}} className="text-white font-bold">
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{padding: '8px', borderRight: '1px solid rgba(184,115,51,0.3)', color: '#8a8a8a'}} className="hover:text-[#b87333] transition-colors uppercase font-bold text-[10px]"><IconChevronL /></button>
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{padding: '8px', color: '#8a8a8a'}} className="hover:text-[#b87333] transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
                                         </div>
-                                        <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2">
+                                        <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} style={{background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.5)', color: '#b87333', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 outline-none">
                                             <option value="all">All</option>
                                             <option value="confirmed">Confirmed</option>
                                             <option value="pending">Pending</option>
                                         </select>
-                                        <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all font-bold">Export Matrix</button>
+                                        <button onClick={() => window.print()} className="fancy-btn" style={{padding: '10px 24px', fontSize: '11px'}}>EXPORT MATRIX</button>
                                         <button
                                             onClick={() => {
                                                 // Gather all shifts for the current month
@@ -811,8 +811,9 @@
                                                 a.click();
                                                 setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
                                             }}
-                                            className="bg-cyan-700 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-cyan-500 transition-all font-bold"
-                                        >Export CSV</button>
+                                            className="fancy-btn"
+                                            style={{padding: '10px 24px', fontSize: '11px'}}
+                                        >EXPORT CSV</button>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl font-bold">
