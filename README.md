@@ -175,6 +175,13 @@ Your localStorage data persists across browser sessions as long as you:
 - CDN resources blocked by network policy or ad blocker
 - Check if other external resources (React, Tailwind) are loading
 - Try disabling browser extensions temporarily
+- Hard refresh the page (Ctrl+Shift+R or Cmd+Shift+R) to clear cached service worker
+
+**Recent Fix (Feb 2026):**
+- Fixed React development/production build mismatch
+- Updated Firebase CDN from invalid version 12.8.0 to stable 9.22.0
+- Removed CDN caching from service worker to prevent version conflicts
+- If updating from an older version, clear your browser cache and reload
 
 ### "I can't see my data / Did I lose my work?"
 
