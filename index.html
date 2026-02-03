@@ -143,35 +143,6 @@
             INITIALIZED: 'reception_initialized'
         };
 
-        // --- FIRESTORE SYNC HOOKS ---
-        // Load shared shifts and staff from Firestore on mount
-        useEffect(() => {
-            async function fetchSharedData() {
-                const loadedShifts = await loadFromFirestore('shared', 'shifts', {});
-                const loadedStaff = await loadFromFirestore('shared', 'staff', {});
-                setEvents(loadedShifts);
-                setStaff(loadedStaff);
-                // Load all reports for all dates
-                const loadedReports = await loadFromFirestore('shared', 'reports', {});
-                setAllReports(loadedReports);
-            }
-            fetchSharedData();
-        }, []);
-
-        // Save shifts to Firestore when events change
-        useEffect(() => {
-            if (Object.keys(events).length > 0) {
-                saveToFirestore('shared', 'shifts', events);
-            }
-        }, [events]);
-
-        // Save staff to Firestore when staff changes
-        useEffect(() => {
-            if (Object.keys(staff).length > 0) {
-                saveToFirestore('shared', 'staff', staff);
-            }
-        }, [staff]);
-
         function saveToStorage(key, data) {
             try {
                 localStorage.setItem(key, JSON.stringify(data));
@@ -335,6 +306,32 @@
                 setReportData(allReports[selectedDate] || {});
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
             }, [selectedDate]);
+
+            // --- FIRESTORE SYNC HOOKS ---
+            // Load shared shifts and staff from Firestore on mount
+            useEffect(() => {
+                async function fetchSharedData() {
+                    const loadedShifts = await loadFromFirestore('shared', 'shifts', {});
+                    const loadedStaff = await loadFromFirestore('shared', 'staff', {});
+                    setEvents(loadedShifts);
+                    setStaff(loadedStaff);
+                }
+                fetchSharedData();
+            }, []);
+
+            // Save shifts to Firestore when events change
+            useEffect(() => {
+                if (Object.keys(events).length > 0) {
+                    saveToFirestore('shared', 'shifts', events);
+                }
+            }, [events]);
+
+            // Save staff to Firestore when staff changes
+            useEffect(() => {
+                if (Object.keys(staff).length > 0) {
+                    saveToFirestore('shared', 'staff', staff);
+                }
+            }, [staff]);
 
             // --- Admin Master Reset Pattern ---
             // --- Baseline Save/Restore ---
