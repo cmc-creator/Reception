@@ -1,6 +1,36 @@
 # Reception
 
-A fully offline-first staff calendar for managing schedules, daily reports, and team communications. All data is primarily stored locally in your browser using localStorage, with optional Firebase sync when available.
+A live, shareable staff calendar web application for managing schedules, daily reports, and team communications. Deploy once to GitHub Pages and share with your entire team!
+
+## ⭐ Multi-User Setup
+
+This app is designed to be **deployed as a live web app** that multiple employees can access simultaneously with **real-time Firebase cloud sync**.
+
+### Quick Deployment (GitHub Pages)
+
+1. **Enable GitHub Pages** for this repository:
+   - Go to repository Settings → Pages
+   - Source: Deploy from a branch
+   - Branch: `main` (or your default branch) → `/` (root)
+   - Click Save
+
+2. **Access your live app** at: `https://[your-username].github.io/Reception/`
+
+3. **Share the URL** with your employees - they can all access the same calendar!
+
+### How Multi-User Sync Works
+
+✅ **With Firebase (Recommended for Teams):**
+- All users access the same shared data via Firebase Firestore
+- Changes by any user are automatically synced to all other users
+- Shifts and staff data are stored in the cloud (`shared` collection)
+- Perfect for teams that need real-time collaboration
+
+✅ **Without Firebase (Single-User Fallback):**
+- App works offline using localStorage
+- Each user has their own independent data
+- No data sharing between users
+- Use this mode if Firebase is blocked by your network
 
 ## Features
 
@@ -12,11 +42,21 @@ A fully offline-first staff calendar for managing schedules, daily reports, and 
 - Master reset functionality for admin users
 - Automatic seeding of sample data on first load
 - Print/export functionality for schedules
-- Optional Firebase cloud sync (gracefully degrades to offline-only mode if unavailable)
+- Progressive Web App (PWA) - installable on devices
+- Service Worker for offline support
 
 ## Getting Started
 
-Simply open `index.html` in a modern web browser. No build step, server, or external services required!
+### For Teams (Recommended)
+
+1. Deploy this repository to GitHub Pages (see deployment steps above)
+2. Ensure Firebase CDN resources can load (check browser console)
+3. Share the GitHub Pages URL with your team
+4. Everyone accesses the same shared calendar data
+
+### For Local Testing
+
+Simply open `index.html` in a modern web browser. No build step required!
 
 On first load, the app automatically creates sample data including:
 - Four staff members (Karen, Izzy, Annalissia, Hal)
@@ -24,34 +64,44 @@ On first load, the app automatically creates sample data including:
 - Example messages
 - Sample daily report data
 
-## Data Storage
+## Data Storage & Sync
 
-**Primary Storage:** All data is stored locally in your browser's localStorage as the primary data source.
+### Firebase Cloud Sync (Multi-User Mode)
 
-**Optional Firebase Sync:** If Firebase services are available, the app will automatically sync shifts and staff data to the cloud. If Firebase is unavailable (e.g., blocked by network policies, CDN issues), the app gracefully falls back to offline-only mode using localStorage.
+**When Firebase is available** (recommended for teams):
+- ✅ **Shared data** across all users accessing the app
+- ✅ **Real-time sync** of shifts and staff assignments
+- ✅ **Accessible anywhere** via the web URL
+- ✅ **No setup required** - Firebase is pre-configured
+- ✅ **Free tier** suitable for small to medium teams
 
-### What this means:
+**Synced data:**
+- Staff roster (shared across all users)
+- Shift assignments (shared across all users)
 
-- ✅ **Works offline:** No internet connection required for core functionality
-- ✅ **No external dependencies required:** App works even if CDN resources fail to load
-- ✅ **Data safety:** Your localStorage data is never overwritten by empty cloud data
-- ✅ **No billing or subscription costs**
-- ✅ **Complete privacy:** Your local data never leaves your browser unless Firebase sync is active
-- ⚠️ Data is specific to each browser and device
-- ⚠️ Clearing browser data will erase your local schedule
-- ⚠️ Firebase sync is optional and requires Firebase services to be accessible
+**Local-only data:**
+- Daily reports (browser-specific)
+- Chat messages (browser-specific)
+- Checklist items (browser-specific)
+- Alert messages (browser-specific)
 
-### Your Data is Safe
+### localStorage Fallback (Single-User Mode)
 
-**Don't worry about losing your work!** Even if the app encounters issues loading:
-- Your localStorage data persists in your browser
-- Firebase being unavailable does NOT delete your local data
-- The app will always load your local data first
-- Cloud sync only adds data, it never removes local data
+**When Firebase is unavailable:**
+- ✅ **Works offline** with no internet connection
+- ✅ **Complete privacy** - data never leaves the browser
+- ✅ **No external dependencies** required
+- ⚠️ **Not shareable** - each user has independent data
+- ⚠️ **Browser-specific** - data doesn't sync between devices
+- ⚠️ **Can be lost** if browser data is cleared
 
-## Sharing Data
+## Sharing Your Calendar
 
-Since the app is primarily offline and local to your browser, you cannot share data in real-time with other users. To share your schedule:
+### Option 1: Live Web App (Best for Teams)
+
+Deploy to GitHub Pages and share the URL with your employees. Everyone sees the same data in real-time via Firebase sync.
+
+### Option 2: Export & Share (For Reports)
 
 1. Use the **Export Matrix** button to print your calendar
 2. Save the print output as a PDF
@@ -84,18 +134,33 @@ Tested in: Chrome, Firefox, Safari, Edge
 
 ## Data Persistence
 
-Your data persists across browser sessions as long as you:
+### With Firebase (Multi-User Mode)
+- Data is stored in Firebase Firestore cloud database
+- Accessible from any device via the web URL
+- Persists indefinitely (not affected by browser cache clearing)
+- Shared across all users
+
+### Without Firebase (Single-User Mode)
+Your localStorage data persists across browser sessions as long as you:
 - Use the same browser on the same device
 - Don't clear browser data/cache
 - Don't use incognito/private browsing mode
 
-## Limitations
+## Architecture & Modes
 
-- **No multi-user collaboration**: Each user has their own independent local data (Firebase sync is optional)
-- **No automatic cloud backup**: Local data is primary storage
-- **No cross-device sync without Firebase**: Local data cannot be accessed from different devices
-- **No data recovery**: Clearing browser data permanently deletes local information
-- **Browser-specific**: Data in Chrome won't appear in Firefox, etc.
+### Multi-User Mode (Firebase Active)
+✅ **Best for teams** - Share calendar with employees
+- Shifts and staff data synced via Firebase Firestore
+- All users see the same calendar in real-time
+- Deploy to GitHub Pages and share the URL
+- No setup or configuration needed
+
+### Single-User Mode (Firebase Unavailable)
+✅ **Privacy-focused fallback** - Personal use only
+- All data stored locally in browser localStorage
+- Works completely offline
+- Each user has independent data
+- Use for personal scheduling or when Firebase is blocked
 
 ## Troubleshooting
 
@@ -122,15 +187,36 @@ Your data persists across browser sessions as long as you:
 
 **The app will automatically load this data** once the page loads successfully.
 
+### "How do I share this with my team?"
+
+**For multi-user sharing:**
+1. Deploy to GitHub Pages (see deployment instructions above)
+2. Ensure Firebase CDN can load (check browser console)
+3. Share the GitHub Pages URL with your team
+4. Everyone will access the same shared calendar
+
+**Check Firebase connection:**
+- Open browser console (F12)
+- Look for "Firebase initialized successfully" message
+- If you see "Firebase not available", the app is in single-user mode
+
 ### "Firebase initialization failed"
 
-This is **not an error** - it means Firebase cloud sync is unavailable, but the app will work perfectly in offline-only mode using localStorage. Your local data is completely safe.
+This message means Firebase cloud sync is unavailable, and the app is running in **single-user mode** using localStorage. 
+
+**For team sharing, you need Firebase to work:**
+- Check if CDN resources are blocked by firewall/ad blocker
+- Ensure external resources can load from: `www.gstatic.com`, `firestore.googleapis.com`
+- Contact your IT department if corporate firewall blocks these domains
+
+**Your local data is completely safe** - it's just not synced to the cloud.
 
 ## Technical Details
 
 - Single-file React application using Babel for in-browser JSX transformation
 - Tailwind CSS via CDN for styling
-- Optional Firebase Firestore for cloud sync (gracefully degrades if unavailable)
+- Firebase Firestore for multi-user cloud sync (gracefully degrades if unavailable)
+- Progressive Web App (PWA) with service worker for offline support
 - No build process required
-- No backend server needed for core functionality
-- Offline-first architecture with localStorage as primary data source
+- No backend server needed
+- Dual-mode architecture: cloud-sync for teams, localStorage for privacy
