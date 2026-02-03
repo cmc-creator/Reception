@@ -728,14 +728,14 @@
                                         saveToStorage('reception_checklist_' + selectedDate, updated);
                                         setNewChecklistItem('');
                                     }} className="flex gap-1 mb-2">
-                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Add task..." />
-                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">Add</button>
+                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.4)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: '#e0e0e0', fontWeight: 700}} className="outline-none" placeholder="Add task..." />
+                                        <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>ADD</button>
                                     </form>
                                 </div>
-                                <div className="glass-panel neon-blue p-3 rounded-lg mt-auto text-left flex flex-col h-48">
-                                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
+                                <div className="glass-panel p-3 rounded-lg mt-auto text-left flex flex-col h-48">
+                                    <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
                                     <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
-                                        {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
+                                        {messages.map(m => <div key={m.id}><span style={{color: '#b87333', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
                                     <form onSubmit={e => { 
@@ -754,8 +754,8 @@
                                             setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
                                         }
                                     }} className="flex gap-1 shrink-0 pt-2 text-left">
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
-                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">OK</button>
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.4)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: '#e0e0e0', fontWeight: 700}} className="outline-none" placeholder="Broadcast..." />
+                                        <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>OK</button>
                                     </form>
                                 </div>
                             </aside>
