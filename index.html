@@ -1,75 +1,15 @@
-useEffect(() => {
-                    if (!user) return;
-                    db.collection('swaps').where('to', '==', user.uid).onSnapshot(snap => {
-                        snap.docs.forEach(doc => {
-                            const swap = doc.data();
-                            if (swap.status === 'approved') {
-                                showNotification(`Your swap request for ${swap.shift.start} - ${swap.shift.end} on ${swap.date} was approved.`);
-                            } else if (swap.status === 'denied') {
-                                showNotification(`Your swap request for ${swap.shift.start} - ${swap.shift.end} on ${swap.date} was denied.`);
-                            }
-                        });
-                    });
-                }, [user]);
-        // --- TOAST NOTIFICATION STATE ---
-        const [toasts, setToasts] = useState([]);
-        function showNotification(msg, type = 'info') {
-            const id = Date.now();
-            setToasts(t => [...t, { id, msg, type }]);
-            // Auto-dismiss after 4 seconds
-            setTimeout(() => {
-                setToasts(t => t.filter(toast => toast.id !== id));
-            }, 4000);
-        }
-        function dismissToast(id) {
-            setToasts(t => t.filter(toast => toast.id !== id));
-        }
-        {/* Toast Notifications */}
-        <div className="fixed top-4 right-4 z-[2000] flex flex-col gap-3 items-end pointer-events-none">
-            {toasts.map(toast => (
-                <div 
-                    key={toast.id} 
-                    className="pointer-events-auto bg-gradient-to-r from-cyan-600 to-cyan-700 text-white px-6 py-3 rounded-xl shadow-2xl font-bold text-sm flex items-center gap-3 animate-slideIn border border-cyan-400/30"
-                    style={{animation: 'slideIn 0.3s ease-out'}}
-                >
-                    <span className="flex-1">{toast.msg}</span>
-                    <button 
-                        onClick={() => dismissToast(toast.id)}
-                        className="text-white/70 hover:text-white text-lg font-black"
-                    >
-                        ×
-                    </button>
-                    <div className="absolute bottom-0 left-0 h-1 bg-cyan-300 animate-shrink" style={{animation: 'shrink 4s linear'}}></div>
-                </div>
-            ))}
-        </div>
-        <style>{`
-            @keyframes slideIn {
-                from { transform: translateX(400px); opacity: 0; }
-                to { transform: translateX(0); opacity: 1; }
-            }
-            @keyframes shrink {
-                from { width: 100%; }
-                to { width: 0%; }
-            }
-        `}</style>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Professional staff scheduling and calendar management system">
-    <meta name="theme-color" content="#06b6d4">
-    <link rel="manifest" href="/manifest.json">
     <title>Destiny Springs | Hub Matrix</title>
     <!-- System Engines -->
     <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-auth-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
@@ -97,113 +37,6 @@ useEffect(() => {
             border: 1.5px solid rgba(0,255,247,0.12);
             border-radius: 18px;
             box-shadow: var(--color-shadow);
-        }
-        body[data-theme="light"] .glass-panel {
-            background: #fff;
-            color: var(--color-text-light);
-            border: 1.5px solid #e0e7ef;
-            box-shadow: 0 4px 32px 0 rgba(0,0,0,0.04);
-        }
-        body[data-theme="light"] .neon-blue {
-            border: 1.5px solid #0ea5e9;
-            box-shadow: 0 0 24px 0 #bae6fd, 0 4px 32px 0 rgba(0,0,0,0.04);
-        }
-        body[data-theme="light"] .neon-fuchsia {
-            border: 1.5px solid #e879f9;
-            box-shadow: 0 0 24px 0 #f0abfc, 0 4px 32px 0 rgba(0,0,0,0.04);
-        }
-        body[data-theme="light"] .holo-text {
-            text-shadow: 0 0 16px #bae6fd, 0 0 2px #f0abfc;
-        }
-        body[data-theme="light"] .nav-rail-btn {
-            background: #f1f5f9 !important;
-            border: 2px solid #0ea5e9 !important;
-            color: #0ea5e9 !important;
-            box-shadow: 0 0 8px 0 #bae6fd, 0 2px 8px 0 #000 !important;
-        }
-        body[data-theme="light"] .nav-rail-btn svg {
-            color: #0ea5e9 !important;
-            filter: drop-shadow(0 0 4px #bae6fd);
-        }
-        body[data-theme="light"] .nav-rail-btn:hover {
-            background: #f0abfc !important;
-            border-color: #e879f9 !important;
-            color: #e879f9 !important;
-            box-shadow: 0 0 16px 0 #f0abfc, 0 2px 8px 0 #000 !important;
-        }
-        body[data-theme="light"] .nav-rail-btn:hover svg {
-            color: #e879f9 !important;
-            filter: drop-shadow(0 0 6px #f0abfc);
-        }
-        body[data-theme="light"] .fancy-btn {
-            background: linear-gradient(90deg, #0ea5e9 0%, #e879f9 100%);
-            color: #18182f;
-            box-shadow: 0 2px 16px 0 #bae6fd;
-        }
-        body[data-theme="light"] .fancy-btn:hover {
-            background: linear-gradient(90deg, #e879f9 0%, #0ea5e9 100%);
-            color: #18182f;
-            box-shadow: 0 4px 32px 0 #f0abfc;
-        }
-        body[data-theme="light"] .bg-black,
-        body[data-theme="light"] .bg-[#050505],
-        body[data-theme="light"] .bg-[#080808],
-        body[data-theme="light"] .bg-rose-950\/20 {
-            background: #f4f7fa !important;
-        }
-        body[data-theme="light"] .text-white {
-            color: #18182f !important;
-        }
-        body[data-theme="light"] .text-cyan-400 {
-            color: #0ea5e9 !important;
-        }
-        body[data-theme="light"] .text-fuchsia-400 {
-            color: #e879f9 !important;
-        }
-        body[data-theme="light"] .text-rose-500 {
-            color: #e11d48 !important;
-        }
-        body[data-theme="light"] .bg-cyan-600\/80 {
-            background: #bae6fd !important;
-            color: #18182f !important;
-        }
-        body[data-theme="light"] .bg-rose-600\/80 {
-            background: #fca5a5 !important;
-            color: #18182f !important;
-        }
-        body[data-theme="light"] .bg-fuchsia-600\/80 {
-            background: #f0abfc !important;
-            color: #18182f !important;
-        }
-        body[data-theme="light"] .bg-blue-600\/80 {
-            background: #bae6fd !important;
-            color: #18182f !important;
-        }
-        body[data-theme="light"] .bg-slate-700 {
-            background: #e0e7ef !important;
-            color: #18182f !important;
-        }
-        .nav-rail-btn {
-            background: rgba(0,255,247,0.10) !important;
-            border: 2px solid var(--color-primary) !important;
-            color: #00fff7 !important;
-            box-shadow: 0 0 8px 0 var(--color-primary), 0 2px 8px 0 #000 !important;
-            opacity: 1 !important;
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-        }
-        .nav-rail-btn svg {
-            color: #00fff7 !important;
-            filter: drop-shadow(0 0 4px #00fff7);
-        }
-        .nav-rail-btn:hover {
-            background: rgba(255,0,234,0.15) !important;
-            border-color: var(--color-accent) !important;
-            color: #ff00ea !important;
-            box-shadow: 0 0 16px 0 var(--color-accent), 0 2px 8px 0 #000 !important;
-        }
-        .nav-rail-btn:hover svg {
-            color: #ff00ea !important;
-            filter: drop-shadow(0 0 6px #ff00ea);
         }
         .neon-blue {
             border: 1.5px solid var(--color-primary);
@@ -239,45 +72,6 @@ useEffect(() => {
             }
             .sidebar, .main-grid {
                 flex-direction: column !important;
-            }
-            .calendar-grid {
-                grid-template-columns: repeat(2, 1fr) !important;
-                font-size: 12px !important;
-            }
-            .nav-rail-btn, .fancy-btn, button {
-                min-height: 48px !important;
-                font-size: 16px !important;
-                padding: 0.5em 1em !important;
-            }
-            .glass-panel, .neon-blue, .neon-fuchsia {
-                padding: 0.5em !important;
-                border-radius: 1em !important;
-            }
-            .no-print {
-                font-size: 14px !important;
-            }
-            .sidebar, aside {
-                min-width: 0 !important;
-                width: 100% !important;
-                padding: 0.5em !important;
-            }
-            .main-grid, main {
-                padding: 0.5em !important;
-            }
-            .modal, .glass-panel {
-                max-width: 98vw !important;
-                max-height: 98vh !important;
-                overflow-y: auto !important;
-            }
-        }
-        @media (max-width: 600px) {
-            .calendar-grid {
-                grid-template-columns: repeat(1, 1fr) !important;
-                font-size: 11px !important;
-            }
-            .nav-rail-btn, .fancy-btn, button {
-                min-height: 44px !important;
-                font-size: 15px !important;
             }
         }
         @media print {
@@ -327,7 +121,6 @@ useEffect(() => {
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
-        const auth = firebase.auth();
 
         // --- FIRESTORE DATA LAYER (SHARED) ---
         async function saveToFirestore(collection, doc, data) {
@@ -348,7 +141,34 @@ useEffect(() => {
             INITIALIZED: 'reception_initialized'
         };
 
-        // ...existing code...
+        // --- FIRESTORE SYNC HOOKS ---
+        // Load shared shifts and staff from Firestore on mount
+        useEffect(() => {
+            async function fetchSharedData() {
+                const loadedShifts = await loadFromFirestore('shared', 'shifts', {});
+                const loadedStaff = await loadFromFirestore('shared', 'staff', {});
+                setEvents(loadedShifts);
+                setStaff(loadedStaff);
+                // Load all reports for all dates
+                const loadedReports = await loadFromFirestore('shared', 'reports', {});
+                setAllReports(loadedReports);
+            }
+            fetchSharedData();
+        }, []);
+
+        // Save shifts to Firestore when events change
+        useEffect(() => {
+            if (Object.keys(events).length > 0) {
+                saveToFirestore('shared', 'shifts', events);
+            }
+        }, [events]);
+
+        // Save staff to Firestore when staff changes
+        useEffect(() => {
+            if (Object.keys(staff).length > 0) {
+                saveToFirestore('shared', 'staff', staff);
+            }
+        }, [staff]);
 
         function saveToStorage(key, data) {
             try {
@@ -386,15 +206,11 @@ useEffect(() => {
         const IconTerminal = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>;
 
         const REPORT_FIELDS = [
-            { id: 'incidents', label: '🚨 Incidents / Alerts', category: 'urgent', placeholder: 'Any incidents, emergencies, or urgent matters that occurred...' },
-            { id: 'handoff', label: '👋 Handoff Notes', category: 'important', placeholder: 'Critical information for the next shift...' },
-            { id: 'maintenance', label: '🔧 Maintenance Issues', category: 'important', placeholder: 'Equipment problems, repairs needed...' },
-            { id: 'mail', label: '📦 Mail / Deliveries', category: 'normal', placeholder: 'Packages received, mail sorted...' }, 
-            { id: 'property', label: '🏷️ Patient Property', category: 'normal', placeholder: 'Property logged, returned, or stored...' },
-            { id: 'supplies', label: '📋 Hub Supplies', category: 'normal', placeholder: 'Inventory status, items restocked...' }, 
-            { id: 'lobby', label: '🏢 Lobby Status', category: 'normal', placeholder: 'Cleanliness, organization, visitor notes...' },
-            { id: 'visitors', label: '👥 Visitor Log', category: 'normal', placeholder: 'Notable visitors, meetings, appointments...' },
-            { id: 'notes', label: '📝 General Notes', category: 'normal', placeholder: 'Other observations, tasks completed...' }
+            { id: 'mail', label: 'Mail / Deliveries' }, 
+            { id: 'property', label: 'Patient Property' },
+            { id: 'supplies', label: 'Hub Supplies' }, 
+            { id: 'lobby', label: 'Lobby Status' },
+            { id: 'aoc', label: 'AOC Status' }
         ];
 
         // --- DETERMINISTIC SEED DATA FOR FIRST LOAD ---
@@ -460,182 +276,8 @@ useEffect(() => {
             saveToStorage(STORAGE_KEYS.INITIALIZED, true);
         }
 
-                // --- THEME INIT ---
-                function getInitialTheme() {
-                    const stored = localStorage.getItem('reception_theme');
-                    if (stored === 'light' || stored === 'dark') return stored;
-                    return 'dark';
-                }
-
-                function App() {
-                    const [theme, setTheme] = useState(getInitialTheme());
-                    const [showPrefs, setShowPrefs] = useState(false);
-                    const [notifyEnabled, setNotifyEnabled] = useState(false);
-                    useEffect(() => {
-                        document.body.setAttribute('data-theme', theme);
-                    }, [theme]);
-
-                    // Load user preferences from Firestore
-                    useEffect(() => {
-                        if (!user) return;
-                        db.collection('userprefs').doc(user.uid).get().then(doc => {
-                            if (doc.exists) {
-                                const prefs = doc.data();
-                                if (prefs.theme) setTheme(prefs.theme);
-                                if (prefs.notifyEnabled !== undefined) setNotifyEnabled(prefs.notifyEnabled);
-                            }
-                        });
-                    }, [user]);
-
-                    // Save preferences to Firestore
-                    function savePrefs(newTheme, newNotify) {
-                        if (!user) return;
-                        db.collection('userprefs').doc(user.uid).set({
-                            theme: newTheme,
-                            notifyEnabled: newNotify
-                        }, { merge: true });
-                    }
-
-                    // --- AUTH STATE ---
-                    const [user, setUser] = useState(null);
-                    const [authMode, setAuthMode] = useState('login'); // 'login' | 'register'
-                    const [authEmail, setAuthEmail] = useState('');
-                    const [authPassword, setAuthPassword] = useState('');
-                    const [authError, setAuthError] = useState('');
-                    useEffect(() => {
-                        const unsub = auth.onAuthStateChanged(u => setUser(u));
-                        return () => unsub();
-                    }, []);
-
-                    // --- ROLE-BASED ACCESS ---
-                    const [userRole, setUserRole] = useState('staff');
-                    useEffect(() => {
-                        if (!user) return;
-                        db.collection('userroles').doc(user.uid).get().then(doc => {
-                            if (doc.exists) setUserRole(doc.data().role || 'staff');
-                        });
-                    }, [user]);
-                    function setRoleForUser(uid, role) {
-                        db.collection('userroles').doc(uid).set({ role }, { merge: true });
-                    }
-                    const isAdmin = userRole === 'admin';
-                    const isManager = userRole === 'manager';
-
-                    // --- ANALYTICS ---
-                    const [showAnalytics, setShowAnalytics] = useState(false);
-                    const analytics = useMemo(() => {
-                        const stats = {};
-                        let totalHours = 0;
-                        let coverageGaps = 0;
-                        const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
-                        const total = new Date(yIdx, mIdx + 1, 0).getDate();
-                        
-                        Object.entries(staff).forEach(([id, s]) => {
-                            stats[id] = { name: s.name, hours: 0, shifts: 0 };
-                        });
-                        
-                        for (let d = 1; d <= total; d++) {
-                            const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                            const dayShifts = events[dk] || [];
-                            if (dayShifts.length === 0) coverageGaps++;
-                            dayShifts.forEach(s => {
-                                if (s.start && s.end && stats[s.empId]) {
-                                    const start = new Date(`2000-01-01T${s.start}`);
-                                    const end = new Date(`2000-01-01T${s.end}`);
-                                    const hours = (end - start) / (1000 * 60 * 60);
-                                    stats[s.empId].hours += hours;
-                                    stats[s.empId].shifts++;
-                                    totalHours += hours;
-                                }
-                            });
-                        }
-                        
-                        return { stats, totalHours, coverageGaps, totalDays: total };
-                    }, [currentDate, events, staff]);
-
-                    async function handleAuth(e) {
-                        e.preventDefault();
-                        setAuthError('');
-                        try {
-                            if (authMode === 'login') {
-                                await auth.signInWithEmailAndPassword(authEmail, authPassword);
-                            } else {
-                                await auth.createUserWithEmailAndPassword(authEmail, authPassword);
-                            }
-                        } catch (err) {
-                            setAuthError(err.message);
-                        }
-                    }
-                    async function handleGoogle() {
-                        setAuthError('');
-                        const provider = new firebase.auth.GoogleAuthProvider();
-                        try {
-                            await auth.signInWithPopup(provider);
-                        } catch (err) {
-                            setAuthError(err.message);
-                        }
-                    }
-                    function handleLogout() {
-                        auth.signOut();
-                    }
-
-                    // --- CALENDAR EXPORT ---
-                    function exportToCalendar() {
-                        const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
-                        const total = new Date(yIdx, mIdx + 1, 0).getDate();
-                        let ical = 'BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Reception Calendar//EN\nCALSCALE:GREGORIAN\n';
-                        
-                        for (let d = 1; d <= total; d++) {
-                            const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                            const dayShifts = events[dk] || [];
-                            dayShifts.forEach(s => {
-                                const staffName = staff[s.empId]?.name || 'Staff';
-                                const dtstart = dk.replace(/-/g, '') + 'T' + (s.start || '080000').replace(/:/g, '') + '00';
-                                const dtend = dk.replace(/-/g, '') + 'T' + (s.end || '200000').replace(/:/g, '') + '00';
-                                ical += `BEGIN:VEVENT\nUID:${s.id}@reception\nDTSTART:${dtstart}\nDTEND:${dtend}\nSUMMARY:${staffName} Shift\nDESCRIPTION:${s.note || ''}\nEND:VEVENT\n`;
-                            });
-                        }
-                        
-                        ical += 'END:VCALENDAR';
-                        const blob = new Blob([ical], { type: 'text/calendar' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `reception_calendar_${yIdx}_${String(mIdx+1).padStart(2,'0')}.ics`;
-                        document.body.appendChild(a);
-                        a.click();
-                        setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                    }
-                    // --- FIRESTORE SYNC HOOKS ---
-                        // Load shared shifts and staff from Firestore on mount
-                        useEffect(() => {
-                            async function fetchSharedData() {
-                                const loadedShifts = await loadFromFirestore('shared', 'shifts', {});
-                                const loadedStaff = await loadFromFirestore('shared', 'staff', {});
-                                setEvents(loadedShifts);
-                                setStaff(loadedStaff);
-                                // Load all reports for all dates
-                                const loadedReports = await loadFromFirestore('shared', 'reports', {});
-                                setAllReports(loadedReports);
-                            }
-                            fetchSharedData();
-                        }, []);
-
-                        // Save shifts to Firestore when events change
-                        useEffect(() => {
-                            if (Object.keys(events).length > 0) {
-                                saveToFirestore('shared', 'shifts', events);
-                            }
-                        }, [events]);
-
-                        // Save staff to Firestore when staff changes
-                        useEffect(() => {
-                            if (Object.keys(staff).length > 0) {
-                                saveToFirestore('shared', 'staff', staff);
-                            }
-                        }, [staff]);
+        function App() {
             // --- Application State ---
-            // Always default to the current month on load
             const [currentDate, setCurrentDate] = useState(() => {
                 const now = new Date();
                 return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -658,55 +300,6 @@ useEffect(() => {
             const [newStaffName, setNewStaffName] = useState('');
             const [newStaffColor, setNewStaffColor] = useState('#0891b2');
             const chatEndRef = useRef(null);
-            
-            // --- Shift Templates ---
-            const [shiftTemplates, setShiftTemplates] = useState(() => loadFromStorage('shift_templates', [
-                { id: 't1', name: 'Morning Shift', start: '08:00', end: '14:00' },
-                { id: 't2', name: 'Afternoon Shift', start: '14:00', end: '20:00' },
-                { id: 't3', name: 'Full Day', start: '08:00', end: '20:00' }
-            ]));
-            const [showTemplateModal, setShowTemplateModal] = useState(false);
-            
-            // --- Report Templates & State ---
-            const [reportTemplates] = useState([
-                { id: 'quiet', label: '😌 Quiet Shift', content: { incidents: 'No incidents', handoff: 'Routine shift - no urgent items', maintenance: 'No issues', notes: 'Quiet, uneventful shift' }},
-                { id: 'busy', label: '🔥 Busy Shift', content: { handoff: 'Multiple activities - see notes', visitors: 'High visitor traffic', notes: 'Busy shift with increased activity' }},
-                { id: 'incident', label: '⚠️ Incident Report', content: { incidents: '[TIME] - [DESCRIPTION]\n[ACTION TAKEN]\n[FOLLOW-UP NEEDED]', handoff: 'Review incident notes above' }}
-            ]);
-            const [reportPriority, setReportPriority] = useState(() => loadFromStorage('report_priority_' + selectedDate, 'normal'));
-            const [reportAttachments, setReportAttachments] = useState(() => loadFromStorage('report_attachments_' + selectedDate, []));
-            const [showReportHistory, setShowReportHistory] = useState(false);
-            
-            // --- View Modes ---
-            const [viewMode, setViewMode] = useState('month'); // 'month', 'week', 'day', 'list'
-            
-            // --- Drag & Drop State ---
-            const [draggedStaff, setDraggedStaff] = useState(null);
-            const [draggedShift, setDraggedShift] = useState(null);
-            const [dragOverDate, setDragOverDate] = useState(null);
-            
-            // --- Emergency & De-escalation ---
-            const [showPanicAlert, setShowPanicAlert] = useState(false);
-            const [showDeescalation, setShowDeescalation] = useState(false);
-            const [panicAlerts, setPanicAlerts] = useState(() => loadFromStorage('panic_alerts', []));
-            
-            // --- Team Fun Features ---
-            const [showAchievements, setShowAchievements] = useState(false);
-            const [showKudos, setShowKudos] = useState(false);
-            const [achievements, setAchievements] = useState(() => loadFromStorage('achievements', {}));
-            const [kudosWall, setKudosWall] = useState(() => loadFromStorage('kudos_wall', []));
-            const [teamBirthdays] = useState(() => loadFromStorage('team_birthdays', {}));
-            const [motivationalQuote] = useState(() => {
-                const quotes = [
-                    { text: "You make a difference every single day.", author: "Your Team" },
-                    { text: "Crisis doesn't build character, it reveals it.", author: "Unknown" },
-                    { text: "Caring for others is the highest expression of humanity.", author: "Unknown" },
-                    { text: "In the middle of difficulty lies opportunity.", author: "Einstein" },
-                    { text: "Be the calm in someone's storm.", author: "Unknown" },
-                    { text: "Small acts of kindness create ripples of healing.", author: "Unknown" }
-                ];
-                return quotes[Math.floor(Math.random() * quotes.length)];
-            });
 
             // --- Initialize Data from localStorage ---
             useEffect(() => {
@@ -720,20 +313,6 @@ useEffect(() => {
 
                 // Load data from localStorage
                 loadDataFromStorage();
-            }, []);
-
-            // --- Register Service Worker for Offline Support ---
-            useEffect(() => {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.register('/sw.js')
-                        .then((registration) => {
-                            console.log('Service Worker registered:', registration);
-                            showNotification('✅ Offline mode enabled! App will work without internet.');
-                        })
-                        .catch((error) => {
-                            console.log('Service Worker registration failed:', error);
-                        });
-                }
             }, []);
 
             function loadDataFromStorage() {
@@ -753,8 +332,6 @@ useEffect(() => {
                 const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 setReportData(allReports[selectedDate] || {});
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
-                setReportPriority(loadFromStorage('report_priority_' + selectedDate, 'normal'));
-                setReportAttachments(loadFromStorage('report_attachments_' + selectedDate, []));
             }, [selectedDate]);
 
             // --- Admin Master Reset Pattern ---
@@ -819,70 +396,8 @@ useEffect(() => {
                         });
                     }
                     const isToday = new Date().toISOString().split('T')[0] === dk;
-                    
-                    // Coverage heatmap coloring
-                    const coverageCount = (events[dk] || []).length;
-                    let coverageClass = '';
-                    if (coverageCount === 0) coverageClass = 'bg-red-900/10';
-                    else if (coverageCount === 1) coverageClass = 'bg-red-700/10';
-                    else if (coverageCount === 2) coverageClass = 'bg-yellow-700/10';
-                    else if (coverageCount === 3) coverageClass = 'bg-yellow-600/10';
-                    else coverageClass = 'bg-green-700/10';
-                    
                     cells.push(
-                        <div 
-                            key={dk} 
-                            onClick={() => setSelectedDate(dk)} 
-                            onDragOver={(e) => {
-                                e.preventDefault();
-                                setDragOverDate(dk);
-                            }}
-                            onDragLeave={() => setDragOverDate(null)}
-                            onDrop={(e) => {
-                                e.preventDefault();
-                                setDragOverDate(null);
-                                
-                                if (draggedStaff) {
-                                    // Create new shift from dragged staff
-                                    const newShift = {
-                                        id: `shift-${Date.now()}`,
-                                        date: dk,
-                                        empId: draggedStaff.id,
-                                        start: '08:00',
-                                        end: '20:00',
-                                        confirmed: true,
-                                        createdAt: Date.now(),
-                                        recurring: 'none'
-                                    };
-                                    const updatedEvents = { ...events };
-                                    if (!updatedEvents[dk]) updatedEvents[dk] = [];
-                                    updatedEvents[dk].push(newShift);
-                                    setEvents(updatedEvents);
-                                    saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
-                                    showNotification(`✅ ${draggedStaff.name} assigned to ${dk}`);
-                                    logAudit('assign', `Drag-dropped ${draggedStaff.name} shift on ${dk}`);
-                                } else if (draggedShift && draggedShift.sourceDate !== dk) {
-                                    // Move shift to new date
-                                    const updatedEvents = { ...events };
-                                    
-                                    // Remove from source date
-                                    const sourceShifts = updatedEvents[draggedShift.sourceDate] || [];
-                                    updatedEvents[draggedShift.sourceDate] = sourceShifts.filter(s => s.id !== draggedShift.id);
-                                    
-                                    // Add to target date
-                                    if (!updatedEvents[dk]) updatedEvents[dk] = [];
-                                    const movedShift = { ...draggedShift, date: dk };
-                                    delete movedShift.sourceDate;
-                                    updatedEvents[dk].push(movedShift);
-                                    
-                                    setEvents(updatedEvents);
-                                    saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
-                                    showNotification(`✅ Shift moved from ${draggedShift.sourceDate} to ${dk}`);
-                                    logAudit('edit', `Moved ${staff[draggedShift.empId]?.name} shift from ${draggedShift.sourceDate} to ${dk}`);
-                                }
-                            }}
-                            className={`min-h-[180px] p-3 border border-white/[0.05] transition-all cursor-pointer relative group ${coverageClass} ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-inner' : 'hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''} ${dragOverDate === dk ? 'ring-2 ring-cyan-400 bg-cyan-500/20' : ''}`}
-                        >
+                        <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[180px] p-3 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-inner' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
                             <div className="flex justify-between items-start">
                                 <span className={`text-xl font-black tracking-tighter ${selectedDate === dk ? 'text-cyan-400' : 'text-slate-600'}`}>{d}</span>
                                 <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 opacity-20 hover:opacity-100 transition-opacity"><IconPlus /></button>
@@ -890,25 +405,11 @@ useEffect(() => {
                             <div className="space-y-2 mt-4">
                                 {dayShifts.length === 0 ? <div className="text-[10px] font-black text-rose-500 animate-pulse uppercase flex items-center gap-1 mt-2 text-left font-mono italic"><IconAlert /> Needs Coverage</div> : 
                                     dayShifts.map(s => (
-                                        <div 
-                                            key={s.id} 
-                                            draggable="true"
-                                            onDragStart={(e) => {
-                                                setDraggedShift({ ...s, sourceDate: dk });
-                                                e.dataTransfer.effectAllowed = 'move';
-                                            }}
-                                            onDragEnd={() => setDraggedShift(null)}
-                                            onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
-                                            className={`text-[13px] p-2 rounded-xl font-bold truncate text-white ${staff[s.empId]?.bg || 'bg-slate-700'} uppercase flex flex-col justify-between text-left shadow-2xl border border-white/10 group-hover:scale-105 transition-transform cursor-move`}
-                                        >
+                                        <div key={s.id} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
+                                            className={`text-[13px] p-2 rounded-xl font-bold truncate text-white ${staff[s.empId]?.bg || 'bg-slate-700'} uppercase flex flex-col justify-between text-left shadow-2xl border border-white/10 group-hover:scale-105 transition-transform cursor-pointer`}>
                                             <div className="flex items-center justify-between">
                                                 <span>{staff[s.empId]?.name || '...'}</span>
-                                                <span className="opacity-50 text-[10px] font-mono shrink-0">{s.start && s.end ? `${s.start} - ${s.end}` : (s.start || s.time || '')}</span>
-                                                {user && user.uid === s.empId && (
-                                                    <button className="ml-2 bg-fuchsia-600 text-white rounded px-2 py-1 text-[10px] font-bold hover:bg-fuchsia-400" onClick={e => { e.stopPropagation(); setSwapRequest({ shift: s, date: dk }); }}>
-                                                        Request Swap
-                                                    </button>
-                                                )}
+                                                <span className="opacity-50 text-[10px] font-mono shrink-0">{(s.start || s.time) + (s.end ? ` - ${s.end}` : '')}</span>
                                             </div>
                                         </div>
                                     ))
@@ -918,713 +419,186 @@ useEffect(() => {
                     );
                 }
                 return cells;
-            });
-            // --- SHIFT SWAP STATE ---
-            const [swapRequest, setSwapRequest] = useState(null);
-            const [swapTarget, setSwapTarget] = useState('');
-            const [pendingSwaps, setPendingSwaps] = useState([]);
-            useEffect(() => {
-                db.collection('swaps').onSnapshot(snap => {
-                    setPendingSwaps(snap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-                });
-            }, []);
-            function submitSwapRequest() {
-                if (!swapRequest || !swapTarget) return;
-                db.collection('swaps').add({
-                    from: user.uid,
-                    to: swapTarget,
-                    shift: swapRequest.shift,
-                    date: swapRequest.date,
-                    status: 'pending',
-                    createdAt: Date.now()
-                });
-                setSwapRequest(null);
-                setSwapTarget('');
-            }
-            function handleSwapDecision(swapId, approve) {
-                const swap = pendingSwaps.find(s => s.id === swapId);
-                if (!swap) return;
-                if (approve) {
-                    // Update shift owner
-                    const updatedEvents = { ...events };
-                    const shifts = updatedEvents[swap.date] || [];
-                    const idx = shifts.findIndex(s => s.id === swap.shift.id);
-                    if (idx !== -1) {
-                        shifts[idx].empId = swap.to;
-                        updatedEvents[swap.date] = shifts;
-                        setEvents(updatedEvents);
-                        saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
-                    }
-                }
-                db.collection('swaps').doc(swapId).update({ status: approve ? 'approved' : 'denied' });
-            }
-            {/* Swap Request Modal */}
-            {swapRequest && (
-                <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
-                    <div className="glass-panel neon-fuchsia p-8 w-full max-w-xs flex flex-col gap-6">
-                        <h2 className="text-xl font-black text-fuchsia-400 uppercase tracking-tighter mb-2">Request Shift Swap</h2>
-                        <div className="mb-2 text-xs">Select staff to swap with:</div>
-                        <select value={swapTarget} onChange={e => setSwapTarget(e.target.value)} className="bg-black border border-fuchsia-500/30 rounded-xl p-2 text-white font-bold">
-                            <option value="">Select...</option>
-                            {Object.entries(staff).filter(([id]) => id !== user.uid).map(([id, s]) => (
-                                <option key={id} value={id}>{s.name}</option>
-                            ))}
-                        </select>
-                        <button onClick={submitSwapRequest} className="bg-fuchsia-600 text-white rounded px-3 py-1 font-bold text-xs hover:bg-fuchsia-400 transition-all mt-2">Submit Request</button>
-                        <button onClick={() => setSwapRequest(null)} className="bg-slate-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-slate-600 transition-all mt-2">Cancel</button>
-                    </div>
-                </div>
-            )}
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch]);
 
-            {/* Admin Swap Panel */}
-            {isAdminAuth && (
-                <div className="fixed right-0 top-0 z-[1100] w-80 bg-black/90 p-4 text-white shadow-xl">
-                    <h3 className="text-lg font-black text-fuchsia-400 mb-4">Pending Swap Requests</h3>
-                    {pendingSwaps.filter(s => s.status === 'pending').length === 0 ? (
-                        <div className="text-xs text-slate-400">No pending requests.</div>
-                    ) : (
-                        pendingSwaps.filter(s => s.status === 'pending').map(swap => (
-                            <div key={swap.id} className="mb-3 p-2 rounded bg-fuchsia-900/30">
-                                <div className="font-bold text-xs mb-1">{staff[swap.from]?.name} → {staff[swap.to]?.name}</div>
-                                <div className="text-xs mb-1">Shift: {swap.shift.start} - {swap.shift.end} ({swap.date})</div>
-                                <button onClick={() => handleSwapDecision(swap.id, true)} className="bg-cyan-600 text-white rounded px-2 py-1 text-xs font-bold mr-2">Approve</button>
-                                <button onClick={() => handleSwapDecision(swap.id, false)} className="bg-rose-600 text-white rounded px-2 py-1 text-xs font-bold">Deny</button>
-                            </div>
-                        ))
-                    )}
-                </div>
-            )}
-
-        if (!user) {
             return (
-                <div className="flex h-screen w-screen items-center justify-center bg-black text-xs">
-                    <div className="glass-panel neon-blue p-10 w-full max-w-xs flex flex-col gap-6 items-center">
-                        <h2 className="text-2xl font-black text-cyan-400 uppercase tracking-tighter">Reception Login</h2>
-                        <form onSubmit={handleAuth} className="flex flex-col gap-3 w-full">
-                            <input type="email" value={authEmail} onChange={e => setAuthEmail(e.target.value)} placeholder="Email" className="bg-black border border-cyan-500/30 rounded-xl p-3 text-white font-bold" required />
-                            <input type="password" value={authPassword} onChange={e => setAuthPassword(e.target.value)} placeholder="Password" className="bg-black border border-cyan-500/30 rounded-xl p-3 text-white font-bold" required />
-                            {authError && <div className="text-rose-500 text-xs font-bold">{authError}</div>}
-                            <button type="submit" className="fancy-btn py-3 mt-2 font-black uppercase">{authMode === 'login' ? 'Login' : 'Register'}</button>
-                        </form>
-                        <button onClick={handleGoogle} className="bg-white text-black rounded-xl px-4 py-2 font-black shadow hover:bg-cyan-100 transition-all">Sign in with Google</button>
-                        <div className="text-xs text-slate-400 mt-2">
-                            {authMode === 'login' ? (
-                                <>No account? <button className="underline text-cyan-400" onClick={() => setAuthMode('register')}>Register</button></>
-                            ) : (
-                                <>Already have an account? <button className="underline text-cyan-400" onClick={() => setAuthMode('login')}>Login</button></>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
-        }
-        return (
-            <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
-                {/* NAV RAIL */}
-                <nav className="no-print w-16 bg-[#050505] border-r border-white/5 flex flex-col items-center py-8 gap-10">
-                    <div className="text-cyan-400 font-black text-xl holo-text">DS</div>
-                    
-                    {/* PANIC BUTTON */}
-                    <button 
-                        onClick={() => {
-                            setShowPanicAlert(true);
-                            const alert = {
-                                id: Date.now(),
-                                user: user.email,
-                                timestamp: new Date().toISOString(),
-                                location: 'Reception Desk',
-                                resolved: false
-                            };
-                            const updated = [alert, ...panicAlerts];
-                            setPanicAlerts(updated);
-                            saveToStorage('panic_alerts', updated);
-                            showNotification('🚨 EMERGENCY ALERT SENT');
-                            logAudit('emergency', `Panic button activated by ${user.email}`);
-                        }}
-                        className="bg-red-600 p-4 rounded-full transition-all hover:scale-110 hover:bg-red-500 shadow-lg shadow-red-500/50 animate-pulse"
-                        title="EMERGENCY ALERT"
-                    >
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="white" stroke="white" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"/>
-                            <line x1="12" y1="8" x2="12" y2="12"/>
-                            <line x1="12" y1="16" x2="12.01" y2="16"/>
-                        </svg>
-                    </button>
-                    
-                    {/* De-escalation Quick Reference */}
-                    <button 
-                        onClick={() => setShowDeescalation(true)}
-                        className="bg-purple-600 p-3 rounded-xl transition-all hover:scale-110 hover:bg-purple-500"
-                        title="De-escalation Scripts"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                        </svg>
-                    </button>
-                    
-                    {/* Team Kudos */}
-                    <button 
-                        onClick={() => setShowKudos(true)}
-                        className="bg-pink-600 p-3 rounded-xl transition-all hover:scale-110 hover:bg-pink-500"
-                        title="Kudos Wall"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                        </svg>
-                    </button>
-                    
-                    {/* Achievements */}
-                    <button 
-                        onClick={() => setShowAchievements(true)}
-                        className="bg-yellow-600 p-3 rounded-xl transition-all hover:scale-110 hover:bg-yellow-500"
-                        title="Team Achievements"
-                    >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"/>
-                        </svg>
-                    </button>
-                    
-                    <button onClick={handleMasterReset} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Admin Master Reset"><IconSync /></button>
-                    <button onClick={saveBaseline} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Save Baseline for Month">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    </button>
-                    <button onClick={restoreBaseline} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Restore Baseline for Month">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                    </button>
-                    <button onClick={() => setIsPersonnelModalOpen(true)} className="nav-rail-btn p-3 rounded-xl transition-all hover:scale-110" title="Personnel Manifest"><IconPersonnel /></button>
-                    <div className="mt-auto flex flex-col items-center gap-3">
-                        <div className="w-2.5 h-2.5 rounded-full status-pulse bg-emerald-500 shadow-[0_0_10px_#10b981]" title="Local Storage Ready" />
-                        <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest font-mono">Protocol</div>
-                    </div>
-                </nav>
-
-                <div className="flex-1 flex flex-col">
-                    <div className="no-print flex items-center justify-end gap-4 px-6 py-2 bg-transparent">
-                        <span className="text-cyan-400 font-bold text-xs">{user.email}</span>
-                        <button onClick={() => setShowPrefs(true)} className="bg-cyan-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-cyan-400 transition-all">Preferences</button>
-                        <button onClick={handleLogout} className="bg-rose-500 text-white rounded px-3 py-1 font-bold text-xs hover:bg-rose-400 transition-all">Logout</button>
-                    </div>
-
-                    {/* Preferences Modal */}
-                    {showPrefs && (
-                        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
-                            <div className="glass-panel neon-blue p-8 w-full max-w-xs flex flex-col gap-6">
-                                <h2 className="text-xl font-black text-cyan-400 uppercase tracking-tighter mb-2">Preferences</h2>
-                                <div className="flex flex-col gap-3">
-                                    <label className="font-bold text-xs text-cyan-400">Theme</label>
-                                    <select value={theme} onChange={e => { setTheme(e.target.value); savePrefs(e.target.value, notifyEnabled); }} className="bg-black border border-cyan-500/30 rounded-xl p-2 text-white font-bold">
-                                        <option value="dark">Dark</option>
-                                        <option value="light">Light</option>
-                                    </select>
-                                    <label className="font-bold text-xs text-cyan-400 mt-4">Notifications</label>
-                                    <div className="flex items-center gap-2">
-                                        <input type="checkbox" checked={notifyEnabled} onChange={e => { setNotifyEnabled(e.target.checked); savePrefs(theme, e.target.checked); }} />
-                                        <span className="text-xs">Enable notifications</span>
-                                    </div>
-                                </div>
-                                <button onClick={() => setShowPrefs(false)} className="bg-cyan-700 text-white rounded px-3 py-1 font-bold text-xs hover:bg-cyan-400 transition-all mt-4">Close</button>
-                            </div>
-                        </div>
-                    )}
-                    <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
-                        <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
-                        <input value={globalAlert} onChange={e => { 
-                            const newAlert = String(e.target.value);
-                            setGlobalAlert(newAlert);
-                            saveToStorage(STORAGE_KEYS.ALERT, newAlert);
-                        }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
-                        <button className="fancy-btn ml-4" onClick={() => {
-                            const newTheme = theme === 'dark' ? 'light' : 'dark';
-                            setTheme(newTheme);
-                            localStorage.setItem('reception_theme', newTheme);
-                        }}>
-                            Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode
+                <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
+                    {/* NAV RAIL */}
+                    <nav className="no-print w-16 bg-[#050505] border-r border-white/5 flex flex-col items-center py-8 gap-10">
+                        <div className="text-cyan-400 font-black text-xl holo-text">DS</div>
+                        <button onClick={handleMasterReset} className="p-3 bg-cyan-500/10 rounded-xl border border-cyan-500/30 transition-all shadow-inner hover:scale-110" title="Admin Master Reset"><IconSync /></button>
+                        <button onClick={saveBaseline} className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/30 transition-all shadow-inner hover:scale-110" title="Save Baseline for Month">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         </button>
-                    </header>
+                        <button onClick={restoreBaseline} className="p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/30 transition-all shadow-inner hover:scale-110" title="Restore Baseline for Month">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                        </button>
+                        <button onClick={() => setIsPersonnelModalOpen(true)} className="p-3 bg-fuchsia-500/10 rounded-xl border border-fuchsia-500/30 transition-all hover:scale-110" title="Personnel Manifest"><IconPersonnel /></button>
+                        <div className="mt-auto flex flex-col items-center gap-3">
+                            <div className="w-2.5 h-2.5 rounded-full status-pulse bg-emerald-500 shadow-[0_0_10px_#10b981]" title="Local Storage Ready" />
+                            <div className="opacity-10 text-[8px] font-black uppercase rotate-90 tracking-widest font-mono">Protocol</div>
+                        </div>
+                    </nav>
 
-                    <div className="flex-1 flex overflow-hidden">
-                        {/* SIDEBAR LOGS - Enhanced Shift Report */}
-                        <aside className="no-print w-96 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
-                            <header className="text-left mb-2 text-white font-black flex items-center justify-between sticky top-0 bg-[#080808] z-10 pb-2">
-                                <div>
-                                    <h1 className="text-xl tracking-tighter holo-text uppercase flex items-center gap-2">
-                                        📋 Shift Report
-                                    </h1>
+                    <div className="flex-1 flex flex-col">
+                        <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
+                            <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
+                            <input value={globalAlert} onChange={e => { 
+                                const newAlert = String(e.target.value);
+                                setGlobalAlert(newAlert);
+                                saveToStorage(STORAGE_KEYS.ALERT, newAlert);
+                            }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
+                            <button className="fancy-btn ml-4" onClick={() => {
+                                const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                                document.body.setAttribute('data-theme', theme);
+                                localStorage.setItem('reception_theme', theme);
+                            }}>
+                                Toggle {document.body.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark'} Mode
+                            </button>
+                        </header>
+
+                        <div className="flex-1 flex overflow-hidden">
+                            {/* SIDEBAR LOGS */}
+                            <aside className="no-print w-80 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
+                                <header className="text-left mb-2 text-white font-black">
+                                    <h1 className="text-lg tracking-tighter holo-text uppercase">Shift Report</h1>
                                     <div className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest font-mono">{selectedDate}</div>
-                                </div>
-                                <div className="flex gap-2">
-                                    <button
-                                        className="bg-purple-600 hover:bg-purple-500 text-white rounded-lg px-3 py-2 text-xs font-bold shadow-lg"
-                                        title="View History"
-                                        onClick={() => setShowReportHistory(true)}
-                                    >
-                                        📜
-                                    </button>
-                                    <button
-                                        className="bg-cyan-600 hover:bg-cyan-400 text-white rounded-lg px-3 py-2 text-xs font-bold shadow-lg"
-                                        title="Download PDF"
-                                        onClick={() => {
-                                            const { jsPDF } = window.jspdf;
-                                            const doc = new jsPDF();
-                                            doc.setFontSize(20);
-                                            doc.text('SHIFT REPORT', 14, 20);
-                                            doc.setFontSize(12);
-                                            doc.text(`Date: ${selectedDate}`, 14, 30);
-                                            doc.text(`Priority: ${reportPriority.toUpperCase()}`, 14, 37);
-                                            let y = 50;
-                                            REPORT_FIELDS.forEach(f => {
-                                                if (reportData && reportData[f.id] && reportData[f.id].trim()) {
-                                                    doc.setFont(undefined, 'bold');
-                                                    doc.setFontSize(11);
-                                                    doc.text(f.label, 14, y);
-                                                    y += 6;
-                                                    doc.setFont(undefined, 'normal');
-                                                    doc.setFontSize(10);
-                                                    const val = String(reportData[f.id]);
-                                                    const lines = doc.splitTextToSize(val, 180);
-                                                    doc.text(lines, 14, y);
-                                                    y += lines.length * 5 + 8;
-                                                    if (y > 270) {
-                                                        doc.addPage();
-                                                        y = 20;
-                                                    }
-                                                }
-                                            });
-                                            if (reportAttachments.length > 0) {
-                                                doc.setFont(undefined, 'bold');
-                                                doc.text(`Attachments: ${reportAttachments.length} file(s)`, 14, y);
-                                            }
-                                            doc.save(`shift_report_${selectedDate}.pdf`);
-                                            showNotification('📄 PDF downloaded');
-                                        }}
-                                    >
-                                        📥 PDF
-                                    </button>
-                                </div>
-                            </header>
-                            
-                            {/* Priority Selector */}
-                            <div className="glass-panel neon-cyan p-3 rounded-lg">
-                                <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block">Shift Priority</label>
-                                <div className="flex gap-2">
-                                    {['normal', 'important', 'urgent'].map(priority => (
-                                        <button
-                                            key={priority}
-                                            onClick={() => {
-                                                setReportPriority(priority);
-                                                saveToStorage('report_priority_' + selectedDate, priority);
-                                                if (priority === 'urgent') showNotification('⚠️ Shift marked as URGENT');
-                                            }}
-                                            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                reportPriority === priority
-                                                    ? priority === 'urgent' ? 'bg-red-600 text-white ring-2 ring-red-400'
-                                                    : priority === 'important' ? 'bg-yellow-600 text-black ring-2 ring-yellow-400'
-                                                    : 'bg-green-600 text-white ring-2 ring-green-400'
-                                                    : 'bg-white/10 text-white/50 hover:bg-white/20'
-                                            }`}
-                                        >
-                                            {priority === 'urgent' ? '🚨' : priority === 'important' ? '⚠️' : '✅'} {priority}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* Quick Templates */}
-                            <div className="glass-panel neon-fuchsia p-3 rounded-lg">
-                                <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-2 block">Quick Templates</label>
-                                <div className="flex gap-2">
-                                    {reportTemplates.map(tmpl => (
-                                        <button
-                                            key={tmpl.id}
-                                            onClick={() => {
-                                                const merged = { ...reportData, ...tmpl.content };
-                                                setReportData(merged);
-                                                const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
-                                                allReports[selectedDate] = merged;
-                                                saveToStorage(STORAGE_KEYS.REPORTS, allReports);
-                                                showNotification(`📝 Applied template: ${tmpl.label}`);
-                                            }}
-                                            className="flex-1 bg-fuchsia-600/30 hover:bg-fuchsia-600 border border-fuchsia-500/50 rounded-lg px-2 py-2 text-[10px] font-bold text-white transition-all"
-                                        >
-                                            {tmpl.label}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* Report Fields by Category */}
-                            <div className="space-y-3">
-                                {/* Urgent Items */}
-                                {REPORT_FIELDS.filter(f => f.category === 'urgent').map(f => (
-                                    <div key={f.id} className="glass-panel border-2 border-red-500/50 bg-red-900/10 p-4 text-left font-bold rounded-xl">
-                                        <label className="text-xs font-black text-red-400 uppercase tracking-widest mb-2 block">{f.label}</label>
-                                        <textarea 
-                                            value={String(reportData[f.id] || '')} 
-                                            onChange={e => {
+                                </header>
+                                <div className="space-y-3">
+                                    {REPORT_FIELDS.map(f => (
+                                        <div key={f.id} className="glass-panel neon-fuchsia p-3 text-left font-bold">
+                                            <label className="text-[9px] font-black text-fuchsia-400 uppercase tracking-widest mb-1 block flex items-center gap-2 font-bold font-mono"><IconActivity /> {f.label}</label>
+                                            <textarea value={String(reportData[f.id] || '')} onChange={e => {
                                                 const newReportData = { ...reportData, [f.id]: e.target.value };
                                                 setReportData(newReportData);
                                                 const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                                                 allReports[selectedDate] = newReportData;
                                                 saveToStorage(STORAGE_KEYS.REPORTS, allReports);
-                                            }} 
-                                            className="w-full bg-black/50 border border-red-500/30 rounded-lg p-2 text-sm text-white h-24 outline-none resize-none font-normal" 
-                                            placeholder={f.placeholder}
-                                        />
-                                    </div>
-                                ))}
-                                
-                                {/* Important Items */}
-                                {REPORT_FIELDS.filter(f => f.category === 'important').map(f => (
-                                    <div key={f.id} className="glass-panel border border-yellow-500/50 bg-yellow-900/10 p-3 text-left font-bold rounded-lg">
-                                        <label className="text-[10px] font-black text-yellow-400 uppercase tracking-widest mb-1 block">{f.label}</label>
-                                        <textarea 
-                                            value={String(reportData[f.id] || '')} 
-                                            onChange={e => {
-                                                const newReportData = { ...reportData, [f.id]: e.target.value };
-                                                setReportData(newReportData);
-                                                const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
-                                                allReports[selectedDate] = newReportData;
-                                                saveToStorage(STORAGE_KEYS.REPORTS, allReports);
-                                            }} 
-                                            className="w-full bg-black/50 border border-yellow-500/30 rounded-lg p-2 text-xs text-white h-20 outline-none resize-none font-normal" 
-                                            placeholder={f.placeholder}
-                                        />
-                                    </div>
-                                ))}
-                                
-                                {/* Normal Items - Collapsible */}
-                                <details className="glass-panel neon-blue p-3 rounded-lg" open>
-                                    <summary className="text-xs font-black text-cyan-400 uppercase tracking-widest cursor-pointer hover:text-cyan-300">
-                                        📝 Standard Report Items ({REPORT_FIELDS.filter(f => f.category === 'normal').length})
-                                    </summary>
-                                    <div className="space-y-2 mt-3">
-                                        {REPORT_FIELDS.filter(f => f.category === 'normal').map(f => (
-                                            <div key={f.id} className="bg-white/5 p-2 text-left rounded">
-                                                <label className="text-[9px] font-bold text-cyan-400 uppercase mb-1 block">{f.label}</label>
-                                                <textarea 
-                                                    value={String(reportData[f.id] || '')} 
-                                                    onChange={e => {
-                                                        const newReportData = { ...reportData, [f.id]: e.target.value };
-                                                        setReportData(newReportData);
-                                                        const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
-                                                        allReports[selectedDate] = newReportData;
-                                                        saveToStorage(STORAGE_KEYS.REPORTS, allReports);
-                                                    }} 
-                                                    className="w-full bg-black/50 border border-cyan-500/30 rounded p-2 text-[11px] text-white h-16 outline-none resize-none font-normal" 
-                                                    placeholder={f.placeholder}
-                                                />
+                                            }} className="w-full bg-transparent border-none text-xs text-white h-14 outline-none resize-none font-bold" placeholder="..." />
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="glass-panel neon-blue p-3 rounded-lg mt-4 text-left flex flex-col">
+                                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconActivity className="inline mr-2"/>Daily Checklist</label>
+                                    <div className="flex flex-col gap-1 mb-2">
+                                        {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
+                                        {checklist.map((item, idx) => (
+                                            <div key={idx} className="flex items-center gap-2 group">
+                                                <input type="checkbox" checked={!!item.checked} onChange={e => {
+                                                    const updated = checklist.map((it, i) => i === idx ? { ...it, checked: !it.checked } : it);
+                                                    setChecklist(updated);
+                                                    saveToStorage('reception_checklist_' + selectedDate, updated);
+                                                }} />
+                                                <span className={`text-[11px] flex-1 ${item.checked ? 'line-through text-slate-500' : ''}`}>{item.text}</span>
+                                                <button onClick={() => {
+                                                    const updated = checklist.filter((_, i) => i !== idx);
+                                                    setChecklist(updated);
+                                                    saveToStorage('reception_checklist_' + selectedDate, updated);
+                                                }} className="text-rose-400 text-xs font-bold opacity-60 hover:opacity-100">&times;</button>
                                             </div>
                                         ))}
                                     </div>
-                                </details>
-                            </div>
-                            
-                            {/* Photo Attachments */}
-                            <div className="glass-panel neon-purple p-3 rounded-lg">
-                                <label className="text-[10px] font-black text-purple-400 uppercase tracking-widest mb-2 block">📷 Photo Attachments</label>
-                                <input 
-                                    type="file" 
-                                    accept="image/*" 
-                                    capture="environment"
-                                    onChange={(e) => {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onload = (ev) => {
-                                                const newAttachments = [...reportAttachments, { name: file.name, data: ev.target.result, timestamp: Date.now() }];
-                                                setReportAttachments(newAttachments);
-                                                saveToStorage('report_attachments_' + selectedDate, newAttachments);
-                                                showNotification('📷 Photo attached');
+                                    <form onSubmit={e => {
+                                        e.preventDefault();
+                                        if (!newChecklistItem.trim()) return;
+                                        const updated = [...checklist, { text: newChecklistItem, checked: false }];
+                                        setChecklist(updated);
+                                        saveToStorage('reception_checklist_' + selectedDate, updated);
+                                        setNewChecklistItem('');
+                                    }} className="flex gap-1 mb-2">
+                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Add task..." />
+                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">Add</button>
+                                    </form>
+                                </div>
+                                <div className="glass-panel neon-blue p-3 rounded-lg mt-auto text-left flex flex-col h-48">
+                                    <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
+                                    <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
+                                        {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
+                                        <div ref={chatEndRef} />
+                                    </div>
+                                    <form onSubmit={e => { 
+                                        e.preventDefault(); 
+                                        if (chatInput.trim()) { 
+                                            const newMessage = { 
+                                                id: `msg-${Date.now()}`, 
+                                                text: chatInput, 
+                                                createdAt: Date.now(), 
+                                                user: 'USER' 
                                             };
-                                            reader.readAsDataURL(file);
+                                            const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
+                                            setMessages(updatedMessages);
+                                            saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
+                                            setChatInput('');
+                                            setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
                                         }
-                                    }}
-                                    className="w-full text-xs text-white bg-purple-600/30 border border-purple-500/50 rounded-lg p-2 cursor-pointer"
-                                />
-                                {reportAttachments.length > 0 && (
-                                    <div className="mt-2 space-y-1">
-                                        {reportAttachments.map((att, idx) => (
-                                            <div key={idx} className="flex items-center justify-between bg-black/50 p-2 rounded text-xs">
-                                                <span className="text-white truncate flex-1">{att.name}</span>
-                                                <button 
-                                                    onClick={() => {
-                                                        const updated = reportAttachments.filter((_, i) => i !== idx);
-                                                        setReportAttachments(updated);
-                                                        saveToStorage('report_attachments_' + selectedDate, updated);
-                                                    }}
-                                                    className="text-red-400 ml-2"
-                                                >×</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                            
-                            <div className="glass-panel neon-blue p-3 rounded-lg mt-4 text-left flex flex-col">
-                                <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconActivity className="inline mr-2"/>Daily Checklist</label>
-                                <div className="flex flex-col gap-1 mb-2">
-                                    {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
-                                    {checklist.map((item, idx) => (
-                                        <div key={idx} className="flex items-center gap-2 group">
-                                            <input type="checkbox" checked={!!item.checked} onChange={e => {
-                                                const updated = checklist.map((it, i) => i === idx ? { ...it, checked: !it.checked } : it);
-                                                setChecklist(updated);
-                                                saveToStorage('reception_checklist_' + selectedDate, updated);
-                                            }} />
-                                            <span className={`text-[11px] flex-1 ${item.checked ? 'line-through text-slate-500' : ''}`}>{item.text}</span>
-                                            <button onClick={() => {
-                                                const updated = checklist.filter((_, i) => i !== idx);
-                                                setChecklist(updated);
-                                                saveToStorage('reception_checklist_' + selectedDate, updated);
-                                            }} className="text-rose-400 text-xs font-bold opacity-60 hover:opacity-100">&times;</button>
-                                        </div>
-                                    ))}
+                                    }} className="flex gap-1 shrink-0 pt-2 text-left">
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
+                                        <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">OK</button>
+                                    </form>
                                 </div>
-                                <form onSubmit={e => {
-                                    e.preventDefault();
-                                    if (!newChecklistItem.trim()) return;
-                                    const updated = [...checklist, { text: newChecklistItem, checked: false }];
-                                    setChecklist(updated);
-                                    saveToStorage('reception_checklist_' + selectedDate, updated);
-                                    setNewChecklistItem('');
-                                }} className="flex gap-1 mb-2">
-                                    <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Add task..." />
-                                    <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">Add</button>
-                                </form>
-                            </div>
-                            <div className="glass-panel neon-blue p-3 rounded-lg mt-auto text-left flex flex-col h-48">
-                                <label className="text-[9px] font-black text-cyan-400 uppercase tracking-widest mb-2 block flex items-center gap-2 font-mono tracking-widest font-bold"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
-                                <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
-                                    {messages.map(m => <div key={m.id}><span className="text-cyan-500 font-black mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
-                                    <div ref={chatEndRef} />
-                                </div>
-                                <form onSubmit={e => { 
-                                    e.preventDefault(); 
-                                    if (chatInput.trim()) { 
-                                        const newMessage = { 
-                                            id: `msg-${Date.now()}`, 
-                                            text: chatInput, 
-                                            createdAt: Date.now(), 
-                                            user: 'USER' 
-                                        };
-                                        const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-                                        setMessages(updatedMessages);
-                                        saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
-                                        setChatInput('');
-                                        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-                                    }
-                                }} className="flex gap-1 shrink-0 pt-2 text-left">
-                                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} className="flex-1 bg-black border border-cyan-500/30 rounded p-1.5 text-[10px] outline-none text-white font-bold" placeholder="Broadcast..." />
-                                    <button type="submit" className="bg-cyan-600 px-2 rounded text-white font-bold transition-all hover:bg-cyan-500 uppercase font-black tracking-widest">OK</button>
-                                </form>
-                            </div>
-                        </aside>
+                            </aside>
 
-                        {/* MAIN GRID */}
-                        <main className="flex-1 p-8 overflow-y-auto no-scrollbar text-center font-bold">
-                            <div className="flex justify-between items-end mb-8 no-print text-left font-bold">
-                                <div className="text-white">
-                                    <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] font-black">
-                                        {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                                    </h2>
-                                    <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
-                                    
-                                    {/* View Mode Switcher */}
-                                    <div className="flex gap-2 mt-3">
-                                        {['month', 'week', 'list'].map(mode => (
-                                            <button
-                                                key={mode}
-                                                onClick={() => setViewMode(mode)}
-                                                className={`px-3 py-1 rounded-lg text-xs font-bold uppercase transition-all ${
-                                                    viewMode === mode 
-                                                        ? 'bg-cyan-500 text-black' 
-                                                        : 'bg-white/10 text-cyan-400 hover:bg-white/20'
-                                                }`}
-                                            >
-                                                {mode}
-                                            </button>
-                                        ))}
+                            {/* MAIN GRID */}
+                            <main className="flex-1 p-8 overflow-y-auto no-scrollbar text-center font-bold">
+                                <div className="flex justify-between items-end mb-8 no-print text-left font-bold">
+                                    <div className="text-white">
+                                        <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] font-black">
+                                            {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                                        </h2>
+                                        <div className="text-[10px] font-black text-cyan-400 tracking-[0.5em] uppercase mt-1">Matrix Interface Alpha</div>
+                                    </div>
+                                    <div className="flex gap-4 items-center">
+                                        <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2 w-48" />
+                                        <div className="flex bg-white/5 rounded-xl border border-white/10 p-1 text-white font-bold">
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5 uppercase font-bold text-[10px]"><IconChevronL /></button>
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
+                                        </div>
+                                        <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2">
+                                            <option value="all">All</option>
+                                            <option value="confirmed">Confirmed</option>
+                                            <option value="pending">Pending</option>
+                                        </select>
+                                        <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all font-bold">Export Matrix</button>
+                                        <button
+                                            onClick={() => {
+                                                // Gather all shifts for the current month
+                                                const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                                                const total = new Date(yIdx, mIdx + 1, 0).getDate();
+                                                let rows = [['Date','Employee','Start','End','Status','Note']];
+                                                for (let d = 1; d <= total; d++) {
+                                                    const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                                                    const dayShifts = events[dk] || [];
+                                                    dayShifts.forEach(s => {
+                                                        rows.push([
+                                                            dk,
+                                                            staff[s.empId]?.name || s.empId,
+                                                            s.start || s.time || '',
+                                                            s.end || '',
+                                                            s.confirmed ? 'Confirmed' : 'Pending',
+                                                            s.note ? s.note.replace(/\n/g, ' ') : ''
+                                                        ]);
+                                                    });
+                                                }
+                                                const csv = rows.map(r => r.map(x => '"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+                                                const blob = new Blob([csv], { type: 'text/csv' });
+                                                const url = URL.createObjectURL(blob);
+                                                const a = document.createElement('a');
+                                                a.href = url;
+                                                a.download = `reception_shifts_${yIdx}_${String(mIdx+1).padStart(2,'0')}.csv`;
+                                                document.body.appendChild(a);
+                                                a.click();
+                                                setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
+                                            }}
+                                            className="bg-cyan-700 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-cyan-500 transition-all font-bold"
+                                        >Export CSV</button>
                                     </div>
                                 </div>
-                                <div className="flex gap-4 items-center">
-                                    <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2 w-48" />
-                                    <div className="flex bg-white/5 rounded-xl border border-white/10 p-1 text-white font-bold">
-                                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} className="p-2 hover:text-cyan-400 transition-colors border-r border-white/5 uppercase font-bold text-[10px]"><IconChevronL /></button>
-                                        <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} className="p-2 hover:text-cyan-400 transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
-                                    </div>
-                                    <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} className="bg-black border border-cyan-500/30 text-cyan-400 rounded-xl px-2 py-1 text-xs font-bold ml-2">
-                                        <option value="all">All</option>
-                                        <option value="confirmed">Confirmed</option>
-                                        <option value="pending">Pending</option>
-                                    </select>
-                                    <button onClick={() => window.print()} className="bg-cyan-500 text-black px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-white transition-all font-bold">Export Matrix</button>
-                                    <button onClick={exportToCalendar} className="bg-fuchsia-500 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-fuchsia-400 transition-all font-bold">Export Calendar</button>
-                                    {(isAdmin || isManager) && (
-                                        <button onClick={() => setShowAnalytics(true)} className="bg-purple-500 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-purple-400 transition-all font-bold">Analytics</button>
-                                    )}
-                                    <button
-                                        onClick={() => {
-                                            // Gather all shifts for the current month
-                                            const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
-                                            const total = new Date(yIdx, mIdx + 1, 0).getDate();
-                                            let rows = [['Date','Employee','Start','End','Status','Note']];
-                                            for (let d = 1; d <= total; d++) {
-                                                const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                                                const dayShifts = events[dk] || [];
-                                                dayShifts.forEach(s => {
-                                                    rows.push([
-                                                        dk,
-                                                        staff[s.empId]?.name || s.empId,
-                                                        s.start || s.time || '',
-                                                        s.end || '',
-                                                        s.confirmed ? 'Confirmed' : 'Pending',
-                                                        s.note ? s.note.replace(/\n/g, ' ') : ''
-                                                    ]);
-                                                });
-                                            }
-                                            const csv = rows.map(r => r.map(x => '"'+String(x).replace(/"/g,'""')+'"').join(',')).join('\r\n');
-                                            const blob = new Blob([csv], { type: 'text/csv' });
-                                            const url = URL.createObjectURL(blob);
-                                            const a = document.createElement('a');
-                                            a.href = url;
-                                            a.download = `reception_shifts_${yIdx}_${String(mIdx+1).padStart(2,'0')}.csv`;
-                                            document.body.appendChild(a);
-                                            a.click();
-                                            setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
-                                        }}
-                                        className="bg-cyan-700 text-white px-6 py-2 rounded-xl font-black text-xs uppercase shadow-lg hover:bg-cyan-500 transition-all font-bold"
-                                    >Export CSV</button>
-                                    
-                                    {/* Coverage Heatmap Legend */}
-                                    <div className="flex items-center gap-2 text-xs ml-4">
-                                        <span className="text-cyan-400 font-bold">Coverage:</span>
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 bg-red-900/40 border border-red-500/30 rounded"></div>
-                                            <span className="text-white/60">0-1</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 bg-yellow-700/40 border border-yellow-500/30 rounded"></div>
-                                            <span className="text-white/60">2-3</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-4 h-4 bg-green-700/40 border border-green-500/30 rounded"></div>
-                                            <span className="text-white/60">4+</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* Month View (Default) */}
-                            {viewMode === 'month' && (
                                 <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl font-bold">
                                     {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-cyan-400/60 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">{d}</div>)}
                                     {calendarMatrix}
                                 </div>
-                            )}
-                            
-                            {/* Week View */}
-                            {viewMode === 'week' && (
-                                <div className="glass-panel neon-blue rounded-xl p-6">
-                                    <div className="grid grid-cols-7 gap-4">
-                                        {(() => {
-                                            const today = new Date(selectedDate);
-                                            const dayOfWeek = today.getDay();
-                                            const startOfWeek = new Date(today);
-                                            startOfWeek.setDate(today.getDate() - dayOfWeek);
-                                            
-                                            return Array.from({ length: 7 }).map((_, i) => {
-                                                const date = new Date(startOfWeek);
-                                                date.setDate(startOfWeek.getDate() + i);
-                                                const dateStr = date.toISOString().split('T')[0];
-                                                const dayShifts = events[dateStr] || [];
-                                                const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i];
-                                                
-                                                return (
-                                                    <div key={i} className="bg-white/5 rounded-lg p-4 border border-cyan-500/20">
-                                                        <div className="text-center mb-4">
-                                                            <div className="text-cyan-400 font-bold text-xs">{dayName}</div>
-                                                            <div className="text-white text-2xl font-black">{date.getDate()}</div>
-                                                        </div>
-                                                        <div className="space-y-2">
-                                                            {dayShifts.length === 0 ? (
-                                                                <div className="text-xs text-rose-500 italic text-center">No shifts</div>
-                                                            ) : (
-                                                                dayShifts.map(s => (
-                                                                    <div key={s.id} className="bg-black/50 p-2 rounded border-l-4" style={{borderLeftColor: staff[s.empId]?.color || '#0891b2'}}>
-                                                                        <div className="text-white font-bold text-xs">{staff[s.empId]?.name || '...'}</div>
-                                                                        <div className="text-cyan-400 text-xs">{s.start} - {s.end}</div>
-                                                                    </div>
-                                                                ))
-                                                            )}
-                                                        </div>
-                                                        <button 
-                                                            onClick={() => { setSelectedDate(dateStr); setIsAddModalOpen(true); }}
-                                                            className="w-full mt-3 bg-cyan-600 text-white py-1 rounded text-xs font-bold hover:bg-cyan-500"
-                                                        >
-                                                            + Add Shift
-                                                        </button>
-                                                    </div>
-                                                );
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-                            )}
-                            
-                            {/* List View */}
-                            {viewMode === 'list' && (
-                                <div className="glass-panel neon-blue rounded-xl p-6">
-                                    <div className="space-y-2">
-                                        {(() => {
-                                            const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
-                                            const total = new Date(yIdx, mIdx + 1, 0).getDate();
-                                            const allShifts = [];
-                                            
-                                            for (let d = 1; d <= total; d++) {
-                                                const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                                                const dayShifts = events[dk] || [];
-                                                dayShifts.forEach(s => allShifts.push({ ...s, date: dk, dateObj: new Date(dk) }));
-                                            }
-                                            
-                                            allShifts.sort((a, b) => a.dateObj - b.dateObj);
-                                            
-                                            if (allShifts.length === 0) {
-                                                return <div className="text-center text-white/50 py-12">No shifts scheduled this month</div>;
-                                            }
-                                            
-                                            return allShifts.map((s, idx) => (
-                                                <div key={idx} className="flex items-center justify-between p-4 bg-white/5 rounded-lg border border-cyan-500/20 hover:bg-white/10 transition-all">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-center">
-                                                            <div className="text-cyan-400 text-xs font-bold">{s.dateObj.toLocaleDateString('en-US', { weekday: 'short' })}</div>
-                                                            <div className="text-white text-2xl font-black">{s.dateObj.getDate()}</div>
-                                                        </div>
-                                                        <div className="w-1 h-12 rounded" style={{backgroundColor: staff[s.empId]?.color || '#0891b2'}}></div>
-                                                        <div>
-                                                            <div className="text-white font-bold">{staff[s.empId]?.name || '...'}</div>
-                                                            <div className="text-cyan-400 text-sm">{s.start} - {s.end}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        {s.confirmed ? (
-                                                            <span className="text-green-400 text-xs font-bold">✓ Confirmed</span>
-                                                        ) : (
-                                                            <span className="text-yellow-400 text-xs font-bold">⚠ Pending</span>
-                                                        )}
-                                                        <button 
-                                                            onClick={() => setEditingShift(s)}
-                                                            className="bg-fuchsia-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-fuchsia-500"
-                                                        >
-                                                            Edit
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            ));
-                                        })()}
-                                    </div>
-                                </div>
-                            )}
-                        </main>
+                            </main>
+                        </div>
                     </div>
 
                     {/* MODAL: PERSONNEL */}
@@ -1706,17 +680,7 @@ useEffect(() => {
                                 {!window.selectedAddEmpId && (
                                     <div className="grid grid-cols-2 gap-2 mb-8">
                                         {Object.entries(staff).map(([id, s]) => (
-                                            <button 
-                                                key={id} 
-                                                draggable="true"
-                                                onDragStart={(e) => {
-                                                    setDraggedStaff({ id, name: s.name, color: s.color });
-                                                    e.dataTransfer.effectAllowed = 'move';
-                                                }}
-                                                onDragEnd={() => setDraggedStaff(null)}
-                                                onClick={() => { window.selectedAddEmpId = id; window.selectedAddEmpName = s.name; window.selectedAddEmpBg = s.bg; window.selectedAddTime = '08:00'; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} 
-                                                className={`p-4 rounded-xl text-[14px] font-black uppercase text-white ${s.bg || 'bg-slate-700'} hover:scale-105 transition-all shadow-lg font-black cursor-move`}
-                                            >
+                                            <button key={id} onClick={() => { window.selectedAddEmpId = id; window.selectedAddEmpName = s.name; window.selectedAddEmpBg = s.bg; window.selectedAddTime = '08:00'; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className={`p-4 rounded-xl text-[14px] font-black uppercase text-white ${s.bg || 'bg-slate-700'} hover:scale-105 transition-all shadow-lg font-black`}>
                                                 {String(s.name)}
                                             </button>
                                         ))}
@@ -1726,7 +690,6 @@ useEffect(() => {
                                 {window.selectedAddEmpId && (
                                     <form onSubmit={e => {
                                         e.preventDefault();
-                                        const recurring = window.selectedRecurring || 'none';
                                         const newShift = {
                                             id: `shift-${Date.now()}`,
                                             date: selectedDate,
@@ -1734,34 +697,11 @@ useEffect(() => {
                                             start: window.selectedAddStart || '08:00',
                                             end: window.selectedAddEnd || '20:00',
                                             confirmed: true,
-                                            createdAt: Date.now(),
-                                            recurring
+                                            createdAt: Date.now()
                                         };
                                         const updatedEvents = { ...events };
-                                        function addShift(dateStr) {
-                                            if (!updatedEvents[dateStr]) updatedEvents[dateStr] = [];
-                                            updatedEvents[dateStr].push({ ...newShift, date: dateStr, id: `shift-${Date.now()}-${dateStr}` });
-                                        }
-                                        if (recurring === 'none') {
-                                            addShift(selectedDate);
-                                        } else {
-                                            // Add shift for selectedDate and future dates in month
-                                            const baseDate = new Date(selectedDate);
-                                            const year = baseDate.getFullYear();
-                                            const month = baseDate.getMonth();
-                                            const dayOfWeek = baseDate.getDay();
-                                            const daysInMonth = new Date(year, month + 1, 0).getDate();
-                                            for (let d = baseDate.getDate(); d <= daysInMonth; d++) {
-                                                const dateObj = new Date(year, month, d);
-                                                if (
-                                                    (recurring === 'daily') ||
-                                                    (recurring === 'weekly' && dateObj.getDay() === dayOfWeek)
-                                                ) {
-                                                    const dateStr = dateObj.toISOString().split('T')[0];
-                                                    addShift(dateStr);
-                                                }
-                                            }
-                                        }
+                                        if (!updatedEvents[selectedDate]) updatedEvents[selectedDate] = [];
+                                        updatedEvents[selectedDate].push(newShift);
                                         setEvents(updatedEvents);
                                         saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
                                         setIsAddModalOpen(false);
@@ -1770,53 +710,15 @@ useEffect(() => {
                                         window.selectedAddEmpBg = null;
                                         window.selectedAddStart = null;
                                         window.selectedAddEnd = null;
-                                        window.selectedRecurring = null;
                                     }} className="space-y-6">
                                         <div className="mb-4 flex items-center gap-3">
                                             <div className={`w-4 h-4 rounded-full ${window.selectedAddEmpBg || 'bg-slate-700'} shadow-white/20`} />
                                             <span className="font-black uppercase text-lg">{window.selectedAddEmpName}</span>
                                         </div>
-                                        
-                                        {/* Quick Templates */}
-                                        <div className="mb-4">
-                                            <label className="block text-xs text-cyan-400 font-bold mb-2">Quick Templates</label>
-                                            <div className="flex gap-2 flex-wrap">
-                                                {shiftTemplates.map(tmpl => (
-                                                    <button
-                                                        key={tmpl.id}
-                                                        type="button"
-                                                        onClick={() => {
-                                                            window.selectedAddStart = tmpl.start;
-                                                            window.selectedAddEnd = tmpl.end;
-                                                            setIsAddModalOpen(false);
-                                                            setTimeout(() => setIsAddModalOpen(true), 10);
-                                                        }}
-                                                        className="px-3 py-1 bg-fuchsia-600/30 hover:bg-fuchsia-600 border border-fuchsia-500/50 rounded-lg text-xs font-bold text-white transition-all"
-                                                    >
-                                                        {tmpl.name}
-                                                    </button>
-                                                ))}
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setShowTemplateModal(true)}
-                                                    className="px-3 py-1 bg-cyan-600/30 hover:bg-cyan-600 border border-cyan-500/50 rounded-lg text-xs font-bold text-white transition-all"
-                                                    title="Manage templates"
-                                                >
-                                                    ⚙️
-                                                </button>
-                                            </div>
-                                        </div>
-                                        
                                         <label className="block text-xs text-cyan-400 font-bold mb-1">Start Time</label>
                                         <input type="time" value={window.selectedAddStart || '08:00'} onChange={e => { window.selectedAddStart = e.target.value; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="w-full bg-black border border-cyan-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black" required />
                                         <label className="block text-xs text-cyan-400 font-bold mb-1">End Time</label>
                                         <input type="time" value={window.selectedAddEnd || '20:00'} onChange={e => { window.selectedAddEnd = e.target.value; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="w-full bg-black border border-cyan-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black" required />
-                                        <label className="block text-xs text-cyan-400 font-bold mb-1">Recurring</label>
-                                        <select value={window.selectedRecurring || 'none'} onChange={e => { window.selectedRecurring = e.target.value; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="w-full bg-black border border-cyan-500/40 rounded-xl p-2 text-center text-lg text-white outline-none shadow-inner font-bold mb-4">
-                                            <option value="none">No Repeat</option>
-                                            <option value="daily">Every Day (this month)</option>
-                                            <option value="weekly">Every Weekday (this month)</option>
-                                        </select>
                                         <div className="flex gap-3 mt-6">
                                             <button type="submit" className="flex-1 bg-cyan-600 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg transition-all hover:bg-cyan-500 font-bold tracking-widest">Assign Shift</button>
                                             <button type="button" onClick={() => { window.selectedAddEmpId = null; window.selectedAddEmpName = null; window.selectedAddEmpBg = null; window.selectedAddStart = null; window.selectedAddEnd = null; setIsAddModalOpen(false); setTimeout(() => setIsAddModalOpen(true), 10); }} className="flex-1 bg-slate-700 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg transition-all hover:bg-slate-600 font-bold tracking-widest">Back</button>
@@ -1841,8 +743,7 @@ useEffect(() => {
                                     if (shiftIndex !== -1) {
                                         dateShifts[shiftIndex] = {
                                             ...dateShifts[shiftIndex],
-                                            start: window.editingShiftStart || editingShift.start || '',
-                                            end: window.editingShiftEnd || editingShift.end || '',
+                                            time: window.editingShiftTime || editingShift.time,
                                             note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || ''),
                                             confirmed: editingShift.confirmed
                                         };
@@ -1851,8 +752,7 @@ useEffect(() => {
                                         setEditingShift({ ...editingShift, time: window.editingShiftTime || editingShift.time, note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || '') });
                                         saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
                                     }
-                                    window.editingShiftStart = null;
-                                    window.editingShiftEnd = null;
+                                    window.editingShiftTime = null;
                                     window.editingShiftNote = null;
                                     setEditingShift(null);
                                 }} className="space-y-6 text-center font-bold">
@@ -1869,10 +769,8 @@ useEffect(() => {
                                         }
                                     }} className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}>{editingShift.confirmed ? 'Link: Verified' : 'Link: Lost'}</button>
                                     <div className="text-left">
-                                        <label className="block text-xs text-fuchsia-400 font-bold mb-1">Start Time</label>
-                                        <input type="time" defaultValue={editingShift.start || ''} onChange={e => { window.editingShiftStart = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
-                                        <label className="block text-xs text-fuchsia-400 font-bold mb-1">End Time</label>
-                                        <input type="time" defaultValue={editingShift.end || ''} onChange={e => { window.editingShiftEnd = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
+                                        <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Time</label>
+                                        <input type="time" defaultValue={editingShift.time} onChange={e => { window.editingShiftTime = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Note</label>
                                         <textarea defaultValue={editingShift.note || ''} onChange={e => { window.editingShiftNote = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-left text-base text-white outline-none shadow-inner font-bold min-h-[60px]" placeholder="Optional note..." />
                                     </div>
@@ -1893,567 +791,12 @@ useEffect(() => {
                             </div>
                         </div>
                     )}
-
-                    {/* Analytics Modal */}
-                    {showAnalytics && (
-                        <div className="fixed inset-0 bg-black/80 z-[1000] flex items-center justify-center">
-                            <div className="glass-panel neon-blue p-8 w-full max-w-2xl flex flex-col gap-6 max-h-[90vh] overflow-y-auto">
-                                <div className="flex justify-between items-center">
-                                    <h2 className="text-2xl font-black text-cyan-400 uppercase tracking-tighter">Analytics Dashboard</h2>
-                                    <button onClick={() => setShowAnalytics(false)} className="text-3xl hover:text-white">&times;</button>
-                                </div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    <div className="glass-panel p-4 text-center">
-                                        <div className="text-4xl font-black text-cyan-400">{analytics.totalHours.toFixed(1)}</div>
-                                        <div className="text-xs mt-2 text-slate-400">Total Hours</div>
-                                    </div>
-                                    <div className="glass-panel p-4 text-center">
-                                        <div className="text-4xl font-black text-fuchsia-400">{analytics.coverageGaps}</div>
-                                        <div className="text-xs mt-2 text-slate-400">Coverage Gaps</div>
-                                    </div>
-                                    <div className="glass-panel p-4 text-center">
-                                        <div className="text-4xl font-black text-purple-400">{Object.keys(analytics.stats).length}</div>
-                                        <div className="text-xs mt-2 text-slate-400">Active Staff</div>
-                                    </div>
-                                </div>
-                                <h3 className="text-lg font-black text-cyan-400 mt-4">Hours by Employee</h3>
-                                {Object.values(analytics.stats).sort((a, b) => b.hours - a.hours).map(s => (
-                                    <div key={s.name} className="flex justify-between items-center p-3 glass-panel">
-                                        <span className="font-bold">{s.name}</span>
-                                        <div className="flex gap-4">
-                                            <span className="text-cyan-400">{s.hours.toFixed(1)} hrs</span>
-                                            <span className="text-slate-400">{s.shifts} shifts</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Panic Alert Modal */}
-                    {showPanicAlert && (
-                        <div className="fixed inset-0 bg-red-900/90 flex items-center justify-center p-4 z-[2000] animate-pulse">
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-md w-full border-4 border-red-500" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-red-500 bg-red-600">
-                                    <h2 className="text-3xl font-black text-white flex items-center gap-3">
-                                        🚨 EMERGENCY ALERT ACTIVE
-                                    </h2>
-                                </div>
-                                
-                                <div className="p-6 space-y-4">
-                                    <div className="bg-red-900/50 p-4 rounded-lg border border-red-500">
-                                        <div className="text-white font-bold text-lg mb-2">Alert Sent:</div>
-                                        <div className="text-red-200 text-sm space-y-1">
-                                            <div>📍 Location: Reception Desk</div>
-                                            <div>👤 Initiated by: {user.email}</div>
-                                            <div>🕐 Time: {new Date().toLocaleTimeString()}</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="bg-yellow-900/50 p-4 rounded-lg border border-yellow-500">
-                                        <div className="text-yellow-200 font-bold mb-2">📞 Emergency Contacts:</div>
-                                        <div className="text-white text-sm space-y-1">
-                                            <div>Security: <span className="font-black">Ext 2222</span></div>
-                                            <div>Charge Nurse: <span className="font-black">Ext 3333</span></div>
-                                            <div>Admin on Duty: <span className="font-black">Ext 4444</span></div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="flex gap-3">
-                                        <button
-                                            onClick={() => setShowPanicAlert(false)}
-                                            className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg text-lg"
-                                        >
-                                            Close Alert
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* De-escalation Scripts Modal */}
-                    {showDeescalation && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowDeescalation(false)}>
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-purple-500/30 sticky top-0 bg-gray-900">
-                                    <h2 className="text-2xl font-black text-purple-400">💬 Crisis De-escalation Guide</h2>
-                                    <button 
-                                        onClick={() => setShowDeescalation(false)}
-                                        className="absolute top-4 right-4 text-white hover:text-purple-400 text-2xl"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                
-                                <div className="p-6 space-y-4">
-                                    <div className="bg-purple-900/20 p-4 rounded-lg border border-purple-500/30">
-                                        <h3 className="text-lg font-bold text-purple-400 mb-3">🎯 Core Principles</h3>
-                                        <ul className="text-white text-sm space-y-2 list-disc list-inside">
-                                            <li>Stay calm - your tone sets the tone</li>
-                                            <li>Maintain safe distance (arm's length minimum)</li>
-                                            <li>Use open body language, avoid crossed arms</li>
-                                            <li>Listen actively, validate feelings</li>
-                                            <li>Never argue or take things personally</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div className="bg-green-900/20 p-4 rounded-lg border border-green-500/30">
-                                        <h3 className="text-lg font-bold text-green-400 mb-3">✅ Calming Phrases</h3>
-                                        <div className="space-y-2 text-sm">
-                                            <div className="bg-black/30 p-3 rounded text-green-200">
-                                                "I can see this is really frustrating for you. Let's work through this together."
-                                            </div>
-                                            <div className="bg-black/30 p-3 rounded text-green-200">
-                                                "You're right to feel upset. Help me understand what happened."
-                                            </div>
-                                            <div className="bg-black/30 p-3 rounded text-green-200">
-                                                "I want to help you. Can you tell me more about what you need?"
-                                            </div>
-                                            <div className="bg-black/30 p-3 rounded text-green-200">
-                                                "Let's take a moment to breathe and figure this out."
-                                            </div>
-                                            <div className="bg-black/30 p-3 rounded text-green-200">
-                                                "I hear you. Let me see what I can do to help."
-                                            </div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="bg-red-900/20 p-4 rounded-lg border border-red-500/30">
-                                        <h3 className="text-lg font-bold text-red-400 mb-3">🚫 Avoid Saying</h3>
-                                        <ul className="text-red-200 text-sm space-y-2 list-disc list-inside">
-                                            <li>"Calm down" or "Relax"</li>
-                                            <li>"You need to..." (commands)</li>
-                                            <li>"That's not true" or "You're wrong"</li>
-                                            <li>"There's nothing I can do"</li>
-                                            <li>Anything dismissive or condescending</li>
-                                        </ul>
-                                    </div>
-                                    
-                                    <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/30">
-                                        <h3 className="text-lg font-bold text-yellow-400 mb-3">⚠️ When to Call for Backup</h3>
-                                        <ul className="text-yellow-200 text-sm space-y-2 list-disc list-inside">
-                                            <li>Aggressive body language or threats</li>
-                                            <li>Verbal escalation despite de-escalation attempts</li>
-                                            <li>Any physical contact</li>
-                                            <li>Weapons or contraband visible</li>
-                                            <li>Your gut says it's unsafe</li>
-                                        </ul>
-                                        <div className="mt-3 bg-yellow-700 p-2 rounded text-black font-bold text-center">
-                                            🆘 Security: Ext 2222
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Kudos Wall Modal */}
-                    {showKudos && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowKudos(false)}>
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-pink-500/30 sticky top-0 bg-gray-900">
-                                    <h2 className="text-2xl font-black text-pink-400">💖 Team Kudos Wall</h2>
-                                    <p className="text-sm text-pink-300 mt-1">Spread the love and appreciation!</p>
-                                    <button 
-                                        onClick={() => setShowKudos(false)}
-                                        className="absolute top-4 right-4 text-white hover:text-pink-400 text-2xl"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                
-                                <div className="p-6">
-                                    <form onSubmit={(e) => {
-                                        e.preventDefault();
-                                        const formData = new FormData(e.target);
-                                        const kudo = {
-                                            id: Date.now(),
-                                            from: user.email,
-                                            to: formData.get('to'),
-                                            message: formData.get('message'),
-                                            timestamp: new Date().toISOString()
-                                        };
-                                        const updated = [kudo, ...kudosWall];
-                                        setKudosWall(updated);
-                                        saveToStorage('kudos_wall', updated);
-                                        showNotification('💖 Kudos sent!');
-                                        e.target.reset();
-                                    }} className="mb-6 space-y-3 bg-pink-900/20 p-4 rounded-lg border border-pink-500/30">
-                                        <input 
-                                            name="to"
-                                            placeholder="Who are you appreciating?"
-                                            className="w-full bg-black/50 border border-pink-500/30 rounded-lg p-3 text-white"
-                                            required
-                                        />
-                                        <textarea 
-                                            name="message"
-                                            placeholder="What do you want to say? (e.g., 'Thanks for covering my shift!' or 'You handled that crisis amazingly!')"
-                                            className="w-full bg-black/50 border border-pink-500/30 rounded-lg p-3 text-white h-20 resize-none"
-                                            required
-                                        />
-                                        <button type="submit" className="w-full bg-pink-600 hover:bg-pink-500 text-white font-bold py-2 rounded-lg">
-                                            Send Kudos 💖
-                                        </button>
-                                    </form>
-                                    
-                                    <div className="space-y-3">
-                                        {kudosWall.length === 0 ? (
-                                            <div className="text-center text-white/50 py-8">No kudos yet. Be the first to spread some love!</div>
-                                        ) : (
-                                            kudosWall.map(kudo => (
-                                                <div key={kudo.id} className="bg-gradient-to-r from-pink-900/30 to-purple-900/30 p-4 rounded-lg border border-pink-500/30">
-                                                    <div className="flex items-start justify-between mb-2">
-                                                        <div className="font-bold text-pink-300">To: {kudo.to}</div>
-                                                        <div className="text-xs text-white/50">{new Date(kudo.timestamp).toLocaleDateString()}</div>
-                                                    </div>
-                                                    <div className="text-white mb-2">{kudo.message}</div>
-                                                    <div className="text-xs text-pink-400">- {kudo.from}</div>
-                                                </div>
-                                            ))
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Achievements Modal */}
-                    {showAchievements && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowAchievements(false)}>
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-yellow-500/30 sticky top-0 bg-gray-900">
-                                    <h2 className="text-2xl font-black text-yellow-400">🏆 Team Achievements</h2>
-                                    <p className="text-sm text-yellow-300 mt-1">Recognition for your hard work!</p>
-                                    <button 
-                                        onClick={() => setShowAchievements(false)}
-                                        className="absolute top-4 right-4 text-white hover:text-yellow-400 text-2xl"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                
-                                <div className="p-6">
-                                    <div className="mb-6 bg-gradient-to-r from-cyan-900/30 to-blue-900/30 p-4 rounded-lg border border-cyan-500/30">
-                                        <div className="text-center">
-                                            <div className="text-4xl mb-2">{motivationalQuote.text}</div>
-                                            <div className="text-cyan-400 text-sm">- {motivationalQuote.author}</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-yellow-900/20 p-4 rounded-lg border-2 border-yellow-500 text-center">
-                                            <div className="text-4xl mb-2">🌟</div>
-                                            <div className="text-yellow-400 font-bold">Early Bird</div>
-                                            <div className="text-xs text-white/70">Always on time</div>
-                                        </div>
-                                        
-                                        <div className="bg-blue-900/20 p-4 rounded-lg border-2 border-blue-500 text-center">
-                                            <div className="text-4xl mb-2">🦸</div>
-                                            <div className="text-blue-400 font-bold">Crisis Hero</div>
-                                            <div className="text-xs text-white/70">Calm under pressure</div>
-                                        </div>
-                                        
-                                        <div className="bg-green-900/20 p-4 rounded-lg border-2 border-green-500 text-center">
-                                            <div className="text-4xl mb-2">🤝</div>
-                                            <div className="text-green-400 font-bold">Team Player</div>
-                                            <div className="text-xs text-white/70">Always helps others</div>
-                                        </div>
-                                        
-                                        <div className="bg-purple-900/20 p-4 rounded-lg border-2 border-purple-500 text-center">
-                                            <div className="text-4xl mb-2">📝</div>
-                                            <div className="text-purple-400 font-bold">Detail Master</div>
-                                            <div className="text-xs text-white/70">Perfect shift reports</div>
-                                        </div>
-                                        
-                                        <div className="bg-pink-900/20 p-4 rounded-lg border-2 border-pink-500 text-center">
-                                            <div className="text-4xl mb-2">💪</div>
-                                            <div className="text-pink-400 font-bold">Iron Person</div>
-                                            <div className="text-xs text-white/70">30 days streak</div>
-                                        </div>
-                                        
-                                        <div className="bg-red-900/20 p-4 rounded-lg border-2 border-red-500 text-center">
-                                            <div className="text-4xl mb-2">🔥</div>
-                                            <div className="text-red-400 font-bold">Hot Streak</div>
-                                            <div className="text-xs text-white/70">Most shifts this month</div>
-                                        </div>
-                                    </div>
-                                    
-                                    <div className="mt-6 bg-white/5 p-4 rounded-lg text-center">
-                                        <div className="text-cyan-400 font-bold mb-2">🎉 Team Stats</div>
-                                        <div className="text-white text-sm space-y-1">
-                                            <div>Total Shifts This Month: <span className="font-black text-cyan-400">{Object.values(events).flat().length}</span></div>
-                                            <div>Team Members: <span className="font-black text-cyan-400">{Object.keys(staff).length}</span></div>
-                                            <div>Kudos Shared: <span className="font-black text-pink-400">{kudosWall.length}</span></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Report History Modal */}
-                    {showReportHistory && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowReportHistory(false)}>
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-cyan-500/30 sticky top-0 bg-gray-900">
-                                    <h2 className="text-2xl font-black text-cyan-400">📜 Shift Report History</h2>
-                                    <button 
-                                        onClick={() => setShowReportHistory(false)}
-                                        className="absolute top-4 right-4 text-white hover:text-cyan-400 text-2xl"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                
-                                <div className="p-6">
-                                    <div className="space-y-4">
-                                        {(() => {
-                                            const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
-                                            const reportDates = Object.keys(allReports).sort().reverse();
-                                            
-                                            if (reportDates.length === 0) {
-                                                return <div className="text-center text-white/50 py-12">No shift reports found</div>;
-                                            }
-                                            
-                                            return reportDates.slice(0, 30).map(date => {
-                                                const report = allReports[date];
-                                                const priority = loadFromStorage('report_priority_' + date, 'normal');
-                                                const hasContent = Object.values(report).some(v => v && String(v).trim());
-                                                
-                                                if (!hasContent) return null;
-                                                
-                                                return (
-                                                    <div key={date} className="bg-gray-800/50 rounded-lg border border-cyan-500/20 p-4">
-                                                        <div className="flex items-center justify-between mb-3">
-                                                            <div className="flex items-center gap-3">
-                                                                <div className={`px-3 py-1 rounded-lg text-xs font-bold uppercase ${
-                                                                    priority === 'urgent' ? 'bg-red-600' :
-                                                                    priority === 'important' ? 'bg-yellow-600 text-black' :
-                                                                    'bg-green-600'
-                                                                }`}>
-                                                                    {priority === 'urgent' ? '🚨' : priority === 'important' ? '⚠️' : '✅'} {priority}
-                                                                </div>
-                                                                <div className="text-white font-bold">{new Date(date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</div>
-                                                            </div>
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedDate(date);
-                                                                    setShowReportHistory(false);
-                                                                }}
-                                                                className="bg-cyan-600 hover:bg-cyan-500 text-white px-3 py-1 rounded text-xs font-bold"
-                                                            >
-                                                                View Day
-                                                            </button>
-                                                        </div>
-                                                        <div className="space-y-2 text-sm">
-                                                            {REPORT_FIELDS.filter(f => report[f.id] && String(report[f.id]).trim()).map(f => (
-                                                                <div key={f.id}>
-                                                                    <div className="text-cyan-400 font-bold text-xs mb-1">{f.label}</div>
-                                                                    <div className="text-white/80 text-xs bg-black/30 p-2 rounded">{String(report[f.id]).substring(0, 150)}{String(report[f.id]).length > 150 ? '...' : ''}</div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            });
-                                        })()}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Shift Template Manager Modal */}
-                    {showTemplateModal && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowTemplateModal(false)}>
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-md w-full" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-cyan-500/30">
-                                    <h2 className="text-xl font-black text-cyan-400">Shift Templates</h2>
-                                    <button 
-                                        onClick={() => setShowTemplateModal(false)}
-                                        className="absolute top-4 right-4 text-white hover:text-cyan-400 text-2xl"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                
-                                <div className="p-6">
-                                    <div className="space-y-3 mb-6">
-                                        {shiftTemplates.map((tmpl, idx) => (
-                                            <div key={tmpl.id} className="flex items-center gap-3 p-3 bg-gray-800/50 rounded-lg border border-cyan-500/20">
-                                                <input
-                                                    type="text"
-                                                    value={tmpl.name}
-                                                    onChange={(e) => {
-                                                        const updated = [...shiftTemplates];
-                                                        updated[idx].name = e.target.value;
-                                                        setShiftTemplates(updated);
-                                                        saveToStorage('shift_templates', updated);
-                                                    }}
-                                                    className="flex-1 bg-transparent border-none text-white font-semibold outline-none"
-                                                />
-                                                <input
-                                                    type="time"
-                                                    value={tmpl.start}
-                                                    onChange={(e) => {
-                                                        const updated = [...shiftTemplates];
-                                                        updated[idx].start = e.target.value;
-                                                        setShiftTemplates(updated);
-                                                        saveToStorage('shift_templates', updated);
-                                                    }}
-                                                    className="bg-black/50 border border-cyan-500/30 rounded px-2 py-1 text-white text-sm"
-                                                />
-                                                <span className="text-cyan-400">-</span>
-                                                <input
-                                                    type="time"
-                                                    value={tmpl.end}
-                                                    onChange={(e) => {
-                                                        const updated = [...shiftTemplates];
-                                                        updated[idx].end = e.target.value;
-                                                        setShiftTemplates(updated);
-                                                        saveToStorage('shift_templates', updated);
-                                                    }}
-                                                    className="bg-black/50 border border-cyan-500/30 rounded px-2 py-1 text-white text-sm"
-                                                />
-                                                <button
-                                                    onClick={() => {
-                                                        const updated = shiftTemplates.filter((_, i) => i !== idx);
-                                                        setShiftTemplates(updated);
-                                                        saveToStorage('shift_templates', updated);
-                                                    }}
-                                                    className="text-red-400 hover:text-red-300 text-xl"
-                                                >
-                                                    ×
-                                                </button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    
-                                    <button
-                                        onClick={() => {
-                                            const newTemplate = {
-                                                id: 't' + Date.now(),
-                                                name: 'New Template',
-                                                start: '09:00',
-                                                end: '17:00'
-                                            };
-                                            const updated = [...shiftTemplates, newTemplate];
-                                            setShiftTemplates(updated);
-                                            saveToStorage('shift_templates', updated);
-                                        }}
-                                        className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg transition-all"
-                                    >
-                                        + Add Template
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Analytics Dashboard Modal */}
-                    {showAnalytics && (
-                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-[1300]" onClick={() => setShowAnalytics(false)}>
-                            <div className="bg-gray-900 rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                                <div className="p-6 border-b border-cyan-500/30">
-                                    <h2 className="text-2xl font-black text-cyan-400">Analytics Dashboard</h2>
-                                    <button 
-                                        onClick={() => setShowAnalytics(false)}
-                                        className="absolute top-4 right-4 text-white hover:text-cyan-400 text-2xl"
-                                    >
-                                        ×
-                                    </button>
-                                </div>
-                                
-                                <div className="p-6 space-y-6">
-                                    {/* Summary Cards */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                        <div className="bg-cyan-900/20 p-4 rounded-lg border border-cyan-500/30">
-                                            <div className="text-cyan-400 text-sm font-bold mb-2">Total Shifts</div>
-                                            <div className="text-3xl font-black text-white">{analytics.totalShifts}</div>
-                                        </div>
-                                        <div className="bg-fuchsia-900/20 p-4 rounded-lg border border-fuchsia-500/30">
-                                            <div className="text-fuchsia-400 text-sm font-bold mb-2">Total Hours</div>
-                                            <div className="text-3xl font-black text-white">{analytics.totalHours.toFixed(1)}</div>
-                                        </div>
-                                        <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/30">
-                                            <div className="text-yellow-400 text-sm font-bold mb-2">Coverage Gaps</div>
-                                            <div className="text-3xl font-black text-white">{analytics.coverageGaps}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Hours by Employee */}
-                                    <div className="bg-gray-800/50 p-4 rounded-lg border border-cyan-500/20">
-                                        <h3 className="text-lg font-bold text-cyan-400 mb-3">Hours by Employee</h3>
-                                        <div className="space-y-2">
-                                            {analytics.employeeStats.map(emp => (
-                                                <div key={emp.name} className="flex items-center justify-between p-2 bg-gray-900/50 rounded">
-                                                    <span className="text-white font-semibold">{emp.name}</span>
-                                                    <div className="flex items-center gap-4">
-                                                        <span className="text-cyan-400 text-sm">{emp.shifts} shifts</span>
-                                                        <span className="text-fuchsia-400 font-bold">{emp.hours.toFixed(1)} hrs</span>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Coverage Report */}
-                                    {analytics.coverageGaps > 0 && (
-                                        <div className="bg-yellow-900/20 p-4 rounded-lg border border-yellow-500/30">
-                                            <h3 className="text-lg font-bold text-yellow-400 mb-2">⚠ Coverage Gaps Detected</h3>
-                                            <p className="text-white text-sm">There are {analytics.coverageGaps} days with less than 2 staff members scheduled. Consider adding more shifts to improve coverage.</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Admin Panel: Audit Log & Role Editor */}
-                    {(isAdmin || isAdminAuth) && (
-                        <div className="fixed left-0 top-0 z-[1200] w-96 bg-black/90 p-4 text-white shadow-xl overflow-y-auto max-h-screen">
-                            <h3 className="text-lg font-black text-cyan-400 mb-4">Admin Panel</h3>
-                            
-                            {/* Role Editor */}
-                            <div className="mb-6 p-3 bg-fuchsia-900/20 rounded">
-                                <h4 className="text-md font-black text-fuchsia-400 mb-3">User Roles</h4>
-                                {Object.entries(staff).map(([id, s]) => (
-                                    <div key={id} className="mb-2 flex items-center justify-between">
-                                        <span className="text-xs">{s.name}</span>
-                                        <select 
-                                            defaultValue="staff" 
-                                            onChange={e => setRoleForUser(id, e.target.value)} 
-                                            className="bg-black border border-cyan-500/30 rounded p-1 text-xs text-white"
-                                        >
-                                            <option value="admin">Admin</option>
-                                            <option value="manager">Manager</option>
-                                            <option value="staff">Staff</option>
-                                        </select>
-                                    </div>
-                                ))}
-                            </div>
-                            
-                            {/* Audit Log */}
-                            <h4 className="text-md font-black text-cyan-400 mb-2">Recent Activity</h4>
-                            {typeof auditLog !== 'undefined' && auditLog.length === 0 ? (
-                                <div className="text-xs text-slate-400">No recent activity.</div>
-                            ) : typeof auditLog !== 'undefined' ? (
-                                auditLog.map((log, i) => (
-                                    <div key={i} className="mb-3 p-2 rounded bg-cyan-900/30">
-                                        <div className="font-bold text-xs mb-1">{log.user} ({log.action})</div>
-                                        <div className="text-xs mb-1">{new Date(log.timestamp).toLocaleString()}</div>
-                                        <div className="text-xs break-words max-w-full overflow-hidden">{JSON.stringify(log.details).substring(0, 100)}...</div>
-                                    </div>
-                                ))
-                            ) : null}
-                        </div>
-                    )}
                 </div>
             );
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
     </script>
 </body>
 </html>
