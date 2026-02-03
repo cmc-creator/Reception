@@ -1,10 +1,10 @@
 // Service Worker for Offline Support
-const CACHE_NAME = 'reception-calendar-v1';
+const CACHE_NAME = 'reception-calendar-v2';
 const urlsToCache = [
   './',
   './index.html',
-  'https://unpkg.com/react@17/umd/react.production.min.js',
-  'https://unpkg.com/react-dom@17/umd/react-dom.production.min.js',
+  'https://unpkg.com/react@18/umd/react.production.min.js',
+  'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
   'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
