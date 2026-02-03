@@ -19,16 +19,19 @@
     
     <style>
         /* ═══════════════════════════════════════════════════════
-           MODERN STEAMPUNK CONTROL TERMINAL AESTHETIC
+           AIRSHIP CONTROL TERMINAL - INDUSTRIAL STEAMPUNK
            ═══════════════════════════════════════════════════════ */
         
         :root {
             --charcoal: #1a1a1b;
             --copper: #b87333;
+            --copper-dark: #8b5a2b;
             --cyan: #00f3ff;
             --copper-glow: rgba(184, 115, 51, 0.6);
             --cyan-glow: rgba(0, 243, 255, 0.8);
-            --grid-line: rgba(0, 243, 255, 0.2);
+            --grid-line: rgba(0, 243, 255, 0.15);
+            --rivet-color: #5a4a3a;
+            --panel-edge: #2a2a2b;
         }
         
         * {
@@ -37,14 +40,100 @@
         
         body[data-theme="steampunk"],
         body[data-theme="dark"] {
-            background: #1a1a1b;
+            background: radial-gradient(ellipse at top, #2a1a1a 0%, #1a1a1b 50%, #0a0a0b 100%);
             color: #e0e0e0;
             font-family: 'JetBrains Mono', monospace;
+            overflow: hidden;
         }
         
         body[data-theme="light"] {
             background: #f4f7fa;
             color: #18182f;
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           RIVETS & INDUSTRIAL ELEMENTS
+           ═══════════════════════════════════════════════════════ */
+        .rivet {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #6a5a4a, var(--rivet-color) 60%, #3a2a1a);
+            box-shadow: 
+                inset 0 1px 2px rgba(0,0,0,0.8),
+                0 1px 1px rgba(255,255,255,0.2);
+        }
+        
+        .corner-bracket {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--copper);
+            box-shadow: 0 0 10px var(--copper-glow);
+        }
+        
+        .corner-bracket.top-left {
+            top: -2px;
+            left: -2px;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        .corner-bracket.top-right {
+            top: -2px;
+            right: -2px;
+            border-left: none;
+            border-bottom: none;
+        }
+        
+        .corner-bracket.bottom-left {
+            bottom: -2px;
+            left: -2px;
+            border-right: none;
+            border-top: none;
+        }
+        
+        .corner-bracket.bottom-right {
+            bottom: -2px;
+            right: -2px;
+            border-left: none;
+            border-top: none;
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           INDUSTRIAL PANEL SYSTEM
+           ═══════════════════════════════════════════════════════ */
+        .industrial-panel {
+            background: 
+                linear-gradient(135deg, rgba(26, 26, 27, 0.98) 0%, rgba(35, 30, 28, 0.95) 100%);
+            border: 2px solid var(--copper);
+            position: relative;
+            box-shadow: 
+                0 0 20px var(--copper-glow),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -2px 5px rgba(0, 0, 0, 0.6),
+                inset 2px 0 3px rgba(0, 0, 0, 0.4),
+                inset -2px 0 3px rgba(0, 0, 0, 0.4);
+        }
+        
+        .industrial-panel::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid rgba(184, 115, 51, 0.3);
+            pointer-events: none;
+        }
+        
+        .industrial-panel::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
+            pointer-events: none;
         }
         
         /* ═══════════════════════════════════════════════════════
@@ -140,152 +229,304 @@
         }
         
         /* ═══════════════════════════════════════════════════════
-           BUTTONS - Metallic Tactile Switches
+           MECHANICAL LEVER SWITCHES
            ═══════════════════════════════════════════════════════ */
         .fancy-btn {
-            background: linear-gradient(180deg, 
-                #b87333 0%, 
-                #8b5a2b 50%, 
-                #6b4423 100%);
-            color: #1a1a1b;
-            border: 1px solid rgba(184, 115, 51, 0.8);
-            border-radius: 2px;
+            background: 
+                linear-gradient(135deg, #2a2a2b 0%, #1a1a1b 50%, #0a0a0b 100%),
+                linear-gradient(180deg, var(--copper-dark) 0%, var(--copper) 100%);
+            background-clip: padding-box, border-box;
+            background-origin: padding-box, border-box;
+            color: var(--cyan);
+            border: 3px solid transparent;
+            border-radius: 0;
             font-weight: 900;
-            letter-spacing: 0.12em;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            padding: 8px 16px;
-            box-shadow: 
-                0 0 15px var(--copper-glow),
-                inset 0 1px 0 rgba(255, 255, 255, 0.4),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
-            transition: all 0.2s ease;
+            padding: 12px 24px;
             position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 20px var(--copper-glow),
+                0 4px 0 var(--copper-dark),
+                0 6px 10px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 3px rgba(0, 0, 0, 0.5);
+            transition: all 0.15s ease;
+            text-shadow: 0 0 10px var(--cyan-glow);
         }
         
         .fancy-btn::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 50%;
-            background: linear-gradient(180deg, 
-                rgba(255, 255, 255, 0.2), 
-                transparent);
-            border-radius: 2px 2px 0 0;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, 
+                var(--cyan) 0%, 
+                var(--copper) 25%, 
+                var(--cyan) 50%, 
+                var(--copper) 75%, 
+                var(--cyan) 100%);
+            background-size: 400% 400%;
+            animation: borderGlow 3s ease infinite;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: -1;
+        }
+        
+        .fancy-btn::after {
+            content: '';
+            position: absolute;
+            inset: 3px;
+            background: linear-gradient(135deg, #2a2a2b 0%, #1a1a1b 100%);
+            z-index: -1;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .fancy-btn:hover::before {
+            opacity: 1;
         }
         
         .fancy-btn:hover {
-            background: linear-gradient(180deg, 
-                #d4903f 0%, 
-                #b87333 50%, 
-                #8b5a2b 100%);
-            color: var(--cyan);
-            text-shadow: 0 0 5px var(--cyan);
+            transform: translateY(-2px);
             box-shadow: 
-                0 0 20px var(--copper-glow),
                 0 0 30px var(--cyan-glow),
-                inset 0 1px 0 rgba(255, 255, 255, 0.5),
-                inset 0 -2px 4px rgba(0, 0, 0, 0.5);
-            transform: translateY(-1px);
+                0 0 40px var(--copper-glow),
+                0 6px 0 var(--copper-dark),
+                0 8px 15px rgba(0, 0, 0, 0.9),
+                inset 0 0 20px rgba(0, 243, 255, 0.2);
         }
         
         .fancy-btn:active {
-            transform: translateY(0);
-            box-shadow: 
-                0 0 10px var(--copper-glow),
-                inset 0 2px 4px rgba(0, 0, 0, 0.6);
-        }
-        
-        /* ═══════════════════════════════════════════════════════
-           SHIFT CARDS
-           ═══════════════════════════════════════════════════════ */
-        .shift-card {
-            background: rgba(26, 26, 27, 0.9);
-            border: 1px solid var(--copper);
-            border-radius: 2px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6),
-                        0 0 10px var(--copper-glow);
-            transition: all 0.2s ease;
-        }
-        .shift-card:hover {
-            border-color: var(--cyan);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8),
-                        0 0 15px var(--cyan-glow);
-            transform: translateY(-2px);
-        }
-        
-        /* ═══════════════════════════════════════════════════════
-           TOP BAR - Control Panel Header
-           ═══════════════════════════════════════════════════════ */
-        .topbar {
-            height: 60px;
-            background: linear-gradient(180deg, 
-                rgba(26, 26, 27, 1) 0%, 
-                rgba(20, 20, 21, 0.98) 100%);
-            border-bottom: 1px solid var(--copper);
+            transform: translateY(2px);
             box-shadow: 
                 0 0 15px var(--copper-glow),
-                0 4px 20px rgba(0, 0, 0, 0.6);
+                0 2px 0 var(--copper-dark),
+                inset 0 3px 8px rgba(0, 0, 0, 0.8);
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           METAL SHIFT PLATES
+           ═══════════════════════════════════════════════════════ */
+        .shift-card {
+            background: 
+                linear-gradient(135deg, 
+                    rgba(40, 35, 30, 0.95) 0%, 
+                    rgba(26, 26, 27, 0.98) 50%, 
+                    rgba(20, 18, 16, 0.95) 100%);
+            border: 2px solid var(--copper);
+            border-radius: 0;
             position: relative;
+            overflow: hidden;
+            box-shadow: 
+                0 0 15px var(--copper-glow),
+                0 3px 0 var(--copper-dark),
+                0 5px 10px rgba(0, 0, 0, 0.8),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 2px 2px 4px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s ease;
+        }
+        
+        .shift-card::before {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #6a5a4a, var(--rivet-color));
+            box-shadow: 
+                inset 0 1px 2px rgba(0,0,0,0.8),
+                0 0 0 1px rgba(184, 115, 51, 0.3);
+        }
+        
+        .shift-card::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #6a5a4a, var(--rivet-color));
+            box-shadow: 
+                inset 0 1px 2px rgba(0,0,0,0.8),
+                0 0 0 1px rgba(184, 115, 51, 0.3);
+        }
+        
+        .shift-card:hover {
+            border-color: var(--cyan);
+            box-shadow: 
+                0 0 25px var(--cyan-glow),
+                0 0 35px var(--copper-glow),
+                0 4px 0 var(--copper-dark),
+                0 6px 15px rgba(0, 0, 0, 0.9),
+                inset 0 0 15px rgba(0, 243, 255, 0.15);
+            transform: translateY(-3px);
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           COMMAND DECK - Top Bar
+           ═══════════════════════════════════════════════════════ */
+        .topbar {
+            height: 70px;
+            background: 
+                linear-gradient(135deg, rgba(30, 25, 23, 0.98) 0%, rgba(26, 26, 27, 1) 100%);
+            border-bottom: 3px solid var(--copper);
+            position: relative;
+            box-shadow: 
+                0 0 25px var(--copper-glow),
+                0 5px 20px rgba(0, 0, 0, 0.7),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -2px 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        .topbar::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 30%;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), transparent);
         }
         
         .topbar::after {
             content: '';
             position: absolute;
-            bottom: 0;
+            bottom: -3px;
             left: 0;
             right: 0;
-            height: 1px;
+            height: 2px;
             background: linear-gradient(90deg, 
-                transparent, 
-                var(--cyan) 50%, 
-                transparent);
-            opacity: 0.5;
+                transparent 0%,
+                var(--cyan) 20%,
+                var(--copper) 50%,
+                var(--cyan) 80%,
+                transparent 100%);
+            animation: scanline 4s linear infinite;
+        }
+        
+        @keyframes scanline {
+            0% { opacity: 0.3; transform: translateX(-100%); }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; transform: translateX(100%); }
         }
         
         /* ═══════════════════════════════════════════════════════
-           SIDEBAR - Technical Manual Panel
+           OPERATIONS PANEL - Sidebar
            ═══════════════════════════════════════════════════════ */
         .sidebar-panel {
-            background: linear-gradient(180deg, 
-                rgba(20, 20, 21, 0.98) 0%, 
-                rgba(26, 26, 27, 0.95) 100%);
-            border-right: 1px solid var(--copper);
+            background: 
+                linear-gradient(180deg, 
+                    rgba(25, 22, 20, 0.98) 0%, 
+                    rgba(20, 20, 21, 0.95) 50%,
+                    rgba(26, 26, 27, 0.98) 100%);
+            border-right: 3px solid var(--copper);
+            position: relative;
             box-shadow: 
-                inset -1px 0 0 rgba(0, 243, 255, 0.1),
-                2px 0 15px rgba(0, 0, 0, 0.5);
+                inset -2px 0 0 rgba(0, 243, 255, 0.15),
+                3px 0 20px rgba(0, 0, 0, 0.6),
+                inset 0 0 30px rgba(0, 0, 0, 0.4);
+        }
+        
+        .sidebar-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            right: -3px;
+            width: 2px;
+            height: 100%;
+            background: linear-gradient(180deg,
+                transparent 0%,
+                var(--cyan) 30%,
+                var(--copper) 50%,
+                var(--cyan) 70%,
+                transparent 100%);
+            animation: energyFlow 3s linear infinite;
+        }
+        
+        @keyframes energyFlow {
+            0% { opacity: 0.3; transform: translateY(-100%); }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; transform: translateY(100%); }
         }
         
         .sidebar-header h1 {
-            letter-spacing: 0.15em;
-            font-size: 0.85rem;
+            letter-spacing: 0.2em;
+            font-size: 0.9rem;
             font-weight: 900;
+            text-shadow: 0 0 10px var(--cyan-glow);
+            position: relative;
+            padding-left: 15px;
+        }
+        
+        .sidebar-header h1::before {
+            content: '■';
+            position: absolute;
+            left: 0;
+            color: var(--cyan);
+            animation: glowPulse 2s ease-in-out infinite;
         }
         
         .sidebar-header .date-chip {
             display: inline-flex;
-            padding: 4px 10px;
-            border-radius: 2px;
-            border: 1px solid var(--cyan);
-            background: rgba(0, 243, 255, 0.1);
-            box-shadow: 0 0 10px var(--cyan-glow),
-                        inset 0 0 5px rgba(0, 243, 255, 0.2);
+            padding: 6px 12px;
+            border-radius: 0;
+            border: 2px solid var(--cyan);
+            background: rgba(0, 243, 255, 0.08);
+            box-shadow: 
+                0 0 15px var(--cyan-glow),
+                inset 0 0 10px rgba(0, 243, 255, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
             font-size: 0.65rem;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.15em;
+            font-weight: 900;
+            position: relative;
+        }
+        
+        .sidebar-header .date-chip::before,
+        .sidebar-header .date-chip::after {
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--cyan);
+            box-shadow: 0 0 5px var(--cyan-glow);
+        }
+        
+        .sidebar-header .date-chip::before {
+            top: -2px;
+            left: -2px;
+        }
+        
+        .sidebar-header .date-chip::after {
+            bottom: -2px;
+            right: -2px;
         }
         
         /* ═══════════════════════════════════════════════════════
-           CALENDAR GRID - Structural Blueprint
+           INDUSTRIAL BLUEPRINT GRID
            ═══════════════════════════════════════════════════════ */
         .calendar-grid {
-            background: #1a1a1b;
-            border: 1px solid var(--copper);
+            background: 
+                radial-gradient(circle at center, rgba(26, 26, 27, 0.95) 0%, rgba(15, 15, 16, 1) 100%);
+            border: 4px solid var(--copper);
             border-radius: 0;
-            box-shadow: 
-                0 0 20px var(--copper-glow),
-                inset 0 0 30px rgba(0, 0, 0, 0.5);
             position: relative;
+            box-shadow: 
+                0 0 30px var(--copper-glow),
+                0 0 50px rgba(184, 115, 51, 0.3),
+                inset 0 0 50px rgba(0, 0, 0, 0.7),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1);
+            overflow: hidden;
         }
         
         .calendar-grid::before {
@@ -295,24 +536,61 @@
             background-image: 
                 linear-gradient(0deg, var(--grid-line) 1px, transparent 1px),
                 linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
-            background-size: 20px 20px;
-            opacity: 0.15;
+            background-size: 15px 15px;
+            opacity: 0.25;
             pointer-events: none;
+            z-index: 1;
+        }
+        
+        .calendar-grid::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(ellipse at 30% 30%, rgba(0, 243, 255, 0.05), transparent 50%),
+                radial-gradient(ellipse at 70% 70%, rgba(184, 115, 51, 0.05), transparent 50%);
+            pointer-events: none;
+            z-index: 1;
+            animation: ambientGlow 8s ease-in-out infinite alternate;
+        }
+        
+        @keyframes ambientGlow {
+            0% { opacity: 0.3; }
+            100% { opacity: 0.6; }
         }
         
         .calendar-header-cell {
-            padding: 14px 0;
+            padding: 16px 0;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
-            font-size: 0.55rem;
+            letter-spacing: 0.25em;
+            font-size: 0.6rem;
             font-weight: 900;
             color: var(--copper);
-            background: linear-gradient(180deg, 
-                rgba(26, 26, 27, 0.95) 0%, 
-                rgba(20, 20, 21, 0.9) 100%);
-            border-bottom: 1px solid var(--copper);
+            background: 
+                linear-gradient(180deg, 
+                    rgba(30, 28, 26, 0.95) 0%, 
+                    rgba(20, 18, 16, 0.9) 100%);
+            border-bottom: 2px solid var(--copper);
             border-right: 1px solid var(--grid-line);
-            text-shadow: 0 0 8px var(--copper-glow);
+            text-shadow: 
+                0 0 10px var(--copper-glow),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 2;
+        }
+        
+        .calendar-header-cell::before {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg,
+                transparent,
+                var(--cyan) 50%,
+                transparent);
+            opacity: 0.6;
         }
         
         .calendar-header-cell:last-child {
@@ -320,67 +598,133 @@
         }
         
         .calendar-day-cell {
-            min-height: 140px;
-            padding: 10px;
+            min-height: 145px;
+            padding: 12px;
             border: 1px solid var(--grid-line);
-            background: rgba(26, 26, 27, 0.5);
-            transition: all 0.2s ease;
+            border-right: 2px solid rgba(184, 115, 51, 0.2);
+            border-bottom: 2px solid rgba(184, 115, 51, 0.2);
+            background: 
+                linear-gradient(135deg, 
+                    rgba(26, 26, 27, 0.6) 0%, 
+                    rgba(20, 20, 21, 0.8) 100%);
+            transition: all 0.25s ease;
             position: relative;
+            z-index: 2;
         }
         
         .calendar-day-cell::before {
             content: '';
             position: absolute;
-            inset: 0;
-            border: 1px solid transparent;
-            transition: border-color 0.2s ease;
+            top: 6px;
+            left: 6px;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #6a5a4a, var(--rivet-color));
+            box-shadow: 
+                inset 0 1px 2px rgba(0,0,0,0.8),
+                0 0 3px rgba(184, 115, 51, 0.3);
+            opacity: 0.6;
+            z-index: 3;
         }
         
-        .calendar-day-cell:hover::before {
+        .calendar-day-cell::after {
+            content: '';
+            position: absolute;
+            inset: 8px;
+            border: 1px solid transparent;
+            transition: all 0.25s ease;
+            pointer-events: none;
+        }
+        
+        .calendar-day-cell:hover::after {
             border-color: var(--copper);
+            box-shadow: inset 0 0 15px rgba(184, 115, 51, 0.2);
         }
         
         .calendar-day-cell:hover {
-            background: rgba(26, 26, 27, 0.8);
+            background: 
+                linear-gradient(135deg, 
+                    rgba(30, 28, 26, 0.8) 0%, 
+                    rgba(26, 26, 27, 0.9) 100%);
+            border-right-color: rgba(184, 115, 51, 0.6);
+            border-bottom-color: rgba(184, 115, 51, 0.6);
             box-shadow: 
                 inset 0 0 20px rgba(184, 115, 51, 0.1),
-                0 0 15px var(--copper-glow);
+                0 0 20px var(--copper-glow);
+            transform: translateY(-2px);
         }
         
         .calendar-day-cell.is-selected {
-            background: rgba(0, 243, 255, 0.05);
-            border-color: var(--cyan);
+            background: 
+                linear-gradient(135deg, 
+                    rgba(0, 243, 255, 0.12) 0%, 
+                    rgba(0, 243, 255, 0.05) 50%,
+                    rgba(26, 26, 27, 0.9) 100%);
+            border: 2px solid var(--cyan);
             box-shadow: 
-                0 0 20px var(--cyan-glow),
-                inset 0 0 20px rgba(0, 243, 255, 0.15);
+                0 0 30px var(--cyan-glow),
+                0 0 45px rgba(0, 243, 255, 0.3),
+                inset 0 0 25px rgba(0, 243, 255, 0.15);
         }
         
-        .calendar-day-cell.is-selected::before {
+        .calendar-day-cell.is-selected::after {
             border-color: var(--cyan);
-            box-shadow: 0 0 10px var(--cyan-glow);
+            box-shadow: 
+                inset 0 0 20px rgba(0, 243, 255, 0.2),
+                0 0 10px var(--cyan-glow);
         }
         
         .calendar-day-cell.is-today {
-            border-left: 2px solid var(--cyan);
-            box-shadow: -5px 0 15px var(--cyan-glow);
+            border-left: 4px solid var(--cyan);
+            box-shadow: -8px 0 20px var(--cyan-glow);
+        }
+        
+        .calendar-day-cell.is-today::before {
+            background: radial-gradient(circle at 30% 30%, var(--cyan), rgba(0, 243, 255, 0.6));
+            box-shadow: 
+                inset 0 1px 2px rgba(0,0,0,0.5),
+                0 0 10px var(--cyan-glow);
+            animation: glowPulse 2s ease-in-out infinite;
+            opacity: 1;
         }
         
         .calendar-day-cell.is-empty {
-            background: rgba(15, 15, 16, 0.3);
-            opacity: 0.4;
+            background: rgba(15, 15, 16, 0.4);
+            opacity: 0.3;
+            border-right-color: rgba(184, 115, 51, 0.1);
+            border-bottom-color: rgba(184, 115, 51, 0.1);
+        }
+        
+        .calendar-day-cell.is-empty::before {
+            display: none;
         }
         
         .calendar-day-number {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 900;
             color: var(--copper);
             letter-spacing: 0.05em;
-            text-shadow: 0 0 8px var(--copper-glow);
+            text-shadow: 
+                0 0 10px var(--copper-glow),
+                0 2px 4px rgba(0, 0, 0, 0.8);
+            position: relative;
+            z-index: 3;
         }
         
         .calendar-day-cell.is-selected .calendar-day-number {
             color: var(--cyan);
-            text-shadow: 0 0 10px var(--cyan-glow);
+            text-shadow: 
+                0 0 15px var(--cyan-glow),
+                0 0 25px var(--cyan-glow),
+                0 2px 4px rgba(0, 0, 0, 0.9);
+        }
+        
+        .calendar-day-cell.is-today .calendar-day-number {
+            color: var(--cyan);
+            text-shadow: 
+                0 0 15px var(--cyan-glow),
+                0 2px 4px rgba(0, 0, 0, 0.8);
         }
         @media (max-width: 900px) {
             .flex, .flex-1, .flex-col, .flex-row, .p-8, .p-10, .w-80, .max-w-2xl, .max-w-md {
