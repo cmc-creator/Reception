@@ -13,44 +13,125 @@
     <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
+        /* ═══════════════════════════════════════════════════════
+           INDUSTRIAL STEAMPUNK COMMAND TERMINAL
+           ═══════════════════════════════════════════════════════ */
         :root {
-            --color-bg-dark: #0a0a23;
-            --color-bg-light: #f4f7fa;
-            --color-primary: #00fff7;
-            --color-accent: #ff00ea;
-            --color-surface: #18182f;
-            --color-surface-light: #fff;
-            --color-text-dark: #fff;
-            --color-text-light: #18182f;
-            --color-shadow: 0 4px 32px 0 rgba(0,255,247,0.08);
+            --charcoal: #1a1a1b;
+            --copper: #b87333;
+            --copper-dark: #8b5a2b;
+            --cyan: #00f3ff;
+            --copper-glow: rgba(184, 115, 51, 0.6);
+            --cyan-glow: rgba(0, 243, 255, 0.8);
+            --rivet-color: #5a4a3a;
+            --panel-edge: #2a2a2b;
         }
-        body[data-theme="dark"] {
-            background: var(--color-bg-dark);
-            color: var(--color-text-dark);
+        
+        * {
+            font-family: 'JetBrains Mono', 'Courier New', monospace !important;
         }
-        body[data-theme="light"] {
-            background: var(--color-bg-light);
-            color: var(--color-text-light);
+        
+        body {
+            background: radial-gradient(ellipse at top, #2a1a1a 0%, #1a1a1b 50%, #0a0a0b 100%) !important;
+            color: #e0e0e0 !important;
+            overflow: hidden;
         }
+        
+        /* ═══ RIVETS & INDUSTRIAL DECORATIONS ═══ */
+        .rivet {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, #6a5a4a, var(--rivet-color) 60%, #3a2a1a);
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 1px rgba(255,255,255,0.2);
+        }
+        
+        /* ═══ INDUSTRIAL METAL PANELS ═══ */
         .glass-panel {
-            background: rgba(0,255,247,0.03);
-            border: 1.5px solid rgba(0,255,247,0.12);
-            border-radius: 18px;
-            box-shadow: var(--color-shadow);
+            background: linear-gradient(135deg, rgba(26, 26, 27, 0.98) 0%, rgba(35, 30, 28, 0.95) 100%);
+            border: 2px solid var(--copper);
+            border-radius: 4px;
+            position: relative;
+            box-shadow: 
+                0 0 20px var(--copper-glow),
+                inset 0 2px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -2px 5px rgba(0, 0, 0, 0.6);
         }
+        
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            inset: 4px;
+            border: 1px solid rgba(184, 115, 51, 0.3);
+            pointer-events: none;
+        }
+        
         .neon-blue {
-            border: 1.5px solid var(--color-primary);
-            box-shadow: 0 0 24px 0 var(--color-primary), var(--color-shadow);
+            border: 2px solid var(--cyan);
+            box-shadow: 0 0 28px var(--cyan-glow), 0 6px 24px rgba(0,0,0,0.6);
         }
+        
         .neon-fuchsia {
-            border: 1.5px solid var(--color-accent);
-            box-shadow: 0 0 24px 0 var(--color-accent), var(--color-shadow);
+            border: 2px solid var(--copper);
+            box-shadow: 0 0 20px var(--copper-glow), 0 6px 24px rgba(0,0,0,0.6);
         }
+        
         .holo-text {
-            text-shadow: 0 0 16px var(--color-primary), 0 0 2px var(--color-accent);
+            text-shadow: 0 0 12px var(--cyan), 0 0 3px var(--copper);
         }
+        
+        /* ═══ MECHANICAL LEVER SWITCHES (BUTTONS) ═══ */
+        .fancy-btn {
+            background: linear-gradient(145deg, rgba(184, 115, 51, 0.9), rgba(139, 90, 43, 0.95));
+            color: #1a1a1b;
+            border: 2px solid var(--copper);
+            border-radius: 6px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            position: relative;
+            box-shadow: 
+                0 4px 0 var(--copper-dark),
+                0 8px 20px rgba(0, 0, 0, 0.6),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: all 0.1s;
+        }
+        
+        .fancy-btn::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 2px solid var(--cyan);
+            border-radius: 8px;
+            opacity: 0;
+            animation: borderGlow 2s ease-in-out infinite;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.6; box-shadow: 0 0 20px var(--cyan-glow); }
+        }
+        
+        .fancy-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                0 6px 0 var(--copper-dark),
+                0 12px 30px var(--copper-glow);
+        }
+        
+        .fancy-btn:active {
+            transform: translateY(2px);
+            box-shadow: 
+                0 2px 0 var(--copper-dark),
+                0 4px 10px rgba(0, 0, 0, 0.8);
+        }
+        
         @keyframes slideIn {
             from { transform: translateX(400px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -61,25 +142,10 @@
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.6; }
         }
         .animate-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-        }
-        .fancy-btn {
-            background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-accent) 100%);
-            color: #fff;
-            border: none;
-            border-radius: 1em;
-            font-weight: 900;
-            letter-spacing: 0.1em;
-            box-shadow: 0 2px 16px 0 var(--color-primary);
-            transition: background 0.2s, color 0.2s, box-shadow 0.2s;
-        }
-        .fancy-btn:hover {
-            background: linear-gradient(90deg, var(--color-accent) 0%, var(--color-primary) 100%);
-            color: #fff;
-            box-shadow: 0 4px 32px 0 var(--color-accent);
+            animation: pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         @media (max-width: 900px) {
             .flex, .flex-1, .flex-col, .flex-row, .p-8, .p-10, .w-80, .max-w-2xl, .max-w-md {
@@ -486,19 +552,22 @@
                     }
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
-                        <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[180px] p-3 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-inner' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
+                        <div key={dk} onClick={() => setSelectedDate(dk)} style={{background: selectedDate === dk ? 'linear-gradient(135deg, rgba(184,115,51,0.15), rgba(139,90,43,0.1))' : 'linear-gradient(135deg, rgba(26,26,27,0.98), rgba(35,30,28,0.95))', border: selectedDate === dk ? '2px solid #b87333' : '1px solid rgba(184,115,51,0.3)', boxShadow: selectedDate === dk ? '0 0 20px rgba(184,115,51,0.4), inset 0 2px 0 rgba(255,255,255,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.5)'}} className={`min-h-[180px] p-3 transition-all cursor-pointer relative group ${isToday ? 'border-l-4' : ''}`}>
+                            {isToday && <div className="rivet" style={{top: '4px', left: '4px'}} />}
                             <div className="flex justify-between items-start">
-                                <span className={`text-xl font-black tracking-tighter ${selectedDate === dk ? 'text-cyan-400' : 'text-slate-600'}`}>{d}</span>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 opacity-20 hover:opacity-100 transition-opacity"><IconPlus /></button>
+                                <span style={{color: selectedDate === dk ? '#b87333' : '#8a8a8a', fontWeight: 900, fontSize: '1.5rem', textShadow: selectedDate === dk ? '0 0 10px rgba(184,115,51,0.5)' : 'none'}}>{d}</span>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} style={{background: 'linear-gradient(145deg, rgba(184,115,51,0.8), rgba(139,90,43,0.9))', border: '1px solid #b87333', padding: '4px 8px', color: '#1a1a1b', fontWeight: 900}} className="opacity-40 hover:opacity-100 transition-opacity"><IconPlus /></button>
                             </div>
                             <div className="space-y-2 mt-4">
-                                {dayShifts.length === 0 ? <div className="text-[10px] font-black text-rose-500 animate-pulse uppercase flex items-center gap-1 mt-2 text-left font-mono italic"><IconAlert /> Needs Coverage</div> : 
+                                {dayShifts.length === 0 ? <div style={{color: '#b87333', fontSize: '9px', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase'}} className="animate-pulse flex items-center gap-1 mt-2"><IconAlert /> NEEDS COVERAGE</div> : 
                                     dayShifts.map(s => (
                                         <div key={s.id} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
-                                            className={`text-[13px] p-2 rounded-xl font-bold truncate text-white ${staff[s.empId]?.bg || 'bg-slate-700'} uppercase flex flex-col justify-between text-left shadow-2xl border border-white/10 group-hover:scale-105 transition-transform cursor-pointer`}>
+                                            style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.9), rgba(104,68,32,0.95))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '8px 12px', color: '#e0e0e0', fontWeight: 900, fontSize: '12px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.2)', position: 'relative'}} className="cursor-pointer transition-all hover:translate-y-[-2px]">
+                                            <div className="rivet" style={{top: '3px', left: '3px', width: '6px', height: '6px'}} />
+                                            <div className="rivet" style={{top: '3px', right: '3px', width: '6px', height: '6px'}} />
                                             <div className="flex items-center justify-between">
                                                 <span>{staff[s.empId]?.name || '...'}</span>
-                                                <span className="opacity-50 text-[10px] font-mono shrink-0">{(s.start || s.time) + (s.end ? ` - ${s.end}` : '')}</span>
+                                                <span style={{opacity: 0.6, fontSize: '10px'}}>{(s.start || s.time) + (s.end ? ` - ${s.end}` : '')}</span>
                                             </div>
                                         </div>
                                     ))
