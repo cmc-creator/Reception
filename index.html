@@ -341,11 +341,11 @@
                     }
                     const loadedShifts = await loadFromFirestore('shared', 'shifts', null);
                     const loadedStaff = await loadFromFirestore('shared', 'staff', null);
-                    // Only update state if we got data from Firestore
-                    if (loadedShifts && Object.keys(loadedShifts).length > 0) {
+                    // Only update state if we got valid data from Firestore
+                    if (loadedShifts && typeof loadedShifts === 'object' && Object.keys(loadedShifts).length > 0) {
                         setEvents(loadedShifts);
                     }
-                    if (loadedStaff && Object.keys(loadedStaff).length > 0) {
+                    if (loadedStaff && typeof loadedStaff === 'object' && Object.keys(loadedStaff).length > 0) {
                         setStaff(loadedStaff);
                     }
                 }

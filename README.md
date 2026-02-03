@@ -93,7 +93,7 @@ Your data persists across browser sessions as long as you:
 
 - **No multi-user collaboration**: Each user has their own independent local data (Firebase sync is optional)
 - **No automatic cloud backup**: Local data is primary storage
-- **No cross-device sync without Firebase**: Local data cannot access from different devices
+- **No cross-device sync without Firebase**: Local data cannot be accessed from different devices
 - **No data recovery**: Clearing browser data permanently deletes local information
 - **Browser-specific**: Data in Chrome won't appear in Firefox, etc.
 
