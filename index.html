@@ -111,26 +111,50 @@
         // --- ADMIN CONFIGURATION ---
         const ADMIN_CODE = 'admin123'; // Change this to your desired admin password
 
-        // --- FIREBASE INIT ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCmNpRkPR160wYwwmToPDSNFac4iKQXVbo",
-            authDomain: "rockstar-reception.firebaseapp.com",
-            projectId: "rockstar-reception",
-            storageBucket: "rockstar-reception.firebasestorage.app",
-            messagingSenderId: "46215930012",
-            appId: "1:46215930012:web:e285e0cfe79154c9f18d59",
-            measurementId: "G-BFLB72NK0F"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        // --- FIREBASE INIT (OPTIONAL) ---
+        let db = null;
+        let isFirebaseAvailable = false;
+        
+        try {
+            if (typeof firebase !== 'undefined') {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyCmNpRkPR160wYwwmToPDSNFac4iKQXVbo",
+                    authDomain: "rockstar-reception.firebaseapp.com",
+                    projectId: "rockstar-reception",
+                    storageBucket: "rockstar-reception.firebasestorage.app",
+                    messagingSenderId: "46215930012",
+                    appId: "1:46215930012:web:e285e0cfe79154c9f18d59",
+                    measurementId: "G-BFLB72NK0F"
+                };
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                isFirebaseAvailable = true;
+                console.log('Firebase initialized successfully');
+            } else {
+                console.log('Firebase not available - running in offline-only mode');
+            }
+        } catch (error) {
+            console.warn('Firebase initialization failed - running in offline-only mode:', error);
+        }
 
         // --- FIRESTORE DATA LAYER (SHARED) ---
         async function saveToFirestore(collection, doc, data) {
-            await db.collection(collection).doc(doc).set(data);
+            if (!isFirebaseAvailable || !db) return;
+            try {
+                await db.collection(collection).doc(doc).set(data);
+            } catch (error) {
+                console.warn('Failed to save to Firestore:', error);
+            }
         }
         async function loadFromFirestore(collection, doc, defaultValue = null) {
-            const snap = await db.collection(collection).doc(doc).get();
-            return snap.exists ? snap.data() : defaultValue;
+            if (!isFirebaseAvailable || !db) return defaultValue;
+            try {
+                const snap = await db.collection(collection).doc(doc).get();
+                return snap.exists ? snap.data() : defaultValue;
+            } catch (error) {
+                console.warn('Failed to load from Firestore:', error);
+                return defaultValue;
+            }
         }
 
         // --- LOCALSTORAGE DATA LAYER ---
@@ -307,28 +331,37 @@
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
             }, [selectedDate]);
 
-            // --- FIRESTORE SYNC HOOKS ---
-            // Load shared shifts and staff from Firestore on mount
+            // --- FIRESTORE SYNC HOOKS (OPTIONAL) ---
+            // Load shared shifts and staff from Firestore on mount (only if Firebase available)
             useEffect(() => {
                 async function fetchSharedData() {
-                    const loadedShifts = await loadFromFirestore('shared', 'shifts', {});
-                    const loadedStaff = await loadFromFirestore('shared', 'staff', {});
-                    setEvents(loadedShifts);
-                    setStaff(loadedStaff);
+                    if (!isFirebaseAvailable) {
+                        console.log('Skipping Firestore sync - Firebase not available');
+                        return;
+                    }
+                    const loadedShifts = await loadFromFirestore('shared', 'shifts', null);
+                    const loadedStaff = await loadFromFirestore('shared', 'staff', null);
+                    // Only update state if we got data from Firestore
+                    if (loadedShifts && Object.keys(loadedShifts).length > 0) {
+                        setEvents(loadedShifts);
+                    }
+                    if (loadedStaff && Object.keys(loadedStaff).length > 0) {
+                        setStaff(loadedStaff);
+                    }
                 }
                 fetchSharedData();
             }, []);
 
-            // Save shifts to Firestore when events change
+            // Save shifts to Firestore when events change (only if Firebase available)
             useEffect(() => {
-                if (Object.keys(events).length > 0) {
+                if (isFirebaseAvailable && Object.keys(events).length > 0) {
                     saveToFirestore('shared', 'shifts', events);
                 }
             }, [events]);
 
-            // Save staff to Firestore when staff changes
+            // Save staff to Firestore when staff changes (only if Firebase available)
             useEffect(() => {
-                if (Object.keys(staff).length > 0) {
+                if (isFirebaseAvailable && Object.keys(staff).length > 0) {
                     saveToFirestore('shared', 'staff', staff);
                 }
             }, [staff]);
