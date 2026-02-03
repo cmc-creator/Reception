@@ -18,63 +18,103 @@
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;900&display=swap" rel="stylesheet">
     
     <style>
+        /* ═══════════════════════════════════════════════════════
+           MODERN STEAMPUNK CONTROL TERMINAL AESTHETIC
+           ═══════════════════════════════════════════════════════ */
+        
         :root {
-            --steampunk-charcoal: #1a1a1a;
-            --steampunk-copper: #b87333;
-            --steampunk-brass: #c9ae5d;
-            --steampunk-bronze: #cd7f32;
-            --steampunk-cyan: #00ffff;
-            --steampunk-leather: #3e2723;
-            --steampunk-gear-shadow: rgba(205, 127, 50, 0.4);
-            --steampunk-glow: rgba(0, 255, 255, 0.6);
+            --charcoal: #1a1a1b;
+            --copper: #b87333;
+            --cyan: #00f3ff;
+            --copper-glow: rgba(184, 115, 51, 0.6);
+            --cyan-glow: rgba(0, 243, 255, 0.8);
+            --grid-line: rgba(0, 243, 255, 0.2);
         }
         
-        body[data-theme="steampunk"] {
-            background: linear-gradient(135deg, var(--steampunk-charcoal) 0%, #0d0d0d 100%);
-            color: #f0e6d2;
-            font-family: 'JetBrains Mono', monospace;
+        * {
+            font-family: 'JetBrains Mono', 'Courier New', monospace;
         }
+        
+        body[data-theme="steampunk"],
         body[data-theme="dark"] {
-            background: linear-gradient(135deg, var(--steampunk-charcoal) 0%, #0d0d0d 100%);
-            color: #f0e6d2;
+            background: #1a1a1b;
+            color: #e0e0e0;
             font-family: 'JetBrains Mono', monospace;
         }
+        
         body[data-theme="light"] {
             background: #f4f7fa;
             color: #18182f;
         }
         
+        /* ═══════════════════════════════════════════════════════
+           GLASS PANEL - Tactile Metallic Switch
+           ═══════════════════════════════════════════════════════ */
         .glass-panel {
-            background: linear-gradient(145deg, rgba(62, 39, 35, 0.7), rgba(26, 26, 26, 0.9));
-            border: 2px solid var(--steampunk-copper);
-            border-radius: 12px;
-            box-shadow: 0 8px 32px var(--steampunk-gear-shadow),
-                        inset 0 1px 0 rgba(201, 174, 93, 0.3);
-            backdrop-filter: blur(4px);
+            background: linear-gradient(145deg, 
+                rgba(26, 26, 27, 0.95) 0%, 
+                rgba(35, 35, 36, 0.85) 50%,
+                rgba(26, 26, 27, 0.95) 100%);
+            border: 1px solid var(--copper);
+            border-radius: 3px;
+            box-shadow: 
+                0 0 15px var(--copper-glow),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 -1px 0 rgba(0, 0, 0, 0.5);
+            position: relative;
         }
         
+        .glass-panel::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(255, 255, 255, 0.3), 
+                transparent);
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           NEON BORDERS - Vacuum Tube Glow
+           ═══════════════════════════════════════════════════════ */
         .neon-blue {
-            border: 2px solid var(--steampunk-cyan);
-            box-shadow: 0 0 20px var(--steampunk-glow),
-                        0 0 40px rgba(0, 255, 255, 0.3),
-                        inset 0 0 10px rgba(0, 255, 255, 0.1);
+            border: 1px solid var(--cyan);
+            box-shadow: 
+                0 0 10px var(--cyan-glow),
+                0 0 20px var(--cyan-glow),
+                0 0 30px rgba(0, 243, 255, 0.4),
+                inset 0 0 8px rgba(0, 243, 255, 0.2);
         }
         
         .neon-fuchsia {
-            border: 2px solid var(--steampunk-brass);
-            box-shadow: 0 0 20px rgba(201, 174, 93, 0.6),
-                        0 0 40px rgba(201, 174, 93, 0.3),
-                        inset 0 0 10px rgba(201, 174, 93, 0.1);
+            border: 1px solid var(--copper);
+            box-shadow: 
+                0 0 10px var(--copper-glow),
+                0 0 20px var(--copper-glow),
+                inset 0 0 8px rgba(184, 115, 51, 0.2);
         }
         
+        /* ═══════════════════════════════════════════════════════
+           GLOWING TEXT - Technical Manual Headers
+           ═══════════════════════════════════════════════════════ */
         .holo-text {
-            text-shadow: 0 0 8px var(--steampunk-cyan),
-                         0 0 16px var(--steampunk-cyan),
-                         0 2px 4px rgba(0,0,0,0.8);
-            color: var(--steampunk-cyan);
+            color: var(--cyan);
+            text-shadow: 
+                0 0 5px var(--cyan),
+                0 0 10px var(--cyan),
+                0 0 15px var(--cyan-glow),
+                0 0 20px var(--cyan-glow);
             font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
         }
         
+        /* ═══════════════════════════════════════════════════════
+           ANIMATIONS
+           ═══════════════════════════════════════════════════════ */
         @keyframes slideIn {
             from { transform: translateX(400px); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
@@ -85,61 +125,262 @@
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.6; }
         }
-        @keyframes gearSpin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
+        @keyframes glowPulse {
+            0%, 100% { 
+                box-shadow: 0 0 10px var(--cyan-glow), 0 0 20px var(--cyan-glow); 
+            }
+            50% { 
+                box-shadow: 0 0 20px var(--cyan-glow), 0 0 40px var(--cyan-glow); 
+            }
         }
         .animate-pulse {
             animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
         
+        /* ═══════════════════════════════════════════════════════
+           BUTTONS - Metallic Tactile Switches
+           ═══════════════════════════════════════════════════════ */
         .fancy-btn {
-            background: linear-gradient(135deg, var(--steampunk-copper) 0%, var(--steampunk-bronze) 100%);
-            color: #fff;
-            border: 2px solid var(--steampunk-brass);
-            border-radius: 8px;
+            background: linear-gradient(180deg, 
+                #b87333 0%, 
+                #8b5a2b 50%, 
+                #6b4423 100%);
+            color: #1a1a1b;
+            border: 1px solid rgba(184, 115, 51, 0.8);
+            border-radius: 2px;
             font-weight: 900;
-            letter-spacing: 0.1em;
-            box-shadow: 0 4px 16px var(--steampunk-gear-shadow),
-                        inset 0 1px 0 rgba(255,255,255,0.2);
-            transition: all 0.3s ease;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
-        }
-        .fancy-btn:hover {
-            background: linear-gradient(135deg, var(--steampunk-bronze) 0%, var(--steampunk-copper) 100%);
-            color: var(--steampunk-cyan);
-            box-shadow: 0 6px 24px var(--steampunk-gear-shadow),
-                        0 0 20px var(--steampunk-glow),
-                        inset 0 1px 0 rgba(255,255,255,0.3);
-            transform: translateY(-2px);
+            padding: 8px 16px;
+            box-shadow: 
+                0 0 15px var(--copper-glow),
+                inset 0 1px 0 rgba(255, 255, 255, 0.4),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.4);
+            transition: all 0.2s ease;
+            position: relative;
         }
         
+        .fancy-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 50%;
+            background: linear-gradient(180deg, 
+                rgba(255, 255, 255, 0.2), 
+                transparent);
+            border-radius: 2px 2px 0 0;
+        }
+        
+        .fancy-btn:hover {
+            background: linear-gradient(180deg, 
+                #d4903f 0%, 
+                #b87333 50%, 
+                #8b5a2b 100%);
+            color: var(--cyan);
+            text-shadow: 0 0 5px var(--cyan);
+            box-shadow: 
+                0 0 20px var(--copper-glow),
+                0 0 30px var(--cyan-glow),
+                inset 0 1px 0 rgba(255, 255, 255, 0.5),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.5);
+            transform: translateY(-1px);
+        }
+        
+        .fancy-btn:active {
+            transform: translateY(0);
+            box-shadow: 
+                0 0 10px var(--copper-glow),
+                inset 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           SHIFT CARDS
+           ═══════════════════════════════════════════════════════ */
         .shift-card {
-            background: linear-gradient(145deg, rgba(62, 39, 35, 0.6), rgba(26, 26, 26, 0.8));
-            border: 1.5px solid var(--steampunk-copper);
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(205, 127, 50, 0.3);
-            transition: all 0.3s ease;
+            background: rgba(26, 26, 27, 0.9);
+            border: 1px solid var(--copper);
+            border-radius: 2px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6),
+                        0 0 10px var(--copper-glow);
+            transition: all 0.2s ease;
         }
         .shift-card:hover {
-            border-color: var(--steampunk-cyan);
-            box-shadow: 0 6px 20px var(--steampunk-glow);
+            border-color: var(--cyan);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.8),
+                        0 0 15px var(--cyan-glow);
             transform: translateY(-2px);
         }
         
-        .day-num {
-            color: var(--steampunk-brass);
-            font-weight: 900;
-            text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+        /* ═══════════════════════════════════════════════════════
+           TOP BAR - Control Panel Header
+           ═══════════════════════════════════════════════════════ */
+        .topbar {
+            height: 60px;
+            background: linear-gradient(180deg, 
+                rgba(26, 26, 27, 1) 0%, 
+                rgba(20, 20, 21, 0.98) 100%);
+            border-bottom: 1px solid var(--copper);
+            box-shadow: 
+                0 0 15px var(--copper-glow),
+                0 4px 20px rgba(0, 0, 0, 0.6);
+            position: relative;
         }
         
-        .selected-date {
-            background: linear-gradient(145deg, rgba(0, 255, 255, 0.15), rgba(0, 255, 255, 0.05));
-            border: 2px solid var(--steampunk-cyan);
-            box-shadow: 0 0 20px var(--steampunk-glow),
-                        inset 0 0 10px rgba(0, 255, 255, 0.2);
+        .topbar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                var(--cyan) 50%, 
+                transparent);
+            opacity: 0.5;
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           SIDEBAR - Technical Manual Panel
+           ═══════════════════════════════════════════════════════ */
+        .sidebar-panel {
+            background: linear-gradient(180deg, 
+                rgba(20, 20, 21, 0.98) 0%, 
+                rgba(26, 26, 27, 0.95) 100%);
+            border-right: 1px solid var(--copper);
+            box-shadow: 
+                inset -1px 0 0 rgba(0, 243, 255, 0.1),
+                2px 0 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .sidebar-header h1 {
+            letter-spacing: 0.15em;
+            font-size: 0.85rem;
+            font-weight: 900;
+        }
+        
+        .sidebar-header .date-chip {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 2px;
+            border: 1px solid var(--cyan);
+            background: rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 10px var(--cyan-glow),
+                        inset 0 0 5px rgba(0, 243, 255, 0.2);
+            font-size: 0.65rem;
+            letter-spacing: 0.1em;
+        }
+        
+        /* ═══════════════════════════════════════════════════════
+           CALENDAR GRID - Structural Blueprint
+           ═══════════════════════════════════════════════════════ */
+        .calendar-grid {
+            background: #1a1a1b;
+            border: 1px solid var(--copper);
+            border-radius: 0;
+            box-shadow: 
+                0 0 20px var(--copper-glow),
+                inset 0 0 30px rgba(0, 0, 0, 0.5);
+            position: relative;
+        }
+        
+        .calendar-grid::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(0deg, var(--grid-line) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 20px 20px;
+            opacity: 0.15;
+            pointer-events: none;
+        }
+        
+        .calendar-header-cell {
+            padding: 14px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            font-size: 0.55rem;
+            font-weight: 900;
+            color: var(--copper);
+            background: linear-gradient(180deg, 
+                rgba(26, 26, 27, 0.95) 0%, 
+                rgba(20, 20, 21, 0.9) 100%);
+            border-bottom: 1px solid var(--copper);
+            border-right: 1px solid var(--grid-line);
+            text-shadow: 0 0 8px var(--copper-glow);
+        }
+        
+        .calendar-header-cell:last-child {
+            border-right: none;
+        }
+        
+        .calendar-day-cell {
+            min-height: 140px;
+            padding: 10px;
+            border: 1px solid var(--grid-line);
+            background: rgba(26, 26, 27, 0.5);
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .calendar-day-cell::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border: 1px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+        
+        .calendar-day-cell:hover::before {
+            border-color: var(--copper);
+        }
+        
+        .calendar-day-cell:hover {
+            background: rgba(26, 26, 27, 0.8);
+            box-shadow: 
+                inset 0 0 20px rgba(184, 115, 51, 0.1),
+                0 0 15px var(--copper-glow);
+        }
+        
+        .calendar-day-cell.is-selected {
+            background: rgba(0, 243, 255, 0.05);
+            border-color: var(--cyan);
+            box-shadow: 
+                0 0 20px var(--cyan-glow),
+                inset 0 0 20px rgba(0, 243, 255, 0.15);
+        }
+        
+        .calendar-day-cell.is-selected::before {
+            border-color: var(--cyan);
+            box-shadow: 0 0 10px var(--cyan-glow);
+        }
+        
+        .calendar-day-cell.is-today {
+            border-left: 2px solid var(--cyan);
+            box-shadow: -5px 0 15px var(--cyan-glow);
+        }
+        
+        .calendar-day-cell.is-empty {
+            background: rgba(15, 15, 16, 0.3);
+            opacity: 0.4;
+        }
+        
+        .calendar-day-number {
+            font-size: 1.1rem;
+            font-weight: 900;
+            color: var(--copper);
+            letter-spacing: 0.05em;
+            text-shadow: 0 0 8px var(--copper-glow);
+        }
+        
+        .calendar-day-cell.is-selected .calendar-day-number {
+            color: var(--cyan);
+            text-shadow: 0 0 10px var(--cyan-glow);
         }
         @media (max-width: 900px) {
             .flex, .flex-1, .flex-col, .flex-row, .p-8, .p-10, .w-80, .max-w-2xl, .max-w-md {
@@ -536,8 +777,8 @@
                 const total = new Date(yIdx, mIdx + 1, 0).getDate();
                 const start = new Date(yIdx, mIdx, 1).getDay();
                 const cells = [];
-                // CALENDAR TALLER: min-h bumped to 180px
-                for (let i = 0; i < start; i++) cells.push(<div key={`e-${i}`} className="min-h-[180px] bg-white/[0.01] border border-white/[0.03]" />);
+                // CALENDAR CELLS
+                for (let i = 0; i < start; i++) cells.push(<div key={`e-${i}`} className="calendar-day-cell is-empty" />);
                 for (let d = 1; d <= total; d++) {
                     const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     let dayShifts = events[dk] || [];
@@ -552,9 +793,9 @@
                     }
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
-                        <div key={dk} onClick={() => setSelectedDate(dk)} className={`min-h-[180px] p-3 border border-white/[0.05] transition-all cursor-pointer relative group ${selectedDate === dk ? 'bg-cyan-500/10 ring-1 ring-cyan-400 shadow-inner' : 'bg-white/[0.01] hover:bg-white/[0.03]'} ${isToday ? 'border-l-2 border-l-cyan-400' : ''}`}>
+                        <div key={dk} onClick={() => setSelectedDate(dk)} className={`calendar-day-cell cursor-pointer relative group ${selectedDate === dk ? 'is-selected' : ''} ${isToday ? 'is-today' : ''}`}>
                             <div className="flex justify-between items-start">
-                                <span className={`text-xl font-black tracking-tighter ${selectedDate === dk ? 'text-cyan-400' : 'text-slate-600'}`}>{d}</span>
+                                <span className={`calendar-day-number ${selectedDate === dk ? 'text-cyan-300' : 'text-slate-500'}`}>{d}</span>
                                 <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} className="p-1 opacity-20 hover:opacity-100 transition-opacity"><IconPlus /></button>
                             </div>
                             <div className="space-y-2 mt-4">
@@ -656,7 +897,7 @@
                     </nav>
 
                     <div className="flex-1 flex flex-col">
-                        <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
+                        <header className="no-print topbar flex items-center px-6 gap-4 text-left font-bold">
                             <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
                             <input value={globalAlert} onChange={e => { 
                                 const newAlert = String(e.target.value);
@@ -675,10 +916,10 @@
 
                         <div className="flex-1 flex overflow-hidden">
                             {/* SIDEBAR LOGS */}
-                            <aside className="no-print w-80 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
-                                <header className="text-left mb-2 text-white font-black">
+                            <aside className="no-print w-80 sidebar-panel p-6 flex flex-col gap-4 overflow-y-auto no-scrollbar">
+                                <header className="sidebar-header text-left mb-3 text-white font-black">
                                     <h1 className="text-lg tracking-tighter holo-text uppercase">Shift Report</h1>
-                                    <div className="text-[10px] text-cyan-400 font-bold uppercase mt-1 tracking-widest font-mono">{selectedDate}</div>
+                                    <div className="date-chip text-[10px] text-cyan-300 font-bold uppercase mt-2 tracking-widest font-mono">{selectedDate}</div>
                                 </header>
                                 <div className="space-y-3">
                                     {REPORT_FIELDS.map(f => (
@@ -809,8 +1050,8 @@
                                         >Export CSV</button>
                                     </div>
                                 </div>
-                                <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl font-bold">
-                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="py-4 text-center text-[10px] font-black text-cyan-400/60 uppercase tracking-widest border-b border-white/5 bg-white/[0.02]">{d}</div>)}
+                                <div className="grid grid-cols-7 calendar-grid overflow-hidden rounded-2xl font-bold">
+                                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => <div key={d} className="calendar-header-cell text-center">{d}</div>)}
                                     {calendarMatrix}
                                 </div>
                             </main>
