@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Destiny Springs | Hub Matrix</title>
     <!-- System Engines -->
-    <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -192,21 +192,48 @@
         // --- ADMIN CONFIGURATION ---
         const ADMIN_CODE = '9898'; // Change this to your desired admin password
 
-        // --- FIREBASE INIT ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyCmNpRkPR160wYwwmToPDSNFac4iKQXVbo",
-            authDomain: "rockstar-reception.firebaseapp.com",
-            projectId: "rockstar-reception",
-            storageBucket: "rockstar-reception.firebasestorage.app",
-            messagingSenderId: "46215930012",
-            appId: "1:46215930012:web:e285e0cfe79154c9f18d59",
-            measurementId: "G-BFLB72NK0F"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+        // --- FIREBASE INIT (OPTIONAL) ---
+        let db = null;
+        let isFirebaseAvailable = false;
+        
+        try {
+            if (typeof firebase !== 'undefined') {
+                const firebaseConfig = {
+                    apiKey: "AIzaSyCmNpRkPR160wYwwmToPDSNFac4iKQXVbo",
+                    authDomain: "rockstar-reception.firebaseapp.com",
+                    projectId: "rockstar-reception",
+                    storageBucket: "rockstar-reception.firebasestorage.app",
+                    messagingSenderId: "46215930012",
+                    appId: "1:46215930012:web:e285e0cfe79154c9f18d59",
+                    measurementId: "G-BFLB72NK0F"
+                };
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                isFirebaseAvailable = true;
+                console.log('Firebase initialized successfully');
+            } else {
+                console.log('Firebase not available - running in offline-only mode');
+            }
+        } catch (error) {
+            console.warn('Firebase initialization failed - running in offline-only mode:', error);
+        }
 
         // --- FIRESTORE DATA LAYER (SHARED) ---
         async function saveToFirestore(collection, doc, data) {
+            if (!isFirebaseAvailable || !db) return;
+            try {
+                await db.collection(collection).doc(doc).set(data);
+            } catch (error) {
+                console.warn('Failed to save to Firestore:', error);
+            }
+        }
+        async function loadFromFirestore(collection, doc, defaultValue = null) {
+            if (!isFirebaseAvailable || !db) return defaultValue;
+            try {
+                const snap = await db.collection(collection).doc(doc).get();
+                return snap.exists ? snap.data() : defaultValue;
+            } catch (error) {
+                console.warn('Failed to load from Firestore:', error);
             try {
                 await db.collection(collection).doc(doc).set(data);
             } catch (e) {
@@ -463,28 +490,37 @@
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
             }, [selectedDate]);
 
-            // --- FIRESTORE SYNC HOOKS ---
-            // Load shared shifts and staff from Firestore on mount
+            // --- FIRESTORE SYNC HOOKS (OPTIONAL) ---
+            // Load shared shifts and staff from Firestore on mount (only if Firebase available)
             useEffect(() => {
                 async function fetchSharedData() {
-                    const loadedShifts = await loadFromFirestore('shared', 'shifts', {});
-                    const loadedStaff = await loadFromFirestore('shared', 'staff', {});
-                    setEvents(loadedShifts);
-                    setStaff(loadedStaff);
+                    if (!isFirebaseAvailable) {
+                        console.log('Skipping Firestore sync - Firebase not available');
+                        return;
+                    }
+                    const loadedShifts = await loadFromFirestore('shared', 'shifts', null);
+                    const loadedStaff = await loadFromFirestore('shared', 'staff', null);
+                    // Only update state if we got valid data from Firestore
+                    if (loadedShifts && typeof loadedShifts === 'object' && Object.keys(loadedShifts).length > 0) {
+                        setEvents(loadedShifts);
+                    }
+                    if (loadedStaff && typeof loadedStaff === 'object' && Object.keys(loadedStaff).length > 0) {
+                        setStaff(loadedStaff);
+                    }
                 }
                 fetchSharedData();
             }, []);
 
-            // Save shifts to Firestore when events change
+            // Save shifts to Firestore when events change (only if Firebase available)
             useEffect(() => {
-                if (Object.keys(events).length > 0) {
+                if (isFirebaseAvailable && Object.keys(events).length > 0) {
                     saveToFirestore('shared', 'shifts', events);
                 }
             }, [events]);
 
-            // Save staff to Firestore when staff changes
+            // Save staff to Firestore when staff changes (only if Firebase available)
             useEffect(() => {
-                if (Object.keys(staff).length > 0) {
+                if (isFirebaseAvailable && Object.keys(staff).length > 0) {
                     saveToFirestore('shared', 'staff', staff);
                 }
             }, [staff]);
@@ -670,6 +706,9 @@
                                 setGlobalAlert(newAlert);
                                 saveToStorage(STORAGE_KEYS.ALERT, newAlert);
                             }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
+                            <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
+                                {isFirebaseAvailable ? '🌐 LIVE SYNC' : '💾 LOCAL MODE'}
+                            </div>
                             <button className="fancy-btn ml-4" onClick={() => {
                                 const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
                                 document.body.setAttribute('data-theme', theme);
@@ -1228,6 +1267,24 @@
             );
         }
 
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+
+        // Register Service Worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                // Use relative path to work with GitHub Pages subdirectory deployment
+                navigator.serviceWorker.register('./sw.js')
+                    .then(registration => {
+                        console.log('✅ Service Worker registered successfully:', registration);
+                        console.log('📱 App is now installable as a PWA');
+                    })
+                    .catch(err => {
+                        console.warn('⚠️ Service Worker registration failed (PWA features unavailable):', err);
+                        // App still works without service worker, just no offline caching
+                    });
+            });
+        }
         ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
