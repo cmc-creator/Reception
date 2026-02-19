@@ -109,7 +109,7 @@ Deploy to GitHub Pages and share the URL with your employees. Everyone sees the 
 
 ## Admin Features
 
-- **Admin Code**: Set in the configuration (default: `admin123`)
+- **Admin Code**: Set in the configuration (default: `9898`)
 - **Master Reset**: Restores default personnel (Karen, Izzy, Annalissia, Hal) and creates a baseline schedule for the current month
 - **Personnel Management**: Add or remove staff members through the Personnel Manifest
 
