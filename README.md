@@ -45,7 +45,7 @@ Since the app is fully offline and local to your browser, you cannot share data 
 
 ## Admin Features
 
-- **Admin Code**: Set in the configuration (default: `admin123`)
+- **Admin Code**: Set in the configuration (default: `9898`)
 - **Master Reset**: Restores default personnel (Karen, Izzy, Annalissia, Hal) and creates a baseline schedule for the current month
 - **Personnel Management**: Add or remove staff members through the Personnel Manifest
 
