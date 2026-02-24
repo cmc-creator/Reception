@@ -234,18 +234,6 @@
                 return snap.exists ? snap.data() : defaultValue;
             } catch (error) {
                 console.warn('Failed to load from Firestore:', error);
-            try {
-                await db.collection(collection).doc(doc).set(data);
-            } catch (e) {
-                console.warn('Firebase unavailable, using localStorage only:', e.message);
-            }
-        }
-        async function loadFromFirestore(collection, doc, defaultValue = null) {
-            try {
-                const snap = await db.collection(collection).doc(doc).get();
-                return snap.exists ? snap.data() : defaultValue;
-            } catch (e) {
-                console.warn('Firebase unavailable, using localStorage only:', e.message);
                 return defaultValue;
             }
         }
@@ -1285,7 +1273,6 @@
                     });
             });
         }
-        ReactDOM.render(<App />, document.getElementById('root'));
     </script>
 </body>
 </html>
