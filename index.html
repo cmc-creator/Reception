@@ -564,6 +564,7 @@
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [editingShift, setEditingShift] = useState(null);
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
             const [loginUsername, setLoginUsername] = useState('');
             const [loginPassword, setLoginPassword] = useState('');
@@ -572,6 +573,20 @@
             const [newStaffName, setNewStaffName] = useState('');
             const [newStaffColor, setNewStaffColor] = useState('#0891b2');
             const [newAccount, setNewAccount] = useState({ username: '', displayName: '', password: '', role: 'staff' });
+            const [bulkAssign, setBulkAssign] = useState(() => {
+                const now = new Date();
+                const rangeStart = now.toISOString().split('T')[0];
+                const end = new Date(now);
+                end.setDate(end.getDate() + 28);
+                return {
+                    empId: '',
+                    start: '08:00',
+                    end: '20:00',
+                    weekdays: [1, 2, 3, 4, 5],
+                    rangeStart,
+                    rangeEnd: end.toISOString().split('T')[0]
+                };
+            });
             const [appSettings, setAppSettings] = useState(() => loadFromStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings()));
             const chatEndRef = useRef(null);
             const isAdmin = currentUser?.role === 'admin';
@@ -856,6 +871,178 @@
                 alert('Master reset complete!');
             }
 
+            function toMinutes(timeText) {
+                const [h, m] = String(timeText || '00:00').split(':').map(Number);
+                return (h * 60) + (m || 0);
+            }
+
+            function hasShiftConflict(sourceEvents, empId, dateKey, start, end, excludeShiftId = null) {
+                const startMinutes = toMinutes(start);
+                const endMinutes = toMinutes(end);
+                const sameDay = sourceEvents[dateKey] || [];
+                return sameDay.some(shift => {
+                    if (shift.id === excludeShiftId) return false;
+                    if (shift.empId !== empId) return false;
+                    const shiftStart = shift.start || shift.time || '08:00';
+                    const shiftEnd = shift.end || '20:00';
+                    const shiftStartMinutes = toMinutes(shiftStart);
+                    const shiftEndMinutes = toMinutes(shiftEnd);
+                    return startMinutes < shiftEndMinutes && shiftStartMinutes < endMinutes;
+                });
+            }
+
+            function createShiftForDate(empId, dateKey, start = '08:00', end = '20:00', options = {}) {
+                const { silent = false } = options;
+                const updatedEvents = { ...events };
+                if (hasShiftConflict(updatedEvents, empId, dateKey, start, end)) {
+                    if (!silent) {
+                        showNotification(`${staff[empId]?.name || 'Staff'} already has an overlapping shift on ${dateKey}.`, 'error');
+                    }
+                    return false;
+                }
+                if (!updatedEvents[dateKey]) updatedEvents[dateKey] = [];
+                const newShift = {
+                    id: `shift-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+                    date: dateKey,
+                    empId,
+                    start,
+                    end,
+                    confirmed: true,
+                    createdAt: Date.now()
+                };
+                updatedEvents[dateKey] = [...updatedEvents[dateKey], newShift];
+                setEvents(updatedEvents);
+                saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
+                return true;
+            }
+
+            function toggleBulkWeekday(dayIndex) {
+                setBulkAssign(previous => {
+                    const exists = previous.weekdays.includes(dayIndex);
+                    const weekdays = exists
+                        ? previous.weekdays.filter(day => day !== dayIndex)
+                        : [...previous.weekdays, dayIndex].sort((a, b) => a - b);
+                    return { ...previous, weekdays };
+                });
+            }
+
+            function applyBulkAssignments() {
+                if (!bulkAssign.empId) {
+                    showNotification('Select a staff member for bulk scheduling.', 'error');
+                    return;
+                }
+                if (!bulkAssign.weekdays.length) {
+                    showNotification('Select at least one weekday.', 'error');
+                    return;
+                }
+                if (bulkAssign.rangeEnd < bulkAssign.rangeStart) {
+                    showNotification('Bulk range end date must be after start date.', 'error');
+                    return;
+                }
+
+                const updatedEvents = { ...events };
+                let created = 0;
+                let skipped = 0;
+
+                const cursor = new Date(`${bulkAssign.rangeStart}T00:00:00`);
+                const endDate = new Date(`${bulkAssign.rangeEnd}T00:00:00`);
+                while (cursor <= endDate) {
+                    const weekday = cursor.getDay();
+                    if (bulkAssign.weekdays.includes(weekday)) {
+                        const dateKey = cursor.toISOString().split('T')[0];
+                        if (!hasShiftConflict(updatedEvents, bulkAssign.empId, dateKey, bulkAssign.start, bulkAssign.end)) {
+                            if (!updatedEvents[dateKey]) updatedEvents[dateKey] = [];
+                            updatedEvents[dateKey] = [
+                                ...updatedEvents[dateKey],
+                                {
+                                    id: `shift-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${created}`,
+                                    date: dateKey,
+                                    empId: bulkAssign.empId,
+                                    start: bulkAssign.start,
+                                    end: bulkAssign.end,
+                                    confirmed: true,
+                                    createdAt: Date.now()
+                                }
+                            ];
+                            created += 1;
+                        } else {
+                            skipped += 1;
+                        }
+                    }
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+
+                setEvents(updatedEvents);
+                saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
+                setIsBulkAssignOpen(false);
+                showNotification(`Bulk scheduling complete: ${created} added, ${skipped} skipped.`);
+            }
+
+            function handleStaffDragStart(staffId) {
+                setDraggedStaff(staffId);
+                setDraggedShift(null);
+            }
+
+            function handleShiftDragStart(shift, fromDate) {
+                setDraggedShift({ shift, fromDate });
+                setDraggedStaff(null);
+            }
+
+            function handleCalendarDragOver(event, dateKey) {
+                event.preventDefault();
+                if (dragOverDate !== dateKey) {
+                    setDragOverDate(dateKey);
+                }
+            }
+
+            function handleCalendarDrop(event, dateKey) {
+                event.preventDefault();
+
+                if (draggedStaff) {
+                    const created = createShiftForDate(draggedStaff, dateKey, '08:00', '20:00');
+                    if (created) {
+                        showNotification(`Scheduled ${staff[draggedStaff]?.name || 'staff'} on ${dateKey}.`);
+                    }
+                }
+
+                if (draggedShift) {
+                    const { shift, fromDate } = draggedShift;
+                    if (fromDate !== dateKey) {
+                        const updatedEvents = { ...events };
+                        const movingStart = shift.start || shift.time || '08:00';
+                        const movingEnd = shift.end || '20:00';
+                        if (hasShiftConflict(updatedEvents, shift.empId, dateKey, movingStart, movingEnd, shift.id)) {
+                            showNotification(`${staff[shift.empId]?.name || 'Staff'} already has an overlapping shift on ${dateKey}.`, 'error');
+                            setDraggedStaff(null);
+                            setDraggedShift(null);
+                            setDragOverDate(null);
+                            return;
+                        }
+                        const fromList = [...(updatedEvents[fromDate] || [])].filter(item => item.id !== shift.id);
+                        if (fromList.length > 0) {
+                            updatedEvents[fromDate] = fromList;
+                        } else {
+                            delete updatedEvents[fromDate];
+                        }
+                        if (!updatedEvents[dateKey]) updatedEvents[dateKey] = [];
+                        updatedEvents[dateKey] = [...updatedEvents[dateKey], { ...shift, date: dateKey }];
+                        setEvents(updatedEvents);
+                        saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
+                        showNotification(`Moved ${staff[shift.empId]?.name || 'shift'} to ${dateKey}.`);
+                    }
+                }
+
+                setDraggedStaff(null);
+                setDraggedShift(null);
+                setDragOverDate(null);
+            }
+
+            function handleCalendarDragLeave(dateKey) {
+                if (dragOverDate === dateKey) {
+                    setDragOverDate(null);
+                }
+            }
+
             // --- UI Elements ---
             const [shiftStatusFilter, setShiftStatusFilter] = useState('all');
             const [shiftSearch, setShiftSearch] = useState('');
@@ -880,7 +1067,7 @@
                     }
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
-                        <div key={dk} onClick={() => setSelectedDate(dk)} style={{background: selectedDate === dk ? 'linear-gradient(135deg, rgba(184,115,51,0.15), rgba(139,90,43,0.1))' : 'linear-gradient(135deg, rgba(26,26,27,0.98), rgba(35,30,28,0.95))', border: selectedDate === dk ? '2px solid #b87333' : '1px solid rgba(184,115,51,0.3)', boxShadow: selectedDate === dk ? '0 0 20px rgba(184,115,51,0.4), inset 0 2px 0 rgba(255,255,255,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.5)'}} className={`min-h-[180px] p-3 transition-all cursor-pointer relative group ${isToday ? 'border-l-4' : ''}`}>
+                        <div key={dk} onClick={() => setSelectedDate(dk)} onDragOver={(event) => handleCalendarDragOver(event, dk)} onDrop={(event) => handleCalendarDrop(event, dk)} onDragLeave={() => handleCalendarDragLeave(dk)} style={{background: selectedDate === dk ? 'linear-gradient(135deg, rgba(184,115,51,0.15), rgba(139,90,43,0.1))' : 'linear-gradient(135deg, rgba(26,26,27,0.98), rgba(35,30,28,0.95))', border: dragOverDate === dk ? '2px solid var(--highlight)' : (selectedDate === dk ? '2px solid #b87333' : '1px solid rgba(184,115,51,0.3)'), boxShadow: dragOverDate === dk ? '0 0 24px var(--highlight-glow), inset 0 2px 0 rgba(255,255,255,0.08)' : (selectedDate === dk ? '0 0 20px rgba(184,115,51,0.4), inset 0 2px 0 rgba(255,255,255,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.5)')}} className={`min-h-[180px] p-3 transition-all cursor-pointer relative group ${isToday ? 'border-l-4' : ''}`}>
                             {isToday && <div className="rivet" style={{top: '4px', left: '4px'}} />}
                             <div className="flex justify-between items-start">
                                 <span style={{color: selectedDate === dk ? '#b87333' : '#8a8a8a', fontWeight: 900, fontSize: '1.5rem', textShadow: selectedDate === dk ? '0 0 10px rgba(184,115,51,0.5)' : 'none'}}>{d}</span>
@@ -889,7 +1076,7 @@
                             <div className="space-y-2 mt-4">
                                 {dayShifts.length === 0 ? <div style={{color: '#b87333', fontSize: '9px', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase'}} className="animate-pulse flex items-center gap-1 mt-2"><IconAlert /> NEEDS COVERAGE</div> : 
                                     dayShifts.map(s => (
-                                        <div key={s.id} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
+                                        <div key={s.id} draggable onDragStart={(event) => { event.stopPropagation(); handleShiftDragStart(s, dk); }} onDragEnd={() => { setDraggedShift(null); setDragOverDate(null); }} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
                                             style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.9), rgba(104,68,32,0.95))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '8px 12px', color: '#e0e0e0', fontWeight: 900, fontSize: '12px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.2)', position: 'relative'}} className="cursor-pointer transition-all hover:translate-y-[-2px]">
                                             <div className="rivet" style={{top: '3px', left: '3px', width: '6px', height: '6px'}} />
                                             <div className="rivet" style={{top: '3px', right: '3px', width: '6px', height: '6px'}} />
@@ -905,7 +1092,7 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate]);
 
             return (
                 <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
@@ -1145,6 +1332,28 @@
                                             className="fancy-btn"
                                             style={{padding: '10px 24px', fontSize: '11px'}}
                                         >EXPORT CSV</button>
+                                        <button className="fancy-btn" style={{padding: '10px 24px', fontSize: '11px'}} onClick={() => setIsBulkAssignOpen(true)}>BULK ASSIGN</button>
+                                    </div>
+                                </div>
+                                <div className="glass-panel p-4 mb-6 text-left">
+                                    <div style={{fontSize: '10px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.2em'}} className="mb-3">Drag Staff Badges To Calendar</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {Object.entries(staff).map(([id, s]) => (
+                                            <button
+                                                key={id}
+                                                type="button"
+                                                draggable
+                                                onDragStart={() => handleStaffDragStart(id)}
+                                                onDragEnd={() => { setDraggedStaff(null); setDragOverDate(null); }}
+                                                style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.88), rgba(104,68,32,0.95))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid #8b5a2b', borderRadius: '999px', padding: '8px 14px', color: '#f4e9dc', fontWeight: 900, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase'}}
+                                                className="transition-all hover:translate-y-[-1px]"
+                                            >
+                                                {String(s.name)}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <div className="text-[10px] text-white/60 mt-3">
+                                        Tip: drag a badge onto a day to create a shift, or drag an existing shift card to move it.
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-7 glass-panel overflow-hidden neon-blue rounded-xl font-bold">
@@ -1352,20 +1561,13 @@
                                 {window.selectedAddEmpId && (
                                     <form onSubmit={e => {
                                         e.preventDefault();
-                                        const newShift = {
-                                            id: `shift-${Date.now()}`,
-                                            date: selectedDate,
-                                            empId: window.selectedAddEmpId,
-                                            start: window.selectedAddStart || '08:00',
-                                            end: window.selectedAddEnd || '20:00',
-                                            confirmed: true,
-                                            createdAt: Date.now()
-                                        };
-                                        const updatedEvents = { ...events };
-                                        if (!updatedEvents[selectedDate]) updatedEvents[selectedDate] = [];
-                                        updatedEvents[selectedDate].push(newShift);
-                                        setEvents(updatedEvents);
-                                        saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
+                                        const created = createShiftForDate(
+                                            window.selectedAddEmpId,
+                                            selectedDate,
+                                            window.selectedAddStart || '08:00',
+                                            window.selectedAddEnd || '20:00'
+                                        );
+                                        if (!created) return;
                                         setIsAddModalOpen(false);
                                         window.selectedAddEmpId = null;
                                         window.selectedAddEmpName = null;
@@ -1403,9 +1605,15 @@
                                     const dateShifts = updatedEvents[editingShift.date] || [];
                                     const shiftIndex = dateShifts.findIndex(s => s.id === editingShift.id);
                                     if (shiftIndex !== -1) {
+                                        const proposedStart = window.editingShiftTime || editingShift.time;
+                                        const proposedEnd = editingShift.end || '20:00';
+                                        if (hasShiftConflict(updatedEvents, editingShift.empId, editingShift.date, proposedStart, proposedEnd, editingShift.id)) {
+                                            showNotification(`${staff[editingShift.empId]?.name || 'Staff'} already has an overlapping shift at that time.`, 'error');
+                                            return;
+                                        }
                                         dateShifts[shiftIndex] = {
                                             ...dateShifts[shiftIndex],
-                                            time: window.editingShiftTime || editingShift.time,
+                                            time: proposedStart,
                                             note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || ''),
                                             confirmed: editingShift.confirmed
                                         };
@@ -1450,6 +1658,78 @@
                                         }} className="bg-rose-600 px-8 py-4 rounded-xl text-white hover:bg-rose-500 shadow-lg font-bold">Remove</button>
                                     </div>
                                 </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* BULK SCHEDULER MODAL */}
+                    {isBulkAssignOpen && (
+                        <div className="fixed inset-0 bg-black/92 backdrop-blur-xl z-[700] flex items-center justify-center p-4">
+                            <div className="glass-panel neon-blue p-8 w-full max-w-2xl rounded-[2rem] text-left text-white">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div>
+                                        <div className="text-[10px] uppercase tracking-[0.3em]" style={{color: 'var(--accent)'}}>Recurring Scheduler</div>
+                                        <h3 className="text-2xl font-black uppercase tracking-tight mt-2">Bulk Assign Shifts</h3>
+                                    </div>
+                                    <button onClick={() => setIsBulkAssignOpen(false)} className="text-5xl leading-none font-light">&times;</button>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Staff</label>
+                                        <select value={bulkAssign.empId} onChange={e => setBulkAssign(previous => ({ ...previous, empId: e.target.value }))} className="panel-input">
+                                            <option value="">Select staff member</option>
+                                            {Object.entries(staff).map(([id, member]) => (
+                                                <option key={id} value={id}>{member.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Start</label>
+                                            <input type="time" value={bulkAssign.start} onChange={e => setBulkAssign(previous => ({ ...previous, start: e.target.value }))} className="panel-input" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">End</label>
+                                            <input type="time" value={bulkAssign.end} onChange={e => setBulkAssign(previous => ({ ...previous, end: e.target.value }))} className="panel-input" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                                    <div>
+                                        <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Range Start</label>
+                                        <input type="date" value={bulkAssign.rangeStart} onChange={e => setBulkAssign(previous => ({ ...previous, rangeStart: e.target.value }))} className="panel-input" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Range End</label>
+                                        <input type="date" value={bulkAssign.rangeEnd} onChange={e => setBulkAssign(previous => ({ ...previous, rangeEnd: e.target.value }))} className="panel-input" />
+                                    </div>
+                                </div>
+
+                                <div className="mt-5">
+                                    <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Weekdays</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((label, dayIndex) => {
+                                            const selected = bulkAssign.weekdays.includes(dayIndex);
+                                            return (
+                                                <button
+                                                    key={label}
+                                                    type="button"
+                                                    onClick={() => toggleBulkWeekday(dayIndex)}
+                                                    style={{border: selected ? '2px solid var(--highlight)' : '1px solid rgba(255,255,255,0.18)', background: selected ? 'rgba(34,211,238,0.16)' : 'rgba(255,255,255,0.04)', color: selected ? '#cffafe' : '#d4d4d8', borderRadius: '999px', padding: '8px 14px', fontSize: '11px', fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase'}}
+                                                >
+                                                    {label}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                <div className="mt-6 flex justify-end gap-3">
+                                    <button type="button" onClick={() => setIsBulkAssignOpen(false)} className="panel-input" style={{width: 'auto', padding: '10px 16px'}}>Cancel</button>
+                                    <button type="button" className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}} onClick={applyBulkAssignments}>Apply Recurring Shifts</button>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -1678,8 +1958,7 @@
                                     <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
                                 </form>
                                 <div className="mt-6 rounded-2xl border border-white/10 p-4 bg-white/[0.02] text-[11px] text-white/68 leading-relaxed">
-                                    Default admin: <strong>admin</strong> / <strong>{ADMIN_CODE}</strong><br />
-                                    Default staff: <strong>staff</strong> / <strong>staff123</strong>
+                                    Credentials are intentionally hidden. Contact your administrator for account access.
                                 </div>
                             </div>
                         </div>

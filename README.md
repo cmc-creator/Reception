@@ -35,6 +35,9 @@ This app is designed to be **deployed as a live web app** that multiple employee
 ## Features
 
 - Visual calendar interface with shift assignments
+- Drag-and-drop scheduling with staff badges and movable shift cards
+- Conflict detection to prevent overlapping shifts for the same staff member
+- Recurring bulk scheduler for weekly assignment patterns across date ranges
 - Role-based sign-in with separate admin and staff accounts
 - Settings panel for facility preferences, access rules, and theme selection
 - Multiple interface themes for different shifts or preferences
@@ -112,8 +115,7 @@ Deploy to GitHub Pages and share the URL with your employees. Everyone sees the 
 
 ## Admin Features
 
-- **Default Admin Account**: `admin` / `9898`
-- **Default Staff Account**: `staff` / `staff123`
+- **Admin Access**: Credentials are managed by your administrator and are intentionally not exposed in the UI
 - **Role Controls**: Admins can create accounts, promote/demote users, and manage facility settings
 - **Master Reset**: Restores default personnel (Karen, Izzy, Annalissia, Hal) and creates a baseline schedule for the current month
 - **Personnel Management**: Add or remove staff members through the Personnel Manifest
