@@ -35,6 +35,9 @@ This app is designed to be **deployed as a live web app** that multiple employee
 ## Features
 
 - Visual calendar interface with shift assignments
+- Role-based sign-in with separate admin and staff accounts
+- Settings panel for facility preferences, access rules, and theme selection
+- Multiple interface themes for different shifts or preferences
 - Personnel management (add/remove staff members)
 - Daily report fields for tracking mail, property, supplies, lobby status, and AOC status
 - Live chat feed for team communication
@@ -109,9 +112,12 @@ Deploy to GitHub Pages and share the URL with your employees. Everyone sees the 
 
 ## Admin Features
 
-- **Admin Code**: Set in the configuration (default: `9898`)
+- **Default Admin Account**: `admin` / `9898`
+- **Default Staff Account**: `staff` / `staff123`
+- **Role Controls**: Admins can create accounts, promote/demote users, and manage facility settings
 - **Master Reset**: Restores default personnel (Karen, Izzy, Annalissia, Hal) and creates a baseline schedule for the current month
 - **Personnel Management**: Add or remove staff members through the Personnel Manifest
+- **Theme Management**: Switch between Forge, Aurora, Daybreak, and Midnight from the settings panel
 
 ## Usage Tips
 

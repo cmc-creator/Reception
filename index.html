@@ -23,13 +23,87 @@
            ═══════════════════════════════════════════════════════ */
         :root {
             --charcoal: #1a1a1b;
-            --copper: #b87333;
-            --copper-dark: #8b5a2b;
-            --cyan: #00f3ff;
-            --copper-glow: rgba(184, 115, 51, 0.6);
-            --cyan-glow: rgba(0, 243, 255, 0.8);
+            --accent: #b87333;
+            --accent-dark: #8b5a2b;
+            --accent-soft: rgba(184, 115, 51, 0.3);
+            --accent-glow: rgba(184, 115, 51, 0.6);
+            --highlight: #00f3ff;
+            --highlight-glow: rgba(0, 243, 255, 0.8);
             --rivet-color: #5a4a3a;
             --panel-edge: #2a2a2b;
+            --bg-top: #2a1a1a;
+            --bg-mid: #1a1a1b;
+            --bg-bottom: #0a0a0b;
+            --panel-start: rgba(26, 26, 27, 0.98);
+            --panel-end: rgba(35, 30, 28, 0.95);
+            --text-primary: #e0e0e0;
+            --text-muted: #8a8a8a;
+            --critical: #e11d48;
+            --critical-soft: rgba(225, 29, 72, 0.2);
+            --success: #22c55e;
+        }
+
+        body[data-theme="aurora"] {
+            --accent: #7dd3fc;
+            --accent-dark: #0369a1;
+            --accent-soft: rgba(125, 211, 252, 0.28);
+            --accent-glow: rgba(56, 189, 248, 0.55);
+            --highlight: #6ee7b7;
+            --highlight-glow: rgba(110, 231, 183, 0.6);
+            --rivet-color: #1f4f5f;
+            --panel-edge: #0f3442;
+            --bg-top: #091726;
+            --bg-mid: #07111b;
+            --bg-bottom: #03080e;
+            --panel-start: rgba(7, 18, 28, 0.97);
+            --panel-end: rgba(11, 33, 47, 0.94);
+            --text-primary: #e0f2fe;
+            --text-muted: #93c5fd;
+            --critical: #fb7185;
+            --critical-soft: rgba(251, 113, 133, 0.22);
+            --success: #34d399;
+        }
+
+        body[data-theme="daybreak"] {
+            --accent: #f97316;
+            --accent-dark: #c2410c;
+            --accent-soft: rgba(249, 115, 22, 0.24);
+            --accent-glow: rgba(249, 115, 22, 0.45);
+            --highlight: #facc15;
+            --highlight-glow: rgba(250, 204, 21, 0.5);
+            --rivet-color: #7c4b1d;
+            --panel-edge: #854d0e;
+            --bg-top: #3b1f12;
+            --bg-mid: #1f140f;
+            --bg-bottom: #120c09;
+            --panel-start: rgba(38, 23, 17, 0.96);
+            --panel-end: rgba(63, 34, 17, 0.92);
+            --text-primary: #fff7ed;
+            --text-muted: #fdba74;
+            --critical: #ef4444;
+            --critical-soft: rgba(239, 68, 68, 0.2);
+            --success: #84cc16;
+        }
+
+        body[data-theme="midnight"] {
+            --accent: #a78bfa;
+            --accent-dark: #6d28d9;
+            --accent-soft: rgba(167, 139, 250, 0.24);
+            --accent-glow: rgba(167, 139, 250, 0.42);
+            --highlight: #22d3ee;
+            --highlight-glow: rgba(34, 211, 238, 0.55);
+            --rivet-color: #312e81;
+            --panel-edge: #1e1b4b;
+            --bg-top: #120f25;
+            --bg-mid: #0a1020;
+            --bg-bottom: #05070f;
+            --panel-start: rgba(11, 15, 30, 0.97);
+            --panel-end: rgba(25, 20, 53, 0.93);
+            --text-primary: #e9e7ff;
+            --text-muted: #c4b5fd;
+            --critical: #f43f5e;
+            --critical-soft: rgba(244, 63, 94, 0.2);
+            --success: #10b981;
         }
         
         * {
@@ -37,9 +111,10 @@
         }
         
         body {
-            background: radial-gradient(ellipse at top, #2a1a1a 0%, #1a1a1b 50%, #0a0a0b 100%) !important;
-            color: #e0e0e0 !important;
+            background: radial-gradient(ellipse at top, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bottom) 100%) !important;
+            color: var(--text-primary) !important;
             overflow: hidden;
+            transition: background 0.25s ease, color 0.25s ease;
         }
         
         /* ═══ RIVETS & INDUSTRIAL DECORATIONS ═══ */
@@ -54,12 +129,12 @@
         
         /* ═══ INDUSTRIAL METAL PANELS ═══ */
         .glass-panel {
-            background: linear-gradient(135deg, rgba(26, 26, 27, 0.98) 0%, rgba(35, 30, 28, 0.95) 100%);
-            border: 2px solid var(--copper);
+            background: linear-gradient(135deg, var(--panel-start) 0%, var(--panel-end) 100%);
+            border: 2px solid var(--accent);
             border-radius: 4px;
             position: relative;
             box-shadow: 
-                0 0 20px var(--copper-glow),
+                0 0 20px var(--accent-glow),
                 inset 0 2px 0 rgba(255, 255, 255, 0.1),
                 inset 0 -2px 5px rgba(0, 0, 0, 0.6);
         }
@@ -68,36 +143,36 @@
             content: '';
             position: absolute;
             inset: 4px;
-            border: 1px solid rgba(184, 115, 51, 0.3);
+            border: 1px solid var(--accent-soft);
             pointer-events: none;
         }
         
         .neon-blue {
-            border: 2px solid var(--cyan);
-            box-shadow: 0 0 28px var(--cyan-glow), 0 6px 24px rgba(0,0,0,0.6);
+            border: 2px solid var(--highlight);
+            box-shadow: 0 0 28px var(--highlight-glow), 0 6px 24px rgba(0,0,0,0.6);
         }
         
         .neon-fuchsia {
-            border: 2px solid var(--copper);
-            box-shadow: 0 0 20px var(--copper-glow), 0 6px 24px rgba(0,0,0,0.6);
+            border: 2px solid var(--accent);
+            box-shadow: 0 0 20px var(--accent-glow), 0 6px 24px rgba(0,0,0,0.6);
         }
         
         .holo-text {
-            text-shadow: 0 0 12px var(--cyan), 0 0 3px var(--copper);
+            text-shadow: 0 0 12px var(--highlight), 0 0 3px var(--accent);
         }
         
         /* ═══ MECHANICAL LEVER SWITCHES (BUTTONS) ═══ */
         .fancy-btn {
-            background: linear-gradient(145deg, rgba(184, 115, 51, 0.9), rgba(139, 90, 43, 0.95));
+            background: linear-gradient(145deg, var(--accent), var(--accent-dark));
             color: #1a1a1b;
-            border: 2px solid var(--copper);
+            border: 2px solid var(--accent);
             border-radius: 6px;
             font-weight: 900;
             letter-spacing: 0.08em;
             text-transform: uppercase;
             position: relative;
             box-shadow: 
-                0 4px 0 var(--copper-dark),
+                0 4px 0 var(--accent-dark),
                 0 8px 20px rgba(0, 0, 0, 0.6),
                 inset 0 1px 0 rgba(255, 255, 255, 0.3);
             transition: all 0.1s;
@@ -107,7 +182,7 @@
             content: '';
             position: absolute;
             inset: -4px;
-            border: 2px solid var(--cyan);
+            border: 2px solid var(--highlight);
             border-radius: 8px;
             opacity: 0;
             animation: borderGlow 2s ease-in-out infinite;
@@ -115,21 +190,80 @@
         
         @keyframes borderGlow {
             0%, 100% { opacity: 0; }
-            50% { opacity: 0.6; box-shadow: 0 0 20px var(--cyan-glow); }
+            50% { opacity: 0.6; box-shadow: 0 0 20px var(--highlight-glow); }
         }
         
         .fancy-btn:hover {
             transform: translateY(-2px);
             box-shadow: 
-                0 6px 0 var(--copper-dark),
-                0 12px 30px var(--copper-glow);
+                0 6px 0 var(--accent-dark),
+                0 12px 30px var(--accent-glow);
         }
         
         .fancy-btn:active {
             transform: translateY(2px);
             box-shadow: 
-                0 2px 0 var(--copper-dark),
+                0 2px 0 var(--accent-dark),
                 0 4px 10px rgba(0, 0, 0, 0.8);
+        }
+
+        .panel-input {
+            width: 100%;
+            background: rgba(10, 10, 12, 0.85);
+            border: 2px solid var(--accent-soft);
+            border-radius: 10px;
+            padding: 0.85rem 0.95rem;
+            color: var(--text-primary);
+            outline: none;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .panel-input:focus {
+            border-color: var(--highlight);
+            box-shadow: 0 0 0 3px rgba(255,255,255,0.04), 0 0 18px var(--highlight-glow);
+        }
+
+        .theme-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 16px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .theme-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .theme-card.active {
+            border-color: var(--highlight);
+            box-shadow: 0 0 20px var(--highlight-glow);
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.2rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.62rem;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+
+        .role-badge.admin {
+            background: var(--critical-soft);
+            color: #fecdd3;
+            border: 1px solid rgba(251, 113, 133, 0.25);
+        }
+
+        .role-badge.staff {
+            background: rgba(34, 211, 238, 0.14);
+            color: #cffafe;
+            border: 1px solid rgba(34, 211, 238, 0.2);
         }
         
         @keyframes slideIn {
@@ -183,14 +317,50 @@
         }
     </style>
 </head>
-<body>
+<body data-theme="forge">
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- ADMIN CONFIGURATION ---
+        // --- ACCOUNT + SETTINGS CONFIGURATION ---
         const ADMIN_CODE = '9898'; // Change this to your desired admin password
+        const DEFAULT_THEME = 'forge';
+        const THEME_OPTIONS = [
+            { id: 'forge', label: 'Forge', description: 'Industrial copper terminal', swatch: 'linear-gradient(135deg, #b87333, #00f3ff)' },
+            { id: 'aurora', label: 'Aurora', description: 'Cold blue operations room', swatch: 'linear-gradient(135deg, #7dd3fc, #6ee7b7)' },
+            { id: 'daybreak', label: 'Daybreak', description: 'Warm daylight command center', swatch: 'linear-gradient(135deg, #f97316, #facc15)' },
+            { id: 'midnight', label: 'Midnight', description: 'Deep violet overnight mode', swatch: 'linear-gradient(135deg, #a78bfa, #22d3ee)' }
+        ];
+
+        function getDefaultUsers() {
+            return {
+                'user-admin': {
+                    id: 'user-admin',
+                    username: 'admin',
+                    displayName: 'Platform Admin',
+                    password: ADMIN_CODE,
+                    role: 'admin',
+                    createdAt: Date.now()
+                },
+                'user-staff': {
+                    id: 'user-staff',
+                    username: 'staff',
+                    displayName: 'Front Desk Staff',
+                    password: 'staff123',
+                    role: 'staff',
+                    createdAt: Date.now()
+                }
+            };
+        }
+
+        function getDefaultSettings() {
+            return {
+                facilityName: 'Destiny Springs',
+                theme: DEFAULT_THEME,
+                allowStaffAlertEdits: false
+            };
+        }
 
         // --- FIREBASE INIT (OPTIONAL) ---
         let db = null;
@@ -242,6 +412,9 @@
         const STORAGE_KEYS = {
             SHIFTS: 'reception_shifts',
             STAFF: 'reception_staff',
+            USERS: 'reception_users',
+            SETTINGS: 'reception_settings',
+            SESSION: 'reception_session',
             MESSAGES: 'reception_messages',
             REPORTS: 'reception_reports',
             ALERT: 'reception_alert',
@@ -282,6 +455,9 @@
         const IconTrash = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>;
         const IconActivity = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
         const IconTerminal = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>;
+        const IconSettings = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82L4.21 7.2a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c0 .66.39 1.26 1 1.51H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>;
+        const IconUser = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21a8 8 0 0 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>;
+        const IconShield = () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>;
 
         // --- REPORT FIELDS & TEMPLATES ---
         const REPORT_FIELDS = [
@@ -311,6 +487,9 @@
                 'unit-hal': { id: 'unit-hal', name: 'Hal', bg: 'bg-blue-600/80' }
             };
             saveToStorage(STORAGE_KEYS.STAFF, seedStaff);
+            saveToStorage(STORAGE_KEYS.USERS, getDefaultUsers());
+            saveToStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings());
+            saveToStorage(STORAGE_KEYS.SESSION, null);
 
             // Always seed for February of the current year
             const now = new Date();
@@ -373,6 +552,8 @@
             const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
             const [events, setEvents] = useState({});
             const [staff, setStaff] = useState({});
+            const [users, setUsers] = useState({});
+            const [currentUser, setCurrentUser] = useState(null);
             const [messages, setMessages] = useState([]);
             const [reportData, setReportData] = useState({});
             // Daily checklist state
@@ -382,12 +563,18 @@
             const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
             const [editingShift, setEditingShift] = useState(null);
-            const [adminCode, setAdminCode] = useState('');
-            const [isAdminAuth, setIsAdminAuth] = useState(false);
+            const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+            const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+            const [loginUsername, setLoginUsername] = useState('');
+            const [loginPassword, setLoginPassword] = useState('');
+            const [loginError, setLoginError] = useState('');
             const [chatInput, setChatInput] = useState('');
             const [newStaffName, setNewStaffName] = useState('');
             const [newStaffColor, setNewStaffColor] = useState('#0891b2');
+            const [newAccount, setNewAccount] = useState({ username: '', displayName: '', password: '', role: 'staff' });
+            const [appSettings, setAppSettings] = useState(() => loadFromStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings()));
             const chatEndRef = useRef(null);
+            const isAdmin = currentUser?.role === 'admin';
 
             // --- Toast Notifications ---
             const [toasts, setToasts] = useState([]);
@@ -400,6 +587,107 @@
             }
             function dismissToast(id) {
                 setToasts(t => t.filter(toast => toast.id !== id));
+            }
+
+            function updateSettings(partialSettings) {
+                const nextSettings = { ...appSettings, ...partialSettings };
+                setAppSettings(nextSettings);
+                saveToStorage(STORAGE_KEYS.SETTINGS, nextSettings);
+                return nextSettings;
+            }
+
+            function requireAdmin(message = 'Admin account required for that action.') {
+                if (currentUser?.role === 'admin') return true;
+                showNotification(message, 'error');
+                return false;
+            }
+
+            function handleThemeChange(themeId) {
+                document.body.setAttribute('data-theme', themeId);
+                updateSettings({ theme: themeId });
+                const themeLabel = THEME_OPTIONS.find(theme => theme.id === themeId)?.label || themeId;
+                showNotification(`Theme switched to ${themeLabel}.`);
+            }
+
+            function handleLogout() {
+                saveToStorage(STORAGE_KEYS.SESSION, null);
+                setCurrentUser(null);
+                setLoginPassword('');
+                setLoginError('');
+                setIsAuthModalOpen(true);
+                setIsSettingsOpen(false);
+            }
+
+            function handleLoginSubmit(event) {
+                event.preventDefault();
+                const normalizedUsername = loginUsername.trim().toLowerCase();
+                const account = Object.values(users).find(user => user.username.toLowerCase() === normalizedUsername && user.password === loginPassword);
+                if (!account) {
+                    setLoginError('Username or password did not match an account.');
+                    return;
+                }
+                setCurrentUser(account);
+                saveToStorage(STORAGE_KEYS.SESSION, { userId: account.id, loggedInAt: Date.now() });
+                setLoginError('');
+                setLoginPassword('');
+                setIsAuthModalOpen(false);
+                showNotification(`Signed in as ${account.displayName}.`);
+            }
+
+            function createAccount() {
+                if (!requireAdmin()) return;
+                const username = newAccount.username.trim().toLowerCase();
+                const displayName = newAccount.displayName.trim();
+                const password = newAccount.password.trim();
+                if (!username || !displayName || !password) {
+                    showNotification('Fill out username, display name, and password first.', 'error');
+                    return;
+                }
+                if (Object.values(users).some(user => user.username.toLowerCase() === username)) {
+                    showNotification('That username is already in use.', 'error');
+                    return;
+                }
+                const id = `user-${Date.now()}`;
+                const updatedUsers = {
+                    ...users,
+                    [id]: {
+                        id,
+                        username,
+                        displayName,
+                        password,
+                        role: newAccount.role,
+                        createdAt: Date.now()
+                    }
+                };
+                setUsers(updatedUsers);
+                saveToStorage(STORAGE_KEYS.USERS, updatedUsers);
+                setNewAccount({ username: '', displayName: '', password: '', role: 'staff' });
+                showNotification(`Created ${newAccount.role} account for ${displayName}.`);
+            }
+
+            function updateUserRole(userId, role) {
+                if (!requireAdmin()) return;
+                const updatedUsers = { ...users, [userId]: { ...users[userId], role } };
+                setUsers(updatedUsers);
+                saveToStorage(STORAGE_KEYS.USERS, updatedUsers);
+                if (currentUser?.id === userId) {
+                    const updatedCurrentUser = updatedUsers[userId];
+                    setCurrentUser(updatedCurrentUser);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: updatedCurrentUser.id, loggedInAt: Date.now() });
+                }
+            }
+
+            function removeUserAccount(userId) {
+                if (!requireAdmin()) return;
+                if (currentUser?.id === userId) {
+                    showNotification('Sign out before removing the active account.', 'error');
+                    return;
+                }
+                const updatedUsers = { ...users };
+                delete updatedUsers[userId];
+                setUsers(updatedUsers);
+                saveToStorage(STORAGE_KEYS.USERS, updatedUsers);
+                showNotification('Account removed.');
             }
 
             // --- Shift Templates ---
@@ -459,14 +747,27 @@
                 loadDataFromStorage();
             }, []);
 
+            useEffect(() => {
+                document.body.setAttribute('data-theme', appSettings.theme || DEFAULT_THEME);
+                document.title = `${appSettings.facilityName || 'Destiny Springs'} | Hub Matrix`;
+            }, [appSettings.theme, appSettings.facilityName]);
+
             function loadDataFromStorage() {
                 const loadedShifts = loadFromStorage(STORAGE_KEYS.SHIFTS, {});
                 const loadedStaff = loadFromStorage(STORAGE_KEYS.STAFF, {});
+                const loadedUsers = loadFromStorage(STORAGE_KEYS.USERS, getDefaultUsers());
+                const loadedSettings = loadFromStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings());
+                const loadedSession = loadFromStorage(STORAGE_KEYS.SESSION, null);
                 const loadedMessages = loadFromStorage(STORAGE_KEYS.MESSAGES, []);
                 const loadedAlert = loadFromStorage(STORAGE_KEYS.ALERT, '');
+                const sessionUser = loadedSession?.userId ? loadedUsers[loadedSession.userId] : null;
                 
                 setEvents(loadedShifts);
                 setStaff(loadedStaff);
+                setUsers(loadedUsers);
+                setAppSettings(loadedSettings);
+                setCurrentUser(sessionUser || null);
+                setIsAuthModalOpen(!sessionUser);
                 setMessages(loadedMessages);
                 setGlobalAlert(loadedAlert);
             }
@@ -516,6 +817,7 @@
             // --- Admin Master Reset Pattern ---
             // --- Baseline Save/Restore ---
             function saveBaseline() {
+                if (!requireAdmin()) return;
                 // Save current staff and shifts as baseline for the current month
                 const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
                 const key = `baseline_${yIdx}_${String(mIdx+1).padStart(2,'0')}`;
@@ -528,6 +830,7 @@
             }
 
             function restoreBaseline() {
+                if (!requireAdmin()) return;
                 const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
                 const key = `baseline_${yIdx}_${String(mIdx+1).padStart(2,'0')}`;
                 const baseline = loadFromStorage(key);
@@ -543,6 +846,7 @@
             }
 
             function handleMasterReset() {
+                if (!requireAdmin()) return;
                 const year = new Date().getFullYear();
                 if (!confirm(`ADMIN MASTER RESET: Restore personnel Karen, Izzy, Annalissia, and Hal and force February ${year} Baseline schedule?`)) return;
                 // Clear all data and re-initialize
@@ -607,7 +911,7 @@
                 <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
                     {/* NAV RAIL */}
                     <nav style={{background: 'linear-gradient(180deg, #1a1a1b 0%, #0f0f10 100%)', borderRight: '2px solid rgba(184,115,51,0.3)', boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.5)'}} className="no-print w-16 flex flex-col items-center py-8 gap-6">
-                        <div style={{color: '#b87333', fontWeight: 900, fontSize: '1.2rem', textShadow: '0 0 10px rgba(184,115,51,0.6)', letterSpacing: '0.1em'}}>DS</div>
+                        <div style={{color: 'var(--accent)', fontWeight: 900, fontSize: '1.2rem', textShadow: '0 0 10px var(--accent-glow)', letterSpacing: '0.1em'}}>{(appSettings.facilityName || 'DS').split(' ').map(part => part[0]).join('').slice(0, 2)}</div>
                         
                         {/* PANIC BUTTON */}
                         <button 
@@ -672,38 +976,38 @@
                             </svg>
                         </button>
                         
-                        <button onClick={handleMasterReset} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Admin Master Reset"><IconSync /></button>
-                        <button onClick={saveBaseline} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Save Baseline for Month">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b87333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                        </button>
-                        <button onClick={restoreBaseline} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Restore Baseline for Month">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#b87333" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
-                        </button>
-                        <button onClick={() => setIsPersonnelModalOpen(true)} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Personnel Manifest"><IconPersonnel /></button>
+                        {isAdmin && <button onClick={handleMasterReset} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Admin Master Reset"><IconSync /></button>}
+                        {isAdmin && <button onClick={saveBaseline} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Save Baseline for Month">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        </button>}
+                        {isAdmin && <button onClick={restoreBaseline} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Restore Baseline for Month">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                        </button>}
+                        {isAdmin && <button onClick={() => setIsPersonnelModalOpen(true)} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Personnel Manifest"><IconPersonnel /></button>}
+                        <button onClick={() => setIsSettingsOpen(true)} style={{background: 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))', border: '2px solid var(--highlight)', borderRadius: '4px', padding: '12px', boxShadow: '0 0 18px var(--highlight-glow), 0 6px 15px rgba(0,0,0,0.5)'}} className="transition-all hover:translate-y-[-2px]" title="Platform Settings"><IconSettings /></button>
                         <div className="mt-auto flex flex-col items-center gap-3">
                             <div className="rivet" style={{width: '10px', height: '10px', boxShadow: '0 0 10px rgba(184,115,51,0.6), inset 0 1px 2px rgba(0,0,0,0.8)'}} title="Local Storage Ready" />
-                            <div style={{opacity: 0.3, fontSize: '7px', fontWeight: 900, textTransform: 'uppercase', transform: 'rotate(90deg)', letterSpacing: '0.2em', color: '#8b5a2b'}}>PROTOCOL</div>
+                            <div style={{opacity: 0.3, fontSize: '7px', fontWeight: 900, textTransform: 'uppercase', transform: 'rotate(90deg)', letterSpacing: '0.2em', color: 'var(--accent-dark)'}}>{isAdmin ? 'ADMIN' : 'STAFF'}</div>
                         </div>
                     </nav>
 
                     <div className="flex-1 flex flex-col">
-                        <header className="no-print h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 gap-4 text-left font-bold">
+                        <header className="no-print min-h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 py-2 gap-4 text-left font-bold">
                             <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
                             <input value={globalAlert} onChange={e => { 
+                                if (!isAdmin && !appSettings.allowStaffAlertEdits) return;
                                 const newAlert = String(e.target.value);
                                 setGlobalAlert(newAlert);
                                 saveToStorage(STORAGE_KEYS.ALERT, newAlert);
-                            }} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder="Broadcast immediate hub directive..." />
+                            }} readOnly={!isAdmin && !appSettings.allowStaffAlertEdits} className="flex-1 bg-transparent border-none text-[11px] font-bold text-white outline-none placeholder-rose-900" placeholder={isAdmin || appSettings.allowStaffAlertEdits ? 'Broadcast immediate hub directive...' : 'Admin-only global alert channel'} />
                             <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
                                 {isFirebaseAvailable ? '🌐 LIVE SYNC' : '💾 LOCAL MODE'}
                             </div>
-                            <button className="fancy-btn ml-4" onClick={() => {
-                                const theme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-                                document.body.setAttribute('data-theme', theme);
-                                localStorage.setItem('reception_theme', theme);
-                            }}>
-                                Toggle {document.body.getAttribute('data-theme') === 'dark' ? 'Light' : 'Dark'} Mode
-                            </button>
+                            <div className="flex items-center gap-3 shrink-0">
+                                {currentUser && <div className={`role-badge ${currentUser.role}`}><IconUser /> {currentUser.displayName}</div>}
+                                <button className="fancy-btn" onClick={() => setIsSettingsOpen(true)} style={{padding: '8px 14px', fontSize: '10px'}}>SETTINGS</button>
+                                {currentUser && <button onClick={handleLogout} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="uppercase">Sign Out</button>}
+                            </div>
                         </header>
 
                         <div className="flex-1 flex overflow-hidden">
@@ -762,7 +1066,7 @@
                                 <div className="glass-panel p-3 rounded-lg mt-auto text-left flex flex-col h-48">
                                     <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
                                     <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
-                                        {messages.map(m => <div key={m.id}><span style={{color: '#b87333', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
+                                        {messages.map(m => <div key={m.id}><span style={{color: 'var(--accent)', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
                                     <form onSubmit={e => { 
@@ -772,7 +1076,7 @@
                                                 id: `msg-${Date.now()}`, 
                                                 text: chatInput, 
                                                 createdAt: Date.now(), 
-                                                user: 'USER' 
+                                                user: currentUser?.displayName || currentUser?.username || 'USER' 
                                             };
                                             const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
                                             setMessages(updatedMessages);
@@ -792,9 +1096,9 @@
                                 <div className="flex justify-between items-end mb-8 no-print text-left font-bold">
                                     <div className="text-white">
                                         <h2 className="text-5xl font-black uppercase tracking-tighter drop-shadow-[0_0_15px_rgba(255,255,255,0.2)] font-black">
-                                            {currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
+                                            {appSettings.facilityName || 'Destiny Springs'}
                                         </h2>
-                                        <div style={{fontSize: '10px', fontWeight: 900, color: '#b87333', letterSpacing: '0.5em', textTransform: 'uppercase', marginTop: '4px', textShadow: '0 0 8px rgba(184,115,51,0.5)'}}>COMMAND TERMINAL</div>
+                                        <div style={{fontSize: '10px', fontWeight: 900, color: 'var(--accent)', letterSpacing: '0.5em', textTransform: 'uppercase', marginTop: '4px', textShadow: '0 0 8px var(--accent-glow)'}}>{currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</div>
                                     </div>
                                     <div className="flex gap-4 items-center">
                                         <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" style={{background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.5)', color: '#b87333', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 w-48 outline-none" />
@@ -857,14 +1161,14 @@
                             <div className="glass-panel neon-fuchsia p-10 w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl rounded-[2rem]">
                                 <div className="flex justify-between items-center mb-8 text-fuchsia-400 text-left">
                                     <h3 className="text-3xl font-black uppercase tracking-tighter">Manifest Hub</h3>
-                                    <button onClick={() => { setIsPersonnelModalOpen(false); setIsAdminAuth(false); }} className="text-5xl font-light hover:text-white transition-colors">&times;</button>
+                                    <button onClick={() => setIsPersonnelModalOpen(false)} className="text-5xl font-light hover:text-white transition-colors">&times;</button>
                                 </div>
-                                {!isAdminAuth ? (
-                                    <form onSubmit={e => { e.preventDefault(); if (adminCode === ADMIN_CODE) setIsAdminAuth(true); }} className="space-y-6 flex-1 flex flex-col justify-center items-center text-center font-bold">
-                                        <div className="text-fuchsia-500 font-black text-xl flex items-center gap-3 alert-pulse">Restricted Access<br/><span className="text-[10px] opacity-40 uppercase tracking-widest font-bold font-mono"><IconLock className="inline mr-2"/> Code Required</span></div>
-                                        <input type="password" value={adminCode} onChange={e => setAdminCode(e.target.value)} className="w-48 bg-black border border-fuchsia-500/40 rounded-xl p-4 text-center text-3xl text-white outline-none shadow-inner font-black" placeholder="****" autoFocus />
-                                        <button type="submit" className="bg-fuchsia-600 px-12 py-3 rounded-xl font-black uppercase text-xs text-white shadow-lg transition-all hover:scale-105 active:scale-95 font-bold tracking-widest">Unlock Manifest</button>
-                                    </form>
+                                {!isAdmin ? (
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center gap-4">
+                                        <div className="text-fuchsia-400 text-xl font-black">Admin Access Required</div>
+                                        <div className="text-white/65 max-w-md leading-relaxed">Staff accounts can use schedules, reports, and chat. Only admin accounts can change the personnel manifest.</div>
+                                        <button className="fancy-btn" onClick={() => { setIsPersonnelModalOpen(false); setIsSettingsOpen(true); }} style={{padding: '10px 18px', fontSize: '11px'}}>OPEN SETTINGS</button>
+                                    </div>
                                 ) : (
                                     <div className="flex flex-col flex-1 overflow-hidden text-left font-bold">
                                         <div className="space-y-4 mb-8 text-white text-left font-bold font-mono">
@@ -917,6 +1221,114 @@
                                         </div>
                                     </div>
                                 )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* MODAL: SETTINGS */}
+                    {isSettingsOpen && (
+                        <div className="fixed inset-0 bg-black/92 backdrop-blur-xl z-[650] flex items-center justify-center p-4">
+                            <div className="glass-panel neon-blue p-8 w-full max-w-4xl max-h-[88vh] overflow-y-auto rounded-[2rem] text-left text-white">
+                                <div className="flex items-start justify-between gap-6 mb-8">
+                                    <div>
+                                        <div className="text-[10px] uppercase tracking-[0.35em] mb-2" style={{color: 'var(--accent)'}}>Platform Settings</div>
+                                        <h3 className="text-3xl font-black uppercase tracking-tight">Control Deck</h3>
+                                        <div className="mt-3 flex items-center gap-3">
+                                            {currentUser && <div className={`role-badge ${currentUser.role}`}><IconShield /> {currentUser.role}</div>}
+                                            {currentUser && <div className="text-sm text-white/65">Signed in as {currentUser.displayName} ({currentUser.username})</div>}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setIsSettingsOpen(false)} className="text-5xl font-light hover:text-white transition-colors leading-none">&times;</button>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <section className="glass-panel p-5 rounded-3xl">
+                                        <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{color: 'var(--accent)'}}>Appearance</div>
+                                        <div className="grid sm:grid-cols-2 gap-4">
+                                            {THEME_OPTIONS.map(theme => (
+                                                <button
+                                                    key={theme.id}
+                                                    type="button"
+                                                    onClick={() => handleThemeChange(theme.id)}
+                                                    className={`theme-card text-left ${appSettings.theme === theme.id ? 'active' : ''}`}
+                                                >
+                                                    <div className="h-12 rounded-xl mb-3" style={{background: theme.swatch}} />
+                                                    <div className="font-black uppercase text-sm tracking-wide">{theme.label}</div>
+                                                    <div className="text-[11px] text-white/65 mt-1">{theme.description}</div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </section>
+
+                                    <section className="glass-panel p-5 rounded-3xl">
+                                        <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{color: 'var(--accent)'}}>Facility Profile</div>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Facility Name</label>
+                                                <input
+                                                    value={appSettings.facilityName || ''}
+                                                    onChange={e => updateSettings({ facilityName: e.target.value })}
+                                                    className="panel-input"
+                                                    readOnly={!isAdmin}
+                                                    placeholder="Facility name"
+                                                />
+                                            </div>
+                                            <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 p-4">
+                                                <div>
+                                                    <div className="font-black uppercase text-[11px] tracking-[0.2em]">Staff Alert Editing</div>
+                                                    <div className="text-[11px] text-white/60 mt-1">Let staff accounts edit the global critical alert banner.</div>
+                                                </div>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={!!appSettings.allowStaffAlertEdits}
+                                                    disabled={!isAdmin}
+                                                    onChange={e => updateSettings({ allowStaffAlertEdits: e.target.checked })}
+                                                />
+                                            </label>
+                                            {!isAdmin && <div className="text-[11px] text-white/45">Staff can personalize the app theme here, but facility controls remain admin-only.</div>}
+                                        </div>
+                                    </section>
+                                </div>
+
+                                <section className="glass-panel p-5 rounded-3xl mt-6">
+                                    <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{color: 'var(--accent)'}}>Accounts</div>
+                                    {isAdmin ? (
+                                        <div className="grid lg:grid-cols-[1.1fr_1.4fr] gap-6">
+                                            <div className="space-y-3">
+                                                <input value={newAccount.displayName} onChange={e => setNewAccount(account => ({ ...account, displayName: e.target.value }))} className="panel-input" placeholder="Display name" />
+                                                <input value={newAccount.username} onChange={e => setNewAccount(account => ({ ...account, username: e.target.value }))} className="panel-input" placeholder="Username" />
+                                                <input type="password" value={newAccount.password} onChange={e => setNewAccount(account => ({ ...account, password: e.target.value }))} className="panel-input" placeholder="Temporary password" />
+                                                <select value={newAccount.role} onChange={e => setNewAccount(account => ({ ...account, role: e.target.value }))} className="panel-input">
+                                                    <option value="staff">Staff</option>
+                                                    <option value="admin">Admin</option>
+                                                </select>
+                                                <button type="button" className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}} onClick={createAccount}>CREATE ACCOUNT</button>
+                                            </div>
+                                            <div className="space-y-3">
+                                                {Object.values(users).map(account => (
+                                                    <div key={account.id} className="rounded-2xl border border-white/10 p-4 flex flex-wrap items-center gap-3 justify-between bg-white/[0.02]">
+                                                        <div>
+                                                            <div className="font-black uppercase text-sm">{account.displayName}</div>
+                                                            <div className="text-[11px] text-white/55 mt-1">{account.username}</div>
+                                                        </div>
+                                                        <div className="flex items-center gap-3 ml-auto">
+                                                            <span className={`role-badge ${account.role}`}>{account.role}</span>
+                                                            <select value={account.role} onChange={e => updateUserRole(account.id, e.target.value)} className="panel-input" style={{width: 'auto', padding: '0.6rem 0.8rem'}}>
+                                                                <option value="staff">Staff</option>
+                                                                <option value="admin">Admin</option>
+                                                            </select>
+                                                            <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-2xl border border-white/10 p-5 bg-white/[0.02] text-white/72 leading-relaxed">
+                                            Your account is set to staff. Appearance settings are available here, but account creation and role changes require an admin login.
+                                        </div>
+                                    )}
+                                </section>
                             </div>
                         </div>
                     )}
@@ -1247,6 +1659,27 @@
                                             <div>Kudos Shared: <span className="font-black text-pink-400">{kudosWall.length}</span></div>
                                         </div>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* AUTH MODAL */}
+                    {isAuthModalOpen && (
+                        <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[2500] flex items-center justify-center p-4">
+                            <div className="glass-panel neon-fuchsia w-full max-w-md p-8 rounded-[2rem] text-left text-white">
+                                <div className="text-[10px] uppercase tracking-[0.3em] mb-3" style={{color: 'var(--accent)'}}>Secure Access</div>
+                                <h2 className="text-3xl font-black uppercase tracking-tight">Sign In</h2>
+                                <div className="text-sm text-white/65 mt-3">Use an admin account to manage staff, settings, and access rules. Staff accounts still have scheduling and reporting access.</div>
+                                <form onSubmit={handleLoginSubmit} className="space-y-4 mt-6">
+                                    <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="Username" autoFocus />
+                                    <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Password" />
+                                    {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
+                                    <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
+                                </form>
+                                <div className="mt-6 rounded-2xl border border-white/10 p-4 bg-white/[0.02] text-[11px] text-white/68 leading-relaxed">
+                                    Default admin: <strong>admin</strong> / <strong>{ADMIN_CODE}</strong><br />
+                                    Default staff: <strong>staff</strong> / <strong>staff123</strong>
                                 </div>
                             </div>
                         </div>
