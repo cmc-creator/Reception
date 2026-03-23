@@ -401,8 +401,24 @@
             .calendar-grid .text-fuchsia-400 { color: #d946ef !important; }
         }
     </style>
+    <script>
+        // Initialize theme from localStorage before React mounts to avoid flash
+        (function() {
+            const savedTheme = localStorage.getItem('reception_settings');
+            if (savedTheme) {
+                try {
+                    const settings = JSON.parse(savedTheme);
+                    if (settings.theme) {
+                        document.body.setAttribute('data-theme', settings.theme);
+                    }
+                } catch (e) {
+                    console.error('Failed to parse saved settings:', e);
+                }
+            }
+        })();
+    </script>
 </head>
-<body data-theme="forge">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
