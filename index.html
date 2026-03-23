@@ -609,69 +609,67 @@
             { id: 'incident', label: '⚠️ Incident Report', content: { incidents: '[TIME] - [DESCRIPTION]\\n[ACTION TAKEN]\\n[FOLLOW-UP NEEDED]', handoff: 'Review incident notes above' }}
         ];
 
-        function initializeSeedData() {
-            // Seed staff
-            const seedStaff = {
-                'unit-karen': { id: 'unit-karen', name: 'Karen', bg: 'bg-cyan-600/80' },
-                'unit-izzy': { id: 'unit-izzy', name: 'Izzy', bg: 'bg-rose-600/80' },
-                'unit-annalissia': { id: 'unit-annalissia', name: 'Annalissia', bg: 'bg-fuchsia-600/80' },
-                'unit-hal': { id: 'unit-hal', name: 'Hal', bg: 'bg-blue-600/80' }
-            };
-            saveToStorage(STORAGE_KEYS.STAFF, seedStaff);
-            saveToStorage(STORAGE_KEYS.USERS, getDefaultUsers());
-            saveToStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings());
-            saveToStorage(STORAGE_KEYS.SESSION, null);
-
-            // Always seed for February of the current year
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = 1; // February (0-based)
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const shifts = {};
-            for (let d = 1; d <= daysInMonth; d++) {
-                const date = new Date(year, month, d);
-                const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                const dow = date.getDay();
-                // Create sample shifts based on day of week
-                if (dow === 1 || dow === 3) { // Mon, Wed
-                    shifts[dateKey] = [{ id: `shift-${Date.now()}-${d}-1`, date: dateKey, empId: 'unit-karen', time: '08:00', confirmed: true }];
-                } else if (dow === 2 || dow === 4 || dow === 5) { // Tue, Thu, Fri
-                    shifts[dateKey] = [{ id: `shift-${Date.now()}-${d}-2`, date: dateKey, empId: 'unit-izzy', time: '08:00', confirmed: true }];
-                } else if (dow === 0) { // Sunday
-                    shifts[dateKey] = [
-                        { id: `shift-${Date.now()}-${d}-3`, date: dateKey, empId: 'unit-hal', time: '16:00', confirmed: true },
-                        { id: `shift-${Date.now()}-${d}-4`, date: dateKey, empId: 'unit-annalissia', time: '08:00', confirmed: true }
-                    ];
-                }
+        function ensureCoreDataInitialized() {
+            if (!loadFromStorage(STORAGE_KEYS.USERS)) {
+                saveToStorage(STORAGE_KEYS.USERS, getDefaultUsers());
             }
-            saveToStorage(STORAGE_KEYS.SHIFTS, shifts);
-
-            // Seed messages
-            const seedMessages = [
-                { id: 'msg-1', text: 'Welcome to Reception! Your calendar is ready.', user: 'SYSTEM', createdAt: Date.now() - 7200000 },
-                { id: 'msg-2', text: 'All data is stored locally in your browser.', user: 'SYSTEM', createdAt: Date.now() - 3600000 },
-                { id: 'msg-3', text: 'Use the Export Matrix button to print or save your schedule.', user: 'INFO', createdAt: Date.now() }
-            ];
-            saveToStorage(STORAGE_KEYS.MESSAGES, seedMessages);
-
-            // Seed report data for today
-            const today = now.toISOString().split('T')[0];
-            const seedReports = {
-                [today]: {
-                    mail: 'Sample: Mail delivery expected at 2 PM',
-                    property: 'Sample: All patient property secured',
-                    supplies: 'Sample: Stock levels normal',
-                    lobby: 'Sample: Clean and organized',
-                    aoc: 'Sample: All systems operational'
-                }
-            };
-            saveToStorage(STORAGE_KEYS.REPORTS, seedReports);
-
-            // Seed alert
-            saveToStorage(STORAGE_KEYS.ALERT, 'Welcome to Reception - Your offline staff calendar');
-
-            // Mark as initialized
+            if (!loadFromStorage(STORAGE_KEYS.SETTINGS)) {
+                saveToStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings());
+            }
+            if (loadFromStorage(STORAGE_KEYS.SESSION) === undefined) {
+                saveToStorage(STORAGE_KEYS.SESSION, null);
+            }
             saveToStorage(STORAGE_KEYS.INITIALIZED, true);
+        }
+
+        function purgeKnownSeedData() {
+            const seededMessages = new Set([
+                'Welcome to Reception! Your calendar is ready.',
+                'All data is stored locally in your browser.',
+                'Use the Export Matrix button to print or save your schedule.'
+            ]);
+            const seededVisitors = new Set(['Doctor Appointment', 'Physical Therapy', 'Lab Draw']);
+            const seededPatients = new Set(['Patient A', 'Patient B', 'Patient C']);
+
+            const messages = loadFromStorage(STORAGE_KEYS.MESSAGES, []);
+            const filteredMessages = messages.filter(msg => !seededMessages.has(String(msg?.text || '')));
+            if (filteredMessages.length !== messages.length) {
+                saveToStorage(STORAGE_KEYS.MESSAGES, filteredMessages);
+            }
+
+            const reports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
+            let reportsChanged = false;
+            const cleanedReports = Object.entries(reports).reduce((acc, [dateKey, report]) => {
+                const nextReport = { ...(report || {}) };
+                Object.keys(nextReport).forEach(field => {
+                    if (typeof nextReport[field] === 'string' && nextReport[field].startsWith('Sample:')) {
+                        nextReport[field] = '';
+                        reportsChanged = true;
+                    }
+                });
+                acc[dateKey] = nextReport;
+                return acc;
+            }, {});
+            if (reportsChanged) {
+                saveToStorage(STORAGE_KEYS.REPORTS, cleanedReports);
+            }
+
+            const visits = loadFromStorage('reception_visitation', []);
+            const filteredVisits = visits.filter(v => !(seededVisitors.has(String(v?.visitor || '')) && seededPatients.has(String(v?.patient || ''))));
+            if (filteredVisits.length !== visits.length) {
+                saveToStorage('reception_visitation', filteredVisits);
+            }
+
+            const links = loadFromStorage('reception_document_links', []);
+            const filteredLinks = links.filter(link => !String(link?.url || '').includes('example.com/'));
+            if (filteredLinks.length !== links.length) {
+                saveToStorage('reception_document_links', filteredLinks);
+            }
+
+            const alertText = loadFromStorage(STORAGE_KEYS.ALERT, '');
+            if (alertText === 'Welcome to Reception - Your offline staff calendar') {
+                saveToStorage(STORAGE_KEYS.ALERT, '');
+            }
         }
 
         function App() {
@@ -726,11 +724,7 @@
             const [isShiftSwapOpen, setIsShiftSwapOpen] = useState(false);
             const [shiftSwapRequests, setShiftSwapRequests] = useState(() => loadFromStorage('reception_shift_swaps', []));
             const [isDocRepoOpen, setIsDocRepoOpen] = useState(false);
-            const [documentLinks, setDocumentLinks] = useState(() => loadFromStorage('reception_document_links', [
-                { id: 'phone-dir', label: 'Phone Directory', url: 'https://example.com/phone-directory.pdf', icon: '📞' },
-                { id: 'emerg-proto', label: 'Emergency Protocols', url: 'https://example.com/emergency-protocols.pdf', icon: '🚨' },
-                { id: 'hipaa', label: 'HIPAA Privacy Practices', url: 'https://example.com/privacy-practices.pdf', icon: '🔒' }
-            ]));
+            const [documentLinks, setDocumentLinks] = useState(() => loadFromStorage('reception_document_links', []));
             const [isVisitationOpen, setIsVisitationOpen] = useState(false);
             const [visitationSchedule, setVisitationSchedule] = useState(() => loadFromStorage('reception_visitation', []));
             const [calendlyAuthToken, setCalendlyAuthToken] = useState(() => loadFromStorage('reception_calendly_token', null));
@@ -933,15 +927,8 @@
 
             // --- Initialize Data from localStorage ---
             useEffect(() => {
-                // Check if app has been initialized before
-                const initialized = loadFromStorage(STORAGE_KEYS.INITIALIZED);
-                
-                if (!initialized) {
-                    // First load - initialize with seed data
-                    initializeSeedData();
-                }
-
-                // Load data from localStorage
+                ensureCoreDataInitialized();
+                purgeKnownSeedData();
                 loadDataFromStorage();
             }, []);
 
@@ -1175,31 +1162,53 @@
                 showNotification('Calendly authentication saved!', 'success', true);
             }
 
-            function syncCalendlyEvents(dateStr = selectedDate) {
+            async function syncCalendlyEvents(dateStr = selectedDate) {
                 if (!calendlyAuthToken) {
                     showNotification('Please authenticate with Calendly first.', 'error');
                     return;
                 }
-                // In production, this would call Calendly API
-                // For now, simulate API call and store events
-                const date = new Date(dateStr);
+
+                const date = new Date(`${dateStr}T00:00:00`);
                 const dayStart = date.toISOString();
-                const dayEnd = new Date(date.getTime() + 24*60*60*1000).toISOString();
-                
-                // Simulated API call - in production would use fetch()
+                const dayEnd = new Date(date.getTime() + 24 * 60 * 60 * 1000).toISOString();
+
                 showNotification(`Syncing visitation schedule for ${dateStr}...`, 'info');
-                
-                // Example: Mock events for demo
-                const mockVisits = [
-                    { time: '09:00', visitor: 'Doctor Appointment', duration: '30 min', patient: 'Patient A' },
-                    { time: '11:30', visitor: 'Physical Therapy', duration: '45 min', patient: 'Patient B' },
-                    { time: '14:00', visitor: 'Lab Draw', duration: '15 min', patient: 'Patient C' }
-                ];
-                
-                const updated = [...visitationSchedule.filter(v => v.date !== dateStr), ...mockVisits.map(v => ({...v, date: dateStr}))];
-                setVisitationSchedule(updated);
-                saveToStorage('reception_visitation', updated);
-                showNotification(`Synced ${mockVisits.length} visitation events.`, 'success', true);
+
+                try {
+                    const response = await fetch(`https://api.calendly.com/scheduled_events?min_start_time=${encodeURIComponent(dayStart)}&max_start_time=${encodeURIComponent(dayEnd)}&count=100`, {
+                        headers: {
+                            Authorization: `Bearer ${calendlyAuthToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Calendly request failed (${response.status})`);
+                    }
+
+                    const payload = await response.json();
+                    const collection = Array.isArray(payload?.collection) ? payload.collection : [];
+                    const visits = collection.map((evt, idx) => {
+                        const start = evt?.start_time ? new Date(evt.start_time) : null;
+                        const end = evt?.end_time ? new Date(evt.end_time) : null;
+                        const minutes = start && end ? Math.max(1, Math.round((end - start) / 60000)) : null;
+                        return {
+                            id: evt?.uri || `visit-${dateStr}-${idx}`,
+                            date: dateStr,
+                            time: start ? start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false }) : '00:00',
+                            visitor: evt?.name || 'Scheduled Visit',
+                            duration: minutes ? `${minutes} min` : 'N/A',
+                            patient: evt?.location?.location || evt?.status || 'Unspecified'
+                        };
+                    });
+
+                    const updated = [...visitationSchedule.filter(v => v.date !== dateStr), ...visits];
+                    setVisitationSchedule(updated);
+                    saveToStorage('reception_visitation', updated);
+                    showNotification(`Synced ${visits.length} real Calendly event(s).`, 'success', true);
+                } catch (error) {
+                    showNotification(`Calendly sync failed: ${error.message}`, 'error', true);
+                }
             }
 
             function getVisitationForDate(dateStr = selectedDate) {
@@ -1541,10 +1550,9 @@
             function handleMasterReset() {
                 if (!requireAdmin()) return;
                 const year = new Date().getFullYear();
-                if (!confirm(`ADMIN MASTER RESET: Restore personnel Karen, Izzy, Annalissia, and Hal and force February ${year} Baseline schedule?`)) return;
-                // Clear all data and re-initialize
+                if (!confirm(`ADMIN MASTER RESET: Clear all saved data for ${year} and keep only core app settings/accounts?`)) return;
                 clearAllStorage();
-                initializeSeedData();
+                ensureCoreDataInitialized();
                 loadDataFromStorage();
                 alert('Master reset complete!');
             }
