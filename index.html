@@ -1140,17 +1140,17 @@
                     }
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
-                        <div key={dk} onClick={() => setSelectedDate(dk)} onDragOver={(event) => handleCalendarDragOver(event, dk)} onDrop={(event) => handleCalendarDrop(event, dk)} onDragLeave={() => handleCalendarDragLeave(dk)} style={{background: selectedDate === dk ? 'linear-gradient(135deg, rgba(184,115,51,0.15), rgba(139,90,43,0.1))' : 'linear-gradient(135deg, rgba(26,26,27,0.98), rgba(35,30,28,0.95))', border: dragOverDate === dk ? '2px solid var(--highlight)' : (selectedDate === dk ? '2px solid #b87333' : '1px solid rgba(184,115,51,0.3)'), boxShadow: dragOverDate === dk ? '0 0 24px var(--highlight-glow), inset 0 2px 0 rgba(255,255,255,0.08)' : (selectedDate === dk ? '0 0 20px rgba(184,115,51,0.4), inset 0 2px 0 rgba(255,255,255,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.5)')}} className={`min-h-[180px] p-3 transition-all cursor-pointer relative group ${isToday ? 'border-l-4' : ''}`}>
+                        <div key={dk} onClick={() => setSelectedDate(dk)} onDragOver={(event) => handleCalendarDragOver(event, dk)} onDrop={(event) => handleCalendarDrop(event, dk)} onDragLeave={() => handleCalendarDragLeave(dk)} style={{background: selectedDate === dk ? 'linear-gradient(135deg, var(--accent-soft), rgba(255,255,255,0.02))' : 'linear-gradient(135deg, var(--panel-start), var(--panel-end))', border: dragOverDate === dk ? '2px solid var(--highlight)' : (selectedDate === dk ? '2px solid var(--accent)' : '1px solid var(--accent-soft)'), boxShadow: dragOverDate === dk ? '0 0 24px var(--highlight-glow), inset 0 2px 0 rgba(255,255,255,0.08)' : (selectedDate === dk ? '0 0 20px var(--accent-glow), inset 0 2px 0 rgba(255,255,255,0.1)' : 'inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.5)')}} className={`min-h-[180px] p-3 transition-all cursor-pointer relative group ${isToday ? 'border-l-4' : ''}`}>
                             {isToday && <div className="rivet" style={{top: '4px', left: '4px'}} />}
                             <div className="flex justify-between items-start">
-                                <span style={{color: selectedDate === dk ? '#b87333' : '#8a8a8a', fontWeight: 900, fontSize: '1.5rem', textShadow: selectedDate === dk ? '0 0 10px rgba(184,115,51,0.5)' : 'none'}}>{d}</span>
-                                <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} style={{background: 'linear-gradient(145deg, rgba(184,115,51,0.8), rgba(139,90,43,0.9))', border: '1px solid #b87333', padding: '4px 8px', color: '#1a1a1b', fontWeight: 900}} className="opacity-40 hover:opacity-100 transition-opacity"><IconPlus /></button>
+                                <span style={{color: selectedDate === dk ? 'var(--accent)' : 'var(--text-muted)', fontWeight: 900, fontSize: '1.5rem', textShadow: selectedDate === dk ? '0 0 10px var(--accent-glow)' : 'none'}}>{d}</span>
+                                <button onClick={(e) => { e.stopPropagation(); setSelectedDate(dk); setIsAddModalOpen(true); }} style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '1px solid var(--accent)', padding: '4px 8px', color: '#1a1a1b', fontWeight: 900}} className="opacity-40 hover:opacity-100 transition-opacity"><IconPlus /></button>
                             </div>
                             <div className="space-y-2 mt-4">
-                                {dayShifts.length === 0 ? <div style={{color: '#b87333', fontSize: '9px', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase'}} className="animate-pulse flex items-center gap-1 mt-2"><IconAlert /> NEEDS COVERAGE</div> : 
+                                {dayShifts.length === 0 ? <div style={{color: 'var(--accent)', fontSize: '9px', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase'}} className="animate-pulse flex items-center gap-1 mt-2"><IconAlert /> NEEDS COVERAGE</div> : 
                                     dayShifts.map(s => (
                                         <div key={s.id} draggable onDragStart={(event) => { event.stopPropagation(); handleShiftDragStart(s, dk); }} onDragEnd={() => { setDraggedShift(null); setDragOverDate(null); }} onClick={(e) => { e.stopPropagation(); setEditingShift(s); }} 
-                                            style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.9), rgba(104,68,32,0.95))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '8px 12px', color: '#e0e0e0', fontWeight: 900, fontSize: '12px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.2)', position: 'relative'}} className="cursor-pointer transition-all hover:translate-y-[-2px]">
+                                            style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '8px 12px', color: 'var(--text-primary)', fontWeight: 900, fontSize: '12px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.2)', position: 'relative'}} className="cursor-pointer transition-all hover:translate-y-[-2px]">
                                             <div className="rivet" style={{top: '3px', left: '3px', width: '6px', height: '6px'}} />
                                             <div className="rivet" style={{top: '3px', right: '3px', width: '6px', height: '6px'}} />
                                             <div className="flex items-center justify-between">
@@ -1170,7 +1170,7 @@
             return (
                 <div className="flex h-screen w-screen bg-black overflow-hidden text-xs">
                     {/* NAV RAIL */}
-                    <nav style={{background: 'linear-gradient(180deg, #1a1a1b 0%, #0f0f10 100%)', borderRight: '2px solid rgba(184,115,51,0.3)', boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.5)'}} className="no-print w-16 flex flex-col items-center py-8 gap-6">
+                    <nav style={{background: 'linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-bottom) 100%)', borderRight: '2px solid var(--accent-soft)', boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.5)'}} className="no-print w-16 flex flex-col items-center py-8 gap-6">
                         <div style={{color: 'var(--accent)', fontWeight: 900, fontSize: '1.2rem', textShadow: '0 0 10px var(--accent-glow)', letterSpacing: '0.1em'}}>{(appSettings.facilityName || 'DS').split(' ').map(part => part[0]).join('').slice(0, 2)}</div>
                         
                         {/* PANIC BUTTON */}
@@ -1203,7 +1203,7 @@
                         {/* De-escalation Quick Reference */}
                         <button 
                             onClick={() => setShowDeescalation(true)}
-                            style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.8), rgba(104,68,32,0.9))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}}
+                            style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}}
                             className="transition-all hover:translate-y-[-2px]"
                             title="De-escalation Scripts"
                         >
@@ -1215,7 +1215,7 @@
                         {/* Team Kudos */}
                         <button 
                             onClick={() => setShowKudos(true)}
-                            style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.8), rgba(104,68,32,0.9))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}}
+                            style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}}
                             className="transition-all hover:translate-y-[-2px]"
                             title="Kudos Wall"
                         >
@@ -1227,7 +1227,7 @@
                         {/* Achievements */}
                         <button 
                             onClick={() => setShowAchievements(true)}
-                            style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.8), rgba(104,68,32,0.9))', border: '2px solid #8b5a2b', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 #5a3a1b, 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}}
+                            style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}}
                             className="transition-all hover:translate-y-[-2px]"
                             title="Team Achievements"
                         >
@@ -1236,17 +1236,17 @@
                             </svg>
                         </button>
                         
-                        {isAdmin && <button onClick={handleMasterReset} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Admin Master Reset"><IconSync /></button>}
-                        {isAdmin && <button onClick={saveBaseline} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Save Baseline for Month">
+                        {isAdmin && <button onClick={handleMasterReset} style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Admin Master Reset"><IconSync /></button>}
+                        {isAdmin && <button onClick={saveBaseline} style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Save Baseline for Month">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                         </button>}
-                        {isAdmin && <button onClick={restoreBaseline} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Restore Baseline for Month">
+                        {isAdmin && <button onClick={restoreBaseline} style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Restore Baseline for Month">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
                         </button>}
-                        {isAdmin && <button onClick={() => setIsPersonnelModalOpen(true)} style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.7), rgba(104,68,32,0.85))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.4), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Personnel Manifest"><IconPersonnel /></button>}
+                        {isAdmin && <button onClick={() => setIsPersonnelModalOpen(true)} style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: '2px solid var(--accent-dark)', borderRadius: '4px', padding: '12px', boxShadow: '0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.2)'}} className="transition-all hover:translate-y-[-2px]" title="Personnel Manifest"><IconPersonnel /></button>}
                         <button onClick={() => setIsSettingsOpen(true)} style={{background: 'linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))', border: '2px solid var(--highlight)', borderRadius: '4px', padding: '12px', boxShadow: '0 0 18px var(--highlight-glow), 0 6px 15px rgba(0,0,0,0.5)'}} className="transition-all hover:translate-y-[-2px]" title="Platform Settings"><IconSettings /></button>
                         <div className="mt-auto flex flex-col items-center gap-3">
-                            <div className="rivet" style={{width: '10px', height: '10px', boxShadow: '0 0 10px rgba(184,115,51,0.6), inset 0 1px 2px rgba(0,0,0,0.8)'}} title="Local Storage Ready" />
+                            <div className="rivet" style={{width: '10px', height: '10px', boxShadow: '0 0 10px var(--accent-glow), inset 0 1px 2px rgba(0,0,0,0.8)'}} title="Local Storage Ready" />
                             <div style={{opacity: 0.3, fontSize: '7px', fontWeight: 900, textTransform: 'uppercase', transform: 'rotate(90deg)', letterSpacing: '0.2em', color: 'var(--accent-dark)'}}>{isAdmin ? 'ADMIN' : 'STAFF'}</div>
                         </div>
                     </nav>
@@ -1274,13 +1274,13 @@
                             {/* SIDEBAR LOGS */}
                             <aside className="no-print w-80 bg-[#080808] border-r border-white/5 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar">
                                 <header className="text-left mb-2 text-white font-black">
-                                    <h1 style={{fontSize: '1.125rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: '#b87333', textShadow: '0 0 10px rgba(184,115,51,0.5)'}}>Shift Report</h1>
-                                    <div style={{fontSize: '10px', color: '#8b5a2b', fontWeight: 900, textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.2em'}}>{selectedDate}</div>
+                                    <h1 style={{fontSize: '1.125rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)'}}>Shift Report</h1>
+                                    <div style={{fontSize: '10px', color: 'var(--accent-dark)', fontWeight: 900, textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.2em'}}>{selectedDate}</div>
                                 </header>
                                 <div className="space-y-3">
                                     {REPORT_FIELDS.map(f => (
                                         <div key={f.id} className="glass-panel p-3 text-left font-bold">
-                                            <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconActivity /> {f.label}</label>
+                                            <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconActivity /> {f.label}</label>
                                             <textarea value={String(reportData[f.id] || '')} onChange={e => {
                                                 const newReportData = { ...reportData, [f.id]: e.target.value };
                                                 setReportData(newReportData);
@@ -1292,7 +1292,7 @@
                                     ))}
                                 </div>
                                 <div className="glass-panel p-3 rounded-lg mt-4 text-left flex flex-col">
-                                    <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconActivity className="inline mr-2"/>Daily Checklist</label>
+                                    <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconActivity className="inline mr-2"/>Daily Checklist</label>
                                     <div className="flex flex-col gap-1 mb-2">
                                         {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
                                         {checklist.map((item, idx) => (
@@ -1319,12 +1319,12 @@
                                         saveToStorage('reception_checklist_' + selectedDate, updated);
                                         setNewChecklistItem('');
                                     }} className="flex gap-1 mb-2">
-                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.4)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: '#e0e0e0', fontWeight: 700}} className="outline-none" placeholder="Add task..." />
+                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Add task..." />
                                         <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>ADD</button>
                                     </form>
                                 </div>
                                 <div className="glass-panel p-3 rounded-lg mt-auto text-left flex flex-col h-48">
-                                    <label style={{fontSize: '9px', fontWeight: 900, color: '#b87333', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
+                                    <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
                                     <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
                                         {messages.map(m => <div key={m.id}><span style={{color: 'var(--accent)', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
@@ -1345,7 +1345,7 @@
                                             setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
                                         }
                                     }} className="flex gap-1 shrink-0 pt-2 text-left">
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.4)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: '#e0e0e0', fontWeight: 700}} className="outline-none" placeholder="Broadcast..." />
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Broadcast..." />
                                         <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>OK</button>
                                     </form>
                                 </div>
@@ -1361,12 +1361,12 @@
                                         <div style={{fontSize: '10px', fontWeight: 900, color: 'var(--accent)', letterSpacing: '0.5em', textTransform: 'uppercase', marginTop: '4px', textShadow: '0 0 8px var(--accent-glow)'}}>{currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</div>
                                     </div>
                                     <div className="flex gap-4 items-center">
-                                        <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" style={{background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.5)', color: '#b87333', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 w-48 outline-none" />
-                                        <div style={{display: 'flex', background: 'linear-gradient(145deg, rgba(26,26,27,0.95), rgba(35,30,28,0.9))', border: '2px solid rgba(184,115,51,0.5)', borderRadius: '4px', padding: '4px'}} className="text-white font-bold">
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{padding: '8px', borderRight: '1px solid rgba(184,115,51,0.3)', color: '#8a8a8a'}} className="hover:text-[#b87333] transition-colors uppercase font-bold text-[10px]"><IconChevronL /></button>
-                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{padding: '8px', color: '#8a8a8a'}} className="hover:text-[#b87333] transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
+                                        <input value={shiftSearch} onChange={e => setShiftSearch(e.target.value)} placeholder="Search by employee or date" style={{background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', color: 'var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 w-48 outline-none" />
+                                        <div style={{display: 'flex', background: 'linear-gradient(145deg, var(--panel-start), var(--panel-end))', border: '2px solid var(--accent-soft)', borderRadius: '4px', padding: '4px'}} className="text-white font-bold">
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))} style={{padding: '8px', borderRight: '1px solid var(--accent-soft)', color: 'var(--text-muted)'}} className="hover:text-[var(--accent)] transition-colors uppercase font-bold text-[10px]"><IconChevronL /></button>
+                                            <button onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))} style={{padding: '8px', color: 'var(--text-muted)'}} className="hover:text-[var(--accent)] transition-colors uppercase font-bold text-[10px]"><IconChevronR /></button>
                                         </div>
-                                        <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} style={{background: 'rgba(26,26,27,0.95)', border: '2px solid rgba(184,115,51,0.5)', color: '#b87333', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 outline-none">
+                                        <select value={shiftStatusFilter} onChange={e => setShiftStatusFilter(e.target.value)} style={{background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', color: 'var(--accent)', borderRadius: '4px', padding: '8px 12px', fontSize: '11px', fontWeight: 700}} className="ml-2 outline-none">
                                             <option value="all">All</option>
                                             <option value="confirmed">Confirmed</option>
                                             <option value="pending">Pending</option>
@@ -1418,7 +1418,7 @@
                                                 draggable
                                                 onDragStart={() => handleStaffDragStart(id)}
                                                 onDragEnd={() => { setDraggedStaff(null); setDragOverDate(null); }}
-                                                style={{background: 'linear-gradient(145deg, rgba(139,90,43,0.88), rgba(104,68,32,0.95))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid #8b5a2b', borderRadius: '999px', padding: '8px 14px', color: '#f4e9dc', fontWeight: 900, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase'}}
+                                                style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid var(--accent-dark)', borderRadius: '999px', padding: '8px 14px', color: 'var(--text-primary)', fontWeight: 900, fontSize: '11px', letterSpacing: '0.08em', textTransform: 'uppercase'}}
                                                 className="transition-all hover:translate-y-[-1px]"
                                             >
                                                 {String(s.name)}
