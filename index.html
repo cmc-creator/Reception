@@ -36,6 +36,7 @@
             --bg-bottom: #0a0a0b;
             --panel-start: rgba(26, 26, 27, 0.98);
             --panel-end: rgba(35, 30, 28, 0.95);
+            --texture-layer: repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 2px, transparent 2px, transparent 6px);
             --text-primary: #e0e0e0;
             --text-muted: #8a8a8a;
             --critical: #e11d48;
@@ -57,6 +58,7 @@
             --bg-bottom: #03080e;
             --panel-start: rgba(7, 18, 28, 0.97);
             --panel-end: rgba(11, 33, 47, 0.94);
+            --texture-layer: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0) 3px), radial-gradient(circle at 70% 80%, rgba(125,211,252,0.08) 0px, rgba(125,211,252,0) 4px);
             --text-primary: #e0f2fe;
             --text-muted: #93c5fd;
             --critical: #fb7185;
@@ -78,6 +80,7 @@
             --bg-bottom: #120c09;
             --panel-start: rgba(38, 23, 17, 0.96);
             --panel-end: rgba(63, 34, 17, 0.92);
+            --texture-layer: linear-gradient(180deg, rgba(255,186,120,0.05), transparent), repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 5px);
             --text-primary: #fff7ed;
             --text-muted: #fdba74;
             --critical: #ef4444;
@@ -99,11 +102,78 @@
             --bg-bottom: #05070f;
             --panel-start: rgba(11, 15, 30, 0.97);
             --panel-end: rgba(25, 20, 53, 0.93);
+            --texture-layer: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px), radial-gradient(circle at 80% 20%, rgba(167,139,250,0.08) 0px, rgba(167,139,250,0) 120px);
             --text-primary: #e9e7ff;
             --text-muted: #c4b5fd;
             --critical: #f43f5e;
             --critical-soft: rgba(244, 63, 94, 0.2);
             --success: #10b981;
+        }
+
+        body[data-theme="walnut"] {
+            --accent: #d4a373;
+            --accent-dark: #8d5a2b;
+            --accent-soft: rgba(212, 163, 115, 0.26);
+            --accent-glow: rgba(212, 163, 115, 0.45);
+            --highlight: #f2cc8f;
+            --highlight-glow: rgba(242, 204, 143, 0.48);
+            --rivet-color: #6f4e37;
+            --panel-edge: #4f321e;
+            --bg-top: #3d291b;
+            --bg-mid: #2b1d14;
+            --bg-bottom: #1b120c;
+            --panel-start: rgba(52, 33, 22, 0.96);
+            --panel-end: rgba(40, 25, 17, 0.94);
+            --texture-layer: repeating-linear-gradient(12deg, rgba(255,219,172,0.07) 0px, rgba(255,219,172,0.07) 2px, rgba(122,75,39,0.08) 2px, rgba(122,75,39,0.08) 5px, transparent 5px, transparent 10px);
+            --text-primary: #f7eadf;
+            --text-muted: #ddb892;
+            --critical: #f87171;
+            --critical-soft: rgba(248, 113, 113, 0.2);
+            --success: #84cc16;
+        }
+
+        body[data-theme="slatework"] {
+            --accent: #94a3b8;
+            --accent-dark: #475569;
+            --accent-soft: rgba(148, 163, 184, 0.24);
+            --accent-glow: rgba(148, 163, 184, 0.36);
+            --highlight: #67e8f9;
+            --highlight-glow: rgba(103, 232, 249, 0.42);
+            --rivet-color: #475569;
+            --panel-edge: #1f2937;
+            --bg-top: #202935;
+            --bg-mid: #121a24;
+            --bg-bottom: #0a0f16;
+            --panel-start: rgba(23, 31, 43, 0.96);
+            --panel-end: rgba(14, 21, 31, 0.94);
+            --texture-layer: radial-gradient(circle at 20% 30%, rgba(148,163,184,0.05) 0px, rgba(148,163,184,0) 3px), radial-gradient(circle at 60% 65%, rgba(148,163,184,0.05) 0px, rgba(148,163,184,0) 3px), repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 6px);
+            --text-primary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --critical: #fb7185;
+            --critical-soft: rgba(251, 113, 133, 0.18);
+            --success: #22c55e;
+        }
+
+        body[data-theme="linen"] {
+            --accent: #c9915d;
+            --accent-dark: #915f36;
+            --accent-soft: rgba(201, 145, 93, 0.25);
+            --accent-glow: rgba(201, 145, 93, 0.34);
+            --highlight: #6ee7b7;
+            --highlight-glow: rgba(110, 231, 183, 0.36);
+            --rivet-color: #8b7355;
+            --panel-edge: #5c4c3a;
+            --bg-top: #f3eee6;
+            --bg-mid: #e5dccf;
+            --bg-bottom: #d7ccb9;
+            --panel-start: rgba(243, 238, 230, 0.95);
+            --panel-end: rgba(226, 215, 198, 0.92);
+            --texture-layer: repeating-linear-gradient(0deg, rgba(140,113,86,0.06) 0px, rgba(140,113,86,0.06) 1px, transparent 1px, transparent 4px), repeating-linear-gradient(90deg, rgba(140,113,86,0.04) 0px, rgba(140,113,86,0.04) 1px, transparent 1px, transparent 5px);
+            --text-primary: #3c2f25;
+            --text-muted: #7c6148;
+            --critical: #dc2626;
+            --critical-soft: rgba(220, 38, 38, 0.16);
+            --success: #15803d;
         }
         
         * {
@@ -111,7 +181,7 @@
         }
         
         body {
-            background: radial-gradient(ellipse at top, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bottom) 100%) !important;
+            background: var(--texture-layer), radial-gradient(ellipse at top, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bottom) 100%) !important;
             color: var(--text-primary) !important;
             overflow: hidden;
             transition: background 0.25s ease, color 0.25s ease;
@@ -330,7 +400,10 @@
             { id: 'forge', label: 'Forge', description: 'Industrial copper terminal', swatch: 'linear-gradient(135deg, #b87333, #00f3ff)' },
             { id: 'aurora', label: 'Aurora', description: 'Cold blue operations room', swatch: 'linear-gradient(135deg, #7dd3fc, #6ee7b7)' },
             { id: 'daybreak', label: 'Daybreak', description: 'Warm daylight command center', swatch: 'linear-gradient(135deg, #f97316, #facc15)' },
-            { id: 'midnight', label: 'Midnight', description: 'Deep violet overnight mode', swatch: 'linear-gradient(135deg, #a78bfa, #22d3ee)' }
+            { id: 'midnight', label: 'Midnight', description: 'Deep violet overnight mode', swatch: 'linear-gradient(135deg, #a78bfa, #22d3ee)' },
+            { id: 'walnut', label: 'Walnut', description: 'Woodgrain command deck', swatch: 'linear-gradient(135deg, #8d5a2b, #f2cc8f)' },
+            { id: 'slatework', label: 'Slatework', description: 'Stone-cut tactical board', swatch: 'linear-gradient(135deg, #334155, #94a3b8)' },
+            { id: 'linen', label: 'Linen', description: 'Textured paper operations wall', swatch: 'linear-gradient(135deg, #f3eee6, #c9915d)' }
         ];
 
         function getDefaultUsers() {
