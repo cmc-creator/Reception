@@ -15,7 +15,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=JetBrains+Mono:wght@300;400;700;900&display=swap" rel="stylesheet">
     
     <style>
         /* ═══════════════════════════════════════════════════════
@@ -47,6 +47,13 @@
             --critical: #e11d48;
             --critical-soft: rgba(225, 29, 72, 0.2);
             --success: #22c55e;
+            --space-1: 0.4rem;
+            --space-2: 0.7rem;
+            --space-3: 1rem;
+            --space-4: 1.4rem;
+            --space-5: 1.9rem;
+            --radius-soft: 10px;
+            --radius-panel: 14px;
         }
 
         body[data-theme="aurora"] {
@@ -219,6 +226,32 @@
         * {
             font-family: 'JetBrains Mono', 'Courier New', monospace !important;
         }
+
+        h1, h2, h3, .display-type {
+            font-family: 'Chakra Petch', 'JetBrains Mono', monospace !important;
+            letter-spacing: 0.02em;
+            line-height: 1.08;
+        }
+
+        .copy-rhythm {
+            line-height: 1.45;
+        }
+
+        .modal-content-flow > * + * {
+            margin-top: var(--space-3);
+        }
+
+        .modal-content-flow-tight > * + * {
+            margin-top: var(--space-2);
+        }
+
+        .section-kicker {
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            font-weight: 900;
+            color: var(--accent);
+        }
         
         body {
             background: var(--texture-layer), radial-gradient(ellipse at top, var(--bg-top) 0%, var(--bg-mid) 50%, var(--bg-bottom) 100%) !important;
@@ -241,7 +274,7 @@
         .glass-panel {
             background: linear-gradient(135deg, var(--panel-start) 0%, var(--panel-end) 100%);
             border: 2px solid var(--accent);
-            border-radius: 4px;
+            border-radius: var(--radius-panel);
             position: relative;
             box-shadow: 
                 0 0 20px var(--accent-glow),
@@ -321,7 +354,7 @@
             width: 100%;
             background: rgba(10, 10, 12, 0.85);
             border: 2px solid var(--accent-soft);
-            border-radius: 10px;
+            border-radius: var(--radius-soft);
             padding: 0.85rem 0.95rem;
             color: var(--text-primary);
             outline: none;
@@ -3029,7 +3062,7 @@
                                     <h2 className="text-2xl font-black text-pink-400">💖 Team Kudos Wall</h2>
                                     <button onClick={() => setShowKudos(false)} className="absolute top-4 right-4 text-white hover:text-pink-400 text-2xl">×</button>
                                 </div>
-                                <div className="p-6">
+                                <div className="p-6 modal-content-flow">
                                     <form onSubmit={(e) => {
                                         e.preventDefault();
                                         const formData = new FormData(e.target);
@@ -3111,7 +3144,7 @@
                                             ))}
                                         </div>
                                     )}
-                                    <div className="mt-6 bg-white/5 p-4 rounded-lg text-center">
+                                    <div className="bg-white/5 p-4 rounded-lg text-center">
                                         <div className="text-cyan-400 font-bold mb-2">🎉 Team Stats</div>
                                         <div className="text-white text-sm space-y-1">
                                             <div>Shifts In Range: <span className="font-black text-cyan-400">{achievementStats.monthShiftCount}</span></div>
@@ -3120,7 +3153,7 @@
                                             <div>Kudos Shared: <span className="font-black text-pink-400">{achievementStats.kudosCount}</span></div>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowAchievements(false)} className="w-full mt-5 fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}}>BACK TO DASHBOARD</button>
+                                    <button onClick={() => setShowAchievements(false)} className="w-full fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}}>BACK TO DASHBOARD</button>
                                 </div>
                             </div>
                         </div>
@@ -3128,8 +3161,8 @@
 
                     {isCommandPaletteOpen && (
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[2600] flex items-start justify-center pt-24 px-4 modal-surface" onClick={() => setIsCommandPaletteOpen(false)}>
-                            <div className="glass-panel neon-blue w-full max-w-2xl p-4 rounded-2xl text-left modal-card-enter" onClick={e => e.stopPropagation()}>
-                                <div className="flex items-center gap-3 mb-3">
+                            <div className="glass-panel neon-blue w-full max-w-2xl p-4 rounded-2xl text-left modal-card-enter modal-content-flow-tight" onClick={e => e.stopPropagation()}>
+                                <div className="flex items-center gap-3">
                                     <div className="data-chip">Command Palette</div>
                                     <div className="text-[10px] soft-text">Ctrl/Cmd + K</div>
                                 </div>
@@ -3140,7 +3173,7 @@
                                     className="panel-input"
                                     placeholder="Type a command (e.g., settings, quick add, archive)"
                                 />
-                                <div className="mt-3 max-h-72 overflow-y-auto space-y-2">
+                                <div className="max-h-72 overflow-y-auto space-y-2">
                                     {commandPaletteItems.length === 0 && <div className="surface-card p-3 text-sm soft-text">No commands match your search.</div>}
                                     {commandPaletteItems.map(item => (
                                         <button
