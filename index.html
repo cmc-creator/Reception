@@ -408,11 +408,11 @@
             if (savedTheme) {
                 try {
                     const settings = JSON.parse(savedTheme);
-                    if (settings.theme) {
+                    if (settings.theme && document.body) {
                         document.body.setAttribute('data-theme', settings.theme);
                     }
                 } catch (e) {
-                    console.error('Failed to parse saved settings:', e);
+                    // Silently fail - React will set the theme
                 }
             }
         })();
@@ -885,9 +885,7 @@
             // --- Enhanced Shift Reports ---
             const [reportPriority, setReportPriority] = useState(() => loadFromStorage('report_priority_' + selectedDate, 'normal'));
             const [reportAttachments, setReportAttachments] = useState(() => loadFromStorage('report_attachments_' + selectedDate, []));
-            const [showReportHistory, setShowReportHistory] = useState(false);
             const [allReports, setAllReports] = useState({});
-            const [reportSearchTerm, setReportSearchTerm] = useState('');
 
             // --- View Modes ---
             const [viewMode, setViewMode] = useState('month');
