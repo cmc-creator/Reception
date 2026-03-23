@@ -1,5 +1,5 @@
 // Service Worker for Offline Support
-const CACHE_NAME = 'reception-calendar-v3';
+const CACHE_NAME = 'reception-calendar-v4';
 const urlsToCache = [
   './',
   './index.html'
@@ -41,6 +41,26 @@ self.addEventListener('fetch', (event) => {
   if (event.request.url.includes('firestore.googleapis.com') || 
       event.request.url.includes('identitytoolkit.googleapis.com') ||
       event.request.url.includes('securetoken.googleapis.com')) {
+    return;
+  }
+
+  // Always prefer network for HTML/doc navigations to avoid stale app shells.
+  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && event.request.url.startsWith('http')) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, responseToCache))
+              .catch(() => {
+                // Ignore cache write issues.
+              });
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('./index.html')))
+    );
     return;
   }
 
