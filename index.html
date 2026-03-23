@@ -622,53 +622,27 @@
             saveToStorage(STORAGE_KEYS.INITIALIZED, true);
         }
 
-        function purgeKnownSeedData() {
-            const seededMessages = new Set([
-                'Welcome to Reception! Your calendar is ready.',
-                'All data is stored locally in your browser.',
-                'Use the Export Matrix button to print or save your schedule.'
-            ]);
-            const seededVisitors = new Set(['Doctor Appointment', 'Physical Therapy', 'Lab Draw']);
-            const seededPatients = new Set(['Patient A', 'Patient B', 'Patient C']);
+        function saveSafetySnapshot() {
+            const snapshot = {
+                capturedAt: Date.now(),
+                shifts: loadFromStorage(STORAGE_KEYS.SHIFTS, {}),
+                staff: loadFromStorage(STORAGE_KEYS.STAFF, {}),
+                reports: loadFromStorage(STORAGE_KEYS.REPORTS, {}),
+                messages: loadFromStorage(STORAGE_KEYS.MESSAGES, []),
+                alert: loadFromStorage(STORAGE_KEYS.ALERT, ''),
+                visitation: loadFromStorage('reception_visitation', []),
+                documentLinks: loadFromStorage('reception_document_links', [])
+            };
+            saveToStorage('reception_safety_snapshot', snapshot);
+        }
 
-            const messages = loadFromStorage(STORAGE_KEYS.MESSAGES, []);
-            const filteredMessages = messages.filter(msg => !seededMessages.has(String(msg?.text || '')));
-            if (filteredMessages.length !== messages.length) {
-                saveToStorage(STORAGE_KEYS.MESSAGES, filteredMessages);
-            }
-
-            const reports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
-            let reportsChanged = false;
-            const cleanedReports = Object.entries(reports).reduce((acc, [dateKey, report]) => {
-                const nextReport = { ...(report || {}) };
-                Object.keys(nextReport).forEach(field => {
-                    if (typeof nextReport[field] === 'string' && nextReport[field].startsWith('Sample:')) {
-                        nextReport[field] = '';
-                        reportsChanged = true;
-                    }
-                });
-                acc[dateKey] = nextReport;
-                return acc;
-            }, {});
-            if (reportsChanged) {
-                saveToStorage(STORAGE_KEYS.REPORTS, cleanedReports);
-            }
-
-            const visits = loadFromStorage('reception_visitation', []);
-            const filteredVisits = visits.filter(v => !(seededVisitors.has(String(v?.visitor || '')) && seededPatients.has(String(v?.patient || ''))));
-            if (filteredVisits.length !== visits.length) {
-                saveToStorage('reception_visitation', filteredVisits);
-            }
-
-            const links = loadFromStorage('reception_document_links', []);
-            const filteredLinks = links.filter(link => !String(link?.url || '').includes('example.com/'));
-            if (filteredLinks.length !== links.length) {
-                saveToStorage('reception_document_links', filteredLinks);
-            }
-
-            const alertText = loadFromStorage(STORAGE_KEYS.ALERT, '');
-            if (alertText === 'Welcome to Reception - Your offline staff calendar') {
-                saveToStorage(STORAGE_KEYS.ALERT, '');
+        function getLatestBaseline() {
+            try {
+                const baselineKeys = Object.keys(localStorage).filter(k => String(k).startsWith('baseline_')).sort();
+                if (!baselineKeys.length) return null;
+                return loadFromStorage(baselineKeys[baselineKeys.length - 1], null);
+            } catch (_) {
+                return null;
             }
         }
 
@@ -928,7 +902,7 @@
             // --- Initialize Data from localStorage ---
             useEffect(() => {
                 ensureCoreDataInitialized();
-                purgeKnownSeedData();
+                saveSafetySnapshot();
                 loadDataFromStorage();
             }, []);
 
@@ -938,8 +912,8 @@
             }, [appSettings.theme, appSettings.facilityName]);
 
             function loadDataFromStorage() {
-                const loadedShifts = loadFromStorage(STORAGE_KEYS.SHIFTS, {});
-                const loadedStaff = loadFromStorage(STORAGE_KEYS.STAFF, {});
+                let loadedShifts = loadFromStorage(STORAGE_KEYS.SHIFTS, {});
+                let loadedStaff = loadFromStorage(STORAGE_KEYS.STAFF, {});
                 const loadedUsers = loadFromStorage(STORAGE_KEYS.USERS, getDefaultUsers());
                 const loadedSettings = normalizeSettings(loadFromStorage(STORAGE_KEYS.SETTINGS, getDefaultSettings()));
                 const loadedSession = loadFromStorage(STORAGE_KEYS.SESSION, null);
@@ -947,6 +921,18 @@
                 const loadedAlert = loadFromStorage(STORAGE_KEYS.ALERT, '');
                 const loadedReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 const sessionUser = loadedSession?.userId ? loadedUsers[loadedSession.userId] : null;
+
+                if (Object.keys(loadedShifts || {}).length === 0) {
+                    const baseline = getLatestBaseline();
+                    if (baseline?.shifts && Object.keys(baseline.shifts).length > 0) {
+                        loadedShifts = baseline.shifts;
+                        saveToStorage(STORAGE_KEYS.SHIFTS, loadedShifts);
+                    }
+                    if (baseline?.staff && Object.keys(loadedStaff || {}).length === 0) {
+                        loadedStaff = baseline.staff;
+                        saveToStorage(STORAGE_KEYS.STAFF, loadedStaff);
+                    }
+                }
                 
                 setEvents(loadedShifts);
                 setStaff(loadedStaff);
