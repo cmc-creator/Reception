@@ -190,6 +190,21 @@
         body[data-theme="linen"] .panel-input::placeholder {
             color: #7c6148;
         }
+
+        .report-field-input {
+            color: var(--text-primary);
+        }
+
+        .report-field-input::placeholder {
+            color: var(--text-muted);
+            opacity: 0.95;
+        }
+
+        body[data-theme="linen"] .report-field-input {
+            background: rgba(255, 255, 255, 0.55);
+            border-radius: 4px;
+            padding: 6px;
+        }
         
         * {
             font-family: 'JetBrains Mono', 'Courier New', monospace !important;
@@ -1984,7 +1999,7 @@
                                     {REPORT_FIELDS.map(f => (
                                         <div key={f.id} className="glass-panel p-3 text-left font-bold">
                                             <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconActivity /> {f.label}</label>
-                                            <textarea value={String(reportData[f.id] || '')} onChange={e => updateReportField(f.id, e.target.value)} className="w-full bg-transparent border-none text-xs text-white h-14 outline-none resize-none font-bold" placeholder={f.placeholder || '...'} />
+                                            <textarea value={String(reportData[f.id] || '')} onChange={e => updateReportField(f.id, e.target.value)} className="report-field-input w-full bg-transparent border-none text-xs h-14 outline-none resize-none font-bold" placeholder={f.placeholder || '...'} />
                                         </div>
                                     ))}
                                 </div>
