@@ -1202,6 +1202,7 @@
             const [reportDirtySinceAt, setReportDirtySinceAt] = useState(null);
             const [reportDirtyClock, setReportDirtyClock] = useState(() => Date.now());
             const [reportLastEditAt, setReportLastEditAt] = useState(null);
+            const [reportReadinessSnapshot, setReportReadinessSnapshot] = useState(null);
 
             // --- View Modes ---
             const [viewMode, setViewMode] = useState('month');
@@ -1519,6 +1520,7 @@
                 setIsReportDirty(false);
                 setReportDirtySinceAt(null);
                 setReportLastEditAt(null);
+                setReportReadinessSnapshot(null);
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
                 setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
@@ -1551,14 +1553,22 @@
                 const elapsedMs = Date.now() - reportLastEditAt;
                 const waitMs = Math.max(0, idleMs - elapsedMs);
                 const timeoutId = window.setTimeout(() => {
-                    persistReport(reportData || {}, selectedDate, reportPriority);
-                    setIsReportDirty(false);
-                    setReportDirtySinceAt(null);
-                    setReportLastEditAt(null);
-                    showNotification(`Auto-saved draft for ${selectedDate} after 60 seconds idle.`, 'info');
+                    const currentReadiness = getReportReadiness(reportData || {});
+                    const previousReadiness = reportReadinessSnapshot;
+                    const readinessImproved = !previousReadiness || 
+                        currentReadiness.completion.completed > previousReadiness.completion.completed ||
+                        (currentReadiness.ready && !previousReadiness.ready);
+                    if (readinessImproved) {
+                        persistReport(reportData || {}, selectedDate, reportPriority);
+                        setIsReportDirty(false);
+                        setReportDirtySinceAt(null);
+                        setReportLastEditAt(null);
+                        setReportReadinessSnapshot(currentReadiness);
+                        showNotification(`Auto-saved draft for ${selectedDate} (readiness improved).`, 'info');
+                    }
                 }, waitMs);
                 return () => window.clearTimeout(timeoutId);
-            }, [isReportDirty, reportLastEditAt, reportData, selectedDate, reportPriority, currentUser?.id]);
+            }, [isReportDirty, reportLastEditAt, reportData, selectedDate, reportPriority, currentUser?.id, reportReadinessSnapshot];
 
             function getReportCompletion(report) {
                 const completed = REPORT_FIELDS.reduce((count, field) => {
@@ -1638,11 +1648,13 @@
             }
 
             function markReportDirty() {
+                const now = Date.now();
+                setReportLastEditAt(now);
+                setReportDirtyClock(now);
                 setIsReportDirty(previous => {
                     if (!previous) {
-                        const now = Date.now();
                         setReportDirtySinceAt(now);
-                        setReportDirtyClock(now);
+                        setReportReadinessSnapshot(getReportReadiness(reportData || {}));
                     }
                     return true;
                 });
@@ -1669,6 +1681,7 @@
                     setIsReportDirty(false);
                     setReportDirtySinceAt(null);
                     setReportLastEditAt(null);
+                    setReportReadinessSnapshot(null);
                 }
                 return payload;
             }
