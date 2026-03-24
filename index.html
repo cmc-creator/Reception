@@ -561,6 +561,106 @@
             flex-shrink: 0;
         }
 
+        .report-sidebar {
+            position: relative;
+            isolation: isolate;
+            box-shadow: inset -1px 0 0 rgba(255,255,255,0.04), 12px 0 36px rgba(0,0,0,0.32);
+        }
+
+        .report-sidebar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(120% 40% at 0% 0%, rgba(255,255,255,0.08), rgba(255,255,255,0) 55%),
+                linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0));
+            z-index: 0;
+        }
+
+        .report-sidebar > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .report-command-deck {
+            overflow: hidden;
+            border-width: 1px;
+            border-color: rgba(255,255,255,0.16);
+            box-shadow: 0 16px 36px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .report-command-deck::after {
+            content: '';
+            position: absolute;
+            inset: -120% -25%;
+            pointer-events: none;
+            background: linear-gradient(120deg, rgba(255,255,255,0), rgba(255,255,255,0.07), rgba(255,255,255,0));
+            transform: translateX(-65%);
+            animation: deckSweep 7s linear infinite;
+        }
+
+        .report-mini-card {
+            border: 1px solid rgba(255,255,255,0.16) !important;
+            background: linear-gradient(150deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02)) !important;
+            border-radius: 10px;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
+            transition: border-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .report-mini-card:hover {
+            border-color: rgba(255,255,255,0.32) !important;
+            transform: translateY(-1px);
+        }
+
+        .report-meta-card {
+            border-width: 1px;
+            border-color: rgba(255,255,255,0.2);
+            background: linear-gradient(165deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+        }
+
+        .report-sidebar .fancy-btn {
+            letter-spacing: 0.1em;
+            box-shadow: 0 3px 0 var(--accent-dark), 0 8px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.28);
+        }
+
+        .report-sidebar .fancy-btn:hover {
+            box-shadow: 0 5px 0 var(--accent-dark), 0 10px 24px rgba(0,0,0,0.58), 0 0 22px var(--accent-glow);
+        }
+
+        .report-sidebar .report-heading-glow {
+            position: relative;
+            display: inline-block;
+        }
+
+        .report-sidebar .report-heading-glow::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -0.35rem;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent), var(--highlight), transparent);
+            filter: drop-shadow(0 0 6px var(--highlight-glow));
+            opacity: 0.9;
+        }
+
+        @keyframes deckSweep {
+            0% { transform: translateX(-65%); }
+            100% { transform: translateX(65%); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .report-command-deck::after {
+                animation: none;
+            }
+
+            .report-mini-card {
+                transition: none;
+            }
+        }
+
         .main-content {
             min-width: 0;
         }
@@ -2779,7 +2879,7 @@
                             {/* SIDEBAR LOGS */}
                             <aside className="report-sidebar no-print w-80 p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar" style={{background: 'linear-gradient(180deg, var(--panel-start), var(--panel-end))', borderRight: '1px solid var(--accent-soft)'}}>
                                 <header className="text-left mb-2 text-white font-black">
-                                    <h1 style={{fontSize: '1.125rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)'}}>Shift Report</h1>
+                                    <h1 className="report-heading-glow" style={{fontSize: '1.125rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)'}}>Shift Report</h1>
                                     <div style={{fontSize: '10px', color: 'var(--accent-dark)', fontWeight: 900, textTransform: 'uppercase', marginTop: '4px', letterSpacing: '0.2em'}}>{selectedDate}</div>
                                     <div className="mt-3 grid grid-cols-2 gap-2">
                                         <button type="button" onClick={() => shiftReportDay(-1)} className="fancy-btn" style={{padding: '7px 10px', fontSize: '10px'}}>PREV DAY</button>
@@ -2787,7 +2887,7 @@
                                     </div>
                                 </header>
 
-                                <div className="glass-panel p-3 rounded-lg text-left flex flex-col gap-3">
+                                <div className="glass-panel report-command-deck p-3 rounded-lg text-left flex flex-col gap-3">
                                     <div className="flex items-center justify-between">
                                         <div className="text-[10px] uppercase tracking-[0.2em]" style={{color: 'var(--accent)', fontWeight: 900}}>Report Controls</div>
                                         <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>{reportCompletion.completed}/{reportCompletion.total} fields</div>
@@ -2805,7 +2905,7 @@
                                             Missing required: {reportReadiness.missingRequiredLabels.join(', ')}
                                         </div>
                                     )}
-                                    <div className="rounded-lg" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
+                                    <div className="rounded-lg report-mini-card" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
                                         <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{color: 'var(--accent)', fontWeight: 800}}>Handoff Snapshot</div>
                                         {reportHandoffSummary.length > 0 && reportHandoffSummary.map((line, idx) => (
                                             <div key={idx} className="text-[10px]" style={{color: 'var(--text-secondary)', marginTop: idx === 0 ? 0 : '3px'}}>{line}</div>
@@ -2814,7 +2914,7 @@
                                             <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No summary yet. Add handoff or notes to build a quick readout.</div>
                                         )}
                                     </div>
-                                    <div className="rounded-lg" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
+                                    <div className="rounded-lg report-mini-card" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
                                         <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{color: 'var(--accent)', fontWeight: 800}}>Recent Activity</div>
                                         {reportActivityTimeline.length === 0 && (
                                             <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No activity yet for this report day.</div>
