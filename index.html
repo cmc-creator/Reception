@@ -217,6 +217,42 @@
             opacity: 0.95;
         }
 
+        .report-meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+
+        .report-meta-card {
+            background: var(--surface-2);
+            border: 1px solid var(--border-muted);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: left;
+        }
+
+        .report-meta-label {
+            color: var(--text-muted);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .report-meta-value {
+            color: var(--text-primary);
+            font-size: 14px;
+            line-height: 1.2;
+            font-weight: 900;
+            margin-top: 6px;
+            word-break: break-word;
+        }
+
+        body[data-theme="linen"] .report-meta-card {
+            background: rgba(255, 255, 255, 0.72);
+            border-color: rgba(123, 97, 72, 0.35);
+        }
+
         body[data-theme="linen"] .report-field-input {
             background: rgba(255, 255, 255, 0.55);
             border-radius: 4px;
@@ -2510,14 +2546,14 @@
                                             {REPORT_TEMPLATES.map(template => <option key={template.id} value={template.id}>{template.label}</option>)}
                                         </select>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-2 text-[10px]">
-                                        <div style={{background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px', textAlign: 'center'}}>
-                                            <div style={{color: 'var(--accent-soft)', marginBottom: '4px'}}>Status</div>
-                                            <div style={{color: 'var(--text-primary)', fontWeight: 'bold', textTransform: 'capitalize'}}>{reportData.__meta?.status || 'draft'}</div>
+                                    <div className="report-meta-grid">
+                                        <div className="report-meta-card">
+                                            <div className="report-meta-label">Status</div>
+                                            <div className="report-meta-value" style={{textTransform: 'capitalize'}}>{reportData.__meta?.status || 'draft'}</div>
                                         </div>
-                                        <div style={{background: 'rgba(255,255,255,0.05)', padding: '8px', borderRadius: '6px', textAlign: 'center'}}>
-                                            <div style={{color: 'var(--accent-soft)', marginBottom: '4px'}}>Prepared By</div>
-                                            <div style={{color: 'var(--text-primary)', fontSize: '10px'}}>{reportData.__meta?.savedBy || 'N/A'}</div>
+                                        <div className="report-meta-card">
+                                            <div className="report-meta-label">Prepared By</div>
+                                            <div className="report-meta-value">{reportData.__meta?.savedBy || 'N/A'}</div>
                                         </div>
                                     </div>
                                     {reportData.__meta?.status === 'rejected' && (
