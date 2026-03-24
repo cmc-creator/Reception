@@ -1575,6 +1575,41 @@
                 return lines;
             }
 
+            function getReportActivityTimeline(dateKey, report, dayShifts, dayChecklist) {
+                const meta = report?.__meta || {};
+                const entries = [];
+                const addEvent = (time, label, detail) => {
+                    entries.push({ time: time || 0, label, detail });
+                };
+
+                if (meta.savedAt) {
+                    addEvent(meta.savedAt, 'Saved draft', meta.savedBy || 'Unknown');
+                }
+                if (meta.submittedAt) {
+                    addEvent(meta.submittedAt, 'Submitted for review', meta.submittedBy || 'Unknown');
+                }
+                if (meta.approvedAt) {
+                    addEvent(meta.approvedAt, 'Approved', meta.approvedBy || 'Unknown');
+                }
+                if (meta.rejectedAt) {
+                    addEvent(meta.rejectedAt, 'Rejected', meta.rejectedBy || 'Unknown');
+                }
+
+                const totalShifts = Array.isArray(dayShifts) ? dayShifts.length : 0;
+                if (totalShifts > 0) {
+                    addEvent(0, 'Shift coverage', `${totalShifts} scheduled`);
+                }
+
+                const checklistItems = Array.isArray(dayChecklist) ? dayChecklist : [];
+                const checklistDone = checklistItems.filter(item => !!item?.checked).length;
+                if (checklistItems.length > 0) {
+                    addEvent(0, 'Checklist progress', `${checklistDone}/${checklistItems.length} complete`);
+                }
+
+                entries.sort((a, b) => b.time - a.time);
+                return entries.slice(0, 5);
+            }
+
             function persistReport(nextReport, dateKey = selectedDate, priorityOverride) {
                 const storedReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 const currentPriority = priorityOverride || reportPriority || 'normal';
@@ -2561,6 +2596,8 @@
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
             const reportHandoffSummary = getReportHandoffSummary(reportData);
+            const selectedDayShifts = events[selectedDate] || [];
+            const reportActivityTimeline = getReportActivityTimeline(selectedDate, reportData, selectedDayShifts, checklist);
             const reportLastSavedAt = reportData?.__meta?.savedAt || null;
 
             return (
@@ -2716,6 +2753,22 @@
                                         {reportHandoffSummary.length === 0 && (
                                             <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No summary yet. Add handoff or notes to build a quick readout.</div>
                                         )}
+                                    </div>
+                                    <div className="rounded-lg" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
+                                        <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{color: 'var(--accent)', fontWeight: 800}}>Recent Activity</div>
+                                        {reportActivityTimeline.length === 0 && (
+                                            <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No activity yet for this report day.</div>
+                                        )}
+                                        {reportActivityTimeline.map((entry, idx) => (
+                                            <div key={`${entry.label}-${idx}`} className="flex items-start justify-between gap-2 text-[10px]" style={{marginTop: idx === 0 ? 0 : '4px'}}>
+                                                <div style={{color: 'var(--text-secondary)'}}>
+                                                    <strong style={{color: 'var(--text-primary)'}}>{entry.label}:</strong> {entry.detail}
+                                                </div>
+                                                <div style={{color: 'var(--text-muted)', whiteSpace: 'nowrap'}}>
+                                                    {entry.time ? new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'today'}
+                                                </div>
+                                            </div>
+                                        ))}
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <select value={reportPriority} onChange={e => {
