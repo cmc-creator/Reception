@@ -1833,12 +1833,11 @@
                 }
 
                 const totalShifts = Array.isArray(dayShifts) ? dayShifts.length : 0;
-                const now = Date.now();
-                setReportLastEditAt(now);
-                setReportDirtyClock(now);
-                setIsReportDirty(previous => {
-                    if (!previous) {
-                        setReportDirtySinceAty.isArray(dayChecklist) ? dayChecklist : [];
+                if (totalShifts > 0) {
+                    addEvent(0, 'Shift coverage', `${totalShifts} shift${totalShifts === 1 ? '' : 's'} assigned`);
+                }
+
+                const checklistItems = Array.isArray(dayChecklist) ? dayChecklist : [];
                 const checklistDone = checklistItems.filter(item => !!item?.checked).length;
                 if (checklistItems.length > 0) {
                     addEvent(0, 'Checklist progress', `${checklistDone}/${checklistItems.length} complete`);
@@ -3995,8 +3994,6 @@
                                 </div>
                             </div>
                         </div>
-                    )}
-
                     )}
 
                     {/* DISCHARGE LIST MODAL */}

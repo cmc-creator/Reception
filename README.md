@@ -11,7 +11,7 @@ This app is designed to be **deployed as a live web app** that multiple employee
 1. **Enable GitHub Pages** for this repository:
    - Go to repository Settings → Pages
    - Source: Deploy from a branch
-   - Branch: `main` (or your default branch) → `/` (root)
+   - Branch: `main` (or your default branch) → `/docs`
    - Click Save
 
 2. **Access your live app** at: `https://[your-username].github.io/Reception/`
@@ -60,9 +60,20 @@ This app is designed to be **deployed as a live web app** that multiple employee
 3. Share the GitHub Pages URL with your team
 4. Everyone accesses the same shared calendar data
 
-### For Local Testing
+### For Production Preview
 
-Simply open `index.html` in a modern web browser. No build step required!
+1. Install dependencies:
+   - `npm install`
+2. Build the production bundle:
+   - `npm run build`
+3. Preview the compiled site locally:
+   - `npm run preview`
+
+The production-ready site is generated into `docs/` and is the version intended for GitHub Pages deployment.
+
+### For Source-Only Testing
+
+You can still open `index.html` directly in a modern browser for quick edits, but that source file intentionally uses CDN Tailwind and in-browser Babel for convenience. The production deployment should use the compiled `docs/` output instead.
 
 On first load, the app automatically creates sample data including:
 - Four staff members (Karen, Izzy, Annalissia, Hal)
@@ -105,7 +116,7 @@ On first load, the app automatically creates sample data including:
 
 ### Option 1: Live Web App (Best for Teams)
 
-Deploy to GitHub Pages and share the URL with your employees. Everyone sees the same data in real-time via Firebase sync.
+Build the app with `npm run build`, deploy the generated `docs/` folder to GitHub Pages, and share the URL with your employees. Everyone sees the same data in real-time via Firebase sync.
 
 ### Option 2: Export & Share (For Reports)
 
@@ -137,6 +148,18 @@ Works in all modern browsers that support:
 - localStorage
 - ES6 JavaScript
 - React 18
+
+## Production Build
+
+- Source app: `index.html`
+- Production output: `docs/`
+- Build command: `npm run build`
+- Local preview command: `npm run preview`
+
+The build pipeline does three things:
+- Precompiles Tailwind into a static stylesheet in `docs/assets/app.css`
+- Transpiles the inline JSX app with Babel and bundles React into `docs/assets/app.js`
+- Writes a deployable `docs/index.html` that no longer depends on the Tailwind CDN or the in-browser Babel transformer
 
 Tested in: Chrome, Firefox, Safari, Edge
 
