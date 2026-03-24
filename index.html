@@ -14,7 +14,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;700&family=JetBrains+Mono:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
         /* ═══════════════════════════════════════════════════════
@@ -325,13 +325,13 @@
         }
         
         * {
-            font-family: 'JetBrains Mono', 'Courier New', monospace !important;
+            font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, sans-serif !important;
         }
 
         h1, h2, h3, .display-type {
-            font-family: 'Chakra Petch', 'JetBrains Mono', monospace !important;
-            letter-spacing: 0.02em;
-            line-height: 1.08;
+            font-family: 'Space Grotesk', 'IBM Plex Sans', sans-serif !important;
+            letter-spacing: 0.01em;
+            line-height: 1.1;
         }
 
         .copy-rhythm {
@@ -4435,7 +4435,6 @@
                                 }} readOnly={!isAdmin && !appSettings.allowStaffAlertEdits} className="header-alert-input" placeholder={isAdmin || appSettings.allowStaffAlertEdits ? 'Broadcast immediate hub directive...' : 'Admin-only global alert channel'} />
                                 <div className="header-chip-grid">
                                     <div className="data-chip header-chip">Alert: {activeAlertLabel}</div>
-                                    <div className="data-chip header-chip">Source: {isFirebaseAvailable ? 'Firebase + cache' : 'Local storage'}</div>
                                     <div className="data-chip header-chip">{latestDataUpdatedAt ? `Updated: ${new Date(latestDataUpdatedAt).toLocaleString()}` : 'Updated: no data yet'}</div>
                                 </div>
                             </div>
