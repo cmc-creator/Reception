@@ -553,6 +553,103 @@
             flex-shrink: 0;
         }
 
+        .nav-rail--elevated {
+            position: relative;
+            isolation: isolate;
+            overflow: hidden;
+        }
+
+        .nav-rail--elevated::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                radial-gradient(120% 30% at 50% -10%, rgba(255,255,255,0.11), rgba(255,255,255,0) 65%),
+                linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
+            z-index: 0;
+        }
+
+        .nav-rail--elevated > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-rail .nav-monogram {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.22);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.18), rgba(255,255,255,0.04));
+            box-shadow: 0 8px 22px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.3);
+        }
+
+        .nav-rail > button {
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+
+        .nav-rail > button:hover {
+            transform: translateY(-2px) scale(1.03);
+            filter: saturate(1.08);
+        }
+
+        .command-strip {
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(8px);
+            box-shadow: inset 0 -1px 0 rgba(255,255,255,0.06), 0 10px 30px rgba(0,0,0,0.28);
+        }
+
+        .command-strip::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background:
+                linear-gradient(100deg, rgba(255,255,255,0), rgba(255,255,255,0.07), rgba(255,255,255,0)),
+                linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0));
+            transform: translateX(-60%);
+            animation: stripSweep 9s linear infinite;
+        }
+
+        .command-strip > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        .alert-pill {
+            border: 1px solid rgba(244, 63, 94, 0.35);
+            background: linear-gradient(145deg, rgba(159, 18, 57, 0.28), rgba(127, 29, 29, 0.14));
+            border-radius: 999px;
+            padding: 0.2rem 0.55rem;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 14px rgba(251, 113, 133, 0.2);
+        }
+
+        .top-header .header-chip {
+            background: linear-gradient(150deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
+            border-color: rgba(255,255,255,0.24);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+        }
+
+        .top-header .header-orb-btn {
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 6px 14px rgba(0,0,0,0.24);
+        }
+
+        .top-header .header-orb-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(255,255,255,0.34) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 18px rgba(0,0,0,0.34);
+        }
+
+        @keyframes stripSweep {
+            0% { transform: translateX(-60%); }
+            100% { transform: translateX(60%); }
+        }
+
         .work-area {
             min-height: 0;
         }
@@ -658,6 +755,10 @@
 
             .report-mini-card {
                 transition: none;
+            }
+
+            .command-strip::before {
+                animation: none;
             }
         }
 
@@ -2763,8 +2864,8 @@
             return (
                 <div className="app-shell flex h-screen w-screen bg-black overflow-hidden text-xs">
                     {/* NAV RAIL */}
-                    <nav style={{background: 'linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-bottom) 100%)', borderRight: '2px solid var(--accent-soft)', boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.5)'}} className="nav-rail no-print w-16 flex flex-col items-center py-8 gap-6">
-                        <div style={{color: 'var(--accent)', fontWeight: 900, fontSize: '1.2rem', textShadow: '0 0 10px var(--accent-glow)', letterSpacing: '0.1em'}}>{(appSettings.facilityName || 'DS').split(' ').map(part => part[0]).join('').slice(0, 2)}</div>
+                    <nav style={{background: 'linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-bottom) 100%)', borderRight: '2px solid var(--accent-soft)', boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.5)'}} className="nav-rail nav-rail--elevated no-print w-16 flex flex-col items-center py-8 gap-6">
+                        <div className="nav-monogram" style={{color: 'var(--accent)', fontWeight: 900, fontSize: '1.2rem', textShadow: '0 0 10px var(--accent-glow)', letterSpacing: '0.1em'}}>{(appSettings.facilityName || 'DS').split(' ').map(part => part[0]).join('').slice(0, 2)}</div>
                         
                         {/* PANIC BUTTON */}
                         <button 
@@ -2850,8 +2951,8 @@
                     </nav>
 
                     <div className="main-stack flex-1 flex flex-col">
-                        <header className="top-header no-print min-h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 py-2 gap-4 text-left font-bold">
-                            <div className="flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
+                        <header className="top-header command-strip no-print min-h-10 bg-rose-950/20 border-b border-rose-500/30 flex items-center px-6 py-2 gap-4 text-left font-bold">
+                            <div className="alert-pill flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
                             <input value={globalAlert} onChange={e => { 
                                 if (!isAdmin && !appSettings.allowStaffAlertEdits) return;
                                 const newAlert = String(e.target.value);
@@ -2861,17 +2962,17 @@
                             <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
                                 {isFirebaseAvailable ? '🌐 LIVE SYNC' : '💾 LOCAL MODE'}
                             </div>
-                            <div className="data-chip" title="Operational data source for this session">{isFirebaseAvailable ? 'Source: Firebase + Local Cache' : 'Source: Local Storage'}</div>
-                            <div className="data-chip" title="Most recent detected data update time">{latestDataUpdatedAt ? `Updated: ${new Date(latestDataUpdatedAt).toLocaleString()}` : 'Updated: no data yet'}</div>
+                            <div className="data-chip header-chip" title="Operational data source for this session">{isFirebaseAvailable ? 'Source: Firebase + Local Cache' : 'Source: Local Storage'}</div>
+                            <div className="data-chip header-chip" title="Most recent detected data update time">{latestDataUpdatedAt ? `Updated: ${new Date(latestDataUpdatedAt).toLocaleString()}` : 'Updated: no data yet'}</div>
                             <div className="header-actions flex items-center gap-3 shrink-0">
-                                <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip" title="Command Palette (Ctrl/Cmd + K)">⌘K Command</button>
-                                <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
+                                <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Command Palette (Ctrl/Cmd + K)">⌘K Command</button>
+                                <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 ALERTS {notifications.filter(n => !n.read).length > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{notifications.filter(n => !n.read).length}</span>}
                                 </button>
                                 {currentUser && <div className={`role-badge ${currentUser.role}`}><IconUser /> {currentUser.displayName}</div>}
-                                <button onClick={toggleDarkMode} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="uppercase flex items-center gap-2" title="Toggle dark mode">{appSettings.theme === 'midnight' ? <IconSun /> : <IconMoon />} {appSettings.theme === 'midnight' ? 'LIGHT' : 'DARK'}</button>
+                                <button onClick={toggleDarkMode} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="header-orb-btn uppercase flex items-center gap-2" title="Toggle dark mode">{appSettings.theme === 'midnight' ? <IconSun /> : <IconMoon />} {appSettings.theme === 'midnight' ? 'LIGHT' : 'DARK'}</button>
                                 <button className="fancy-btn" onClick={() => setIsSettingsOpen(true)} style={{padding: '8px 14px', fontSize: '10px'}}>SETTINGS</button>
-                                {currentUser && <button onClick={handleLogout} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="uppercase">Sign Out</button>}
+                                {currentUser && <button onClick={handleLogout} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="header-orb-btn uppercase">Sign Out</button>}
                             </div>
                         </header>
 
