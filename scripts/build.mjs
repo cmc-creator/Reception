@@ -52,13 +52,15 @@ async function main() {
     .filter((tag) => !tag.includes('cdn.tailwindcss.com'))
     .filter((tag) => !tag.includes('react@18/umd/react.production.min.js'))
     .filter((tag) => !tag.includes('react-dom@18/umd/react-dom.production.min.js'))
+    .filter((tag) => !tag.includes('firebasejs/'))
+    .filter((tag) => !tag.includes('jspdf.umd.min.js'))
     .filter((tag) => !tag.includes('@babel/standalone'));
   const linkTags = [...sourceHtml.matchAll(/<link\b[^>]*>/g)]
     .map((match) => match[0])
     .filter((tag) => !tag.includes('rel="manifest"'));
 
   const entrySource = appSource
-    .replace(/const\s*\{\s*useState,\s*useEffect,\s*useMemo,\s*useRef\s*\}\s*=\s*React;\s*/m, "import { useEffect, useMemo, useRef, useState } from 'react';\nimport { createRoot } from 'react-dom/client';\n\n")
+    .replace(/const\s*\{\s*useState,\s*useEffect,\s*useMemo,\s*useRef\s*\}\s*=\s*React;\s*/m, "import firebase from 'firebase/compat/app';\nimport 'firebase/compat/firestore';\nimport 'firebase/compat/auth';\nimport { useEffect, useMemo, useRef, useState } from 'react';\nimport { createRoot } from 'react-dom/client';\n\n")
     .replace(/const root = ReactDOM\.createRoot\(document\.getElementById\('root'\)\);/, "const root = createRoot(document.getElementById('root'));\n");
 
   if (!entrySource.includes("from 'react'")) {

@@ -57,7 +57,7 @@ This app is designed to be **deployed as a live web app** that multiple employee
 ### For Teams (Recommended)
 
 1. Deploy this repository to GitHub Pages (see deployment steps above)
-2. Ensure Firebase CDN resources can load (check browser console)
+2. Ensure outbound network access to Firebase services is allowed for shared sync
 3. Share the GitHub Pages URL with your team
 4. Everyone accesses the same shared calendar data
 
@@ -76,7 +76,7 @@ GitHub Actions now handles Pages deployment automatically from the compiled `doc
 
 ### For Source-Only Testing
 
-You can still open `index.html` directly in a modern browser for quick edits, but that source file intentionally uses CDN Tailwind and in-browser Babel for convenience. The production deployment should use the compiled `docs/` output instead.
+You can still open `index.html` directly in a modern browser for quick edits, but that source file intentionally uses CDN Tailwind, CDN Firebase, and in-browser Babel for convenience. The production deployment should use the compiled `docs/` output instead.
 
 On first load, the app automatically creates sample data including:
 - Four staff members (Karen, Izzy, Annalissia, Hal)
@@ -163,7 +163,7 @@ Works in all modern browsers that support:
 The build pipeline does three things:
 - Precompiles Tailwind into a static stylesheet in `docs/assets/app.css`
 - Transpiles the inline JSX app with Babel and bundles React into `docs/assets/app.js`
-- Writes a deployable `docs/index.html` that no longer depends on the Tailwind CDN or the in-browser Babel transformer
+- Writes a deployable `docs/index.html` that no longer depends on the Tailwind CDN, Firebase CDN, jsPDF CDN, or the in-browser Babel transformer
 
 Tested in: Chrome, Firefox, Safari, Edge
 
@@ -202,8 +202,8 @@ Your localStorage data persists across browser sessions as long as you:
 ### "The app shows a blank page"
 
 **Check the browser console** (F12 or right-click → Inspect → Console):
-- If you see warnings about Firebase not loading, this is **normal and expected**
-- The app will log "Firebase not available - running in offline-only mode"
+- If the compiled `docs/` build is deployed, you should not see Tailwind CDN or in-browser Babel warnings
+- If Firebase access is blocked, the app will log that it is running in offline-only mode
 - Your local data is safe and the app should still work
 
 **Common causes:**
@@ -214,7 +214,7 @@ Your localStorage data persists across browser sessions as long as you:
 
 **Recent Fix (Feb 2026):**
 - Fixed React development/production build mismatch
-- Updated Firebase CDN from invalid version 12.8.0 to stable 9.22.0
+- Production build now bundles Firebase from npm instead of loading it from a CDN
 - Removed CDN caching from service worker to prevent version conflicts
 - If updating from an older version, clear your browser cache and reload
 
@@ -233,7 +233,7 @@ Your localStorage data persists across browser sessions as long as you:
 
 **For multi-user sharing:**
 1. Deploy to GitHub Pages (see deployment instructions above)
-2. Ensure Firebase CDN can load (check browser console)
+2. Ensure Firebase network access is available if you want shared sync
 3. Share the GitHub Pages URL with your team
 4. Everyone will access the same shared calendar
 
@@ -247,7 +247,7 @@ Your localStorage data persists across browser sessions as long as you:
 This message means Firebase cloud sync is unavailable, and the app is running in **single-user mode** using localStorage. 
 
 **For team sharing, you need Firebase to work:**
-- Check if CDN resources are blocked by firewall/ad blocker
+- Check if access to Firebase services is blocked by firewall or network policy
 - Ensure external resources can load from: `www.gstatic.com`, `firestore.googleapis.com`
 - Contact your IT department if corporate firewall blocks these domains
 
@@ -256,7 +256,7 @@ This message means Firebase cloud sync is unavailable, and the app is running in
 ## Technical Details
 
 - Single-file React application using Babel for in-browser JSX transformation
-- Tailwind CSS via CDN for styling
+- Tailwind CSS is compiled into the production stylesheet during the build
 - Firebase Firestore for multi-user cloud sync (gracefully degrades if unavailable)
 - Progressive Web App (PWA) with service worker for offline support
 - No build process required
