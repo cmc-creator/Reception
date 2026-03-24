@@ -1769,7 +1769,7 @@
                     }
                 }, waitMs);
                 return () => window.clearTimeout(timeoutId);
-            }, [isReportDirty, reportLastEditAt, reportData, selectedDate, reportPriority, currentUser?.id, reportReadinessSnapshot];
+            }, [isReportDirty, reportLastEditAt, reportData, selectedDate, reportPriority, currentUser?.id, reportReadinessSnapshot]);
 
             function getReportCompletion(report) {
                 const completed = REPORT_FIELDS.reduce((count, field) => {
