@@ -1201,6 +1201,7 @@
             const [isReportDirty, setIsReportDirty] = useState(false);
             const [reportDirtySinceAt, setReportDirtySinceAt] = useState(null);
             const [reportDirtyClock, setReportDirtyClock] = useState(() => Date.now());
+            const [reportLastEditAt, setReportLastEditAt] = useState(null);
 
             // --- View Modes ---
             const [viewMode, setViewMode] = useState('month');
@@ -1517,6 +1518,7 @@
                 setReportData(allReports[selectedDate] || {});
                 setIsReportDirty(false);
                 setReportDirtySinceAt(null);
+                setReportLastEditAt(null);
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
                 setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
@@ -1542,6 +1544,21 @@
                 const intervalId = window.setInterval(() => setReportDirtyClock(Date.now()), 30000);
                 return () => window.clearInterval(intervalId);
             }, [isReportDirty]);
+
+            useEffect(() => {
+                if (!isReportDirty || !reportLastEditAt || !currentUser) return undefined;
+                const idleMs = 60000;
+                const elapsedMs = Date.now() - reportLastEditAt;
+                const waitMs = Math.max(0, idleMs - elapsedMs);
+                const timeoutId = window.setTimeout(() => {
+                    persistReport(reportData || {}, selectedDate, reportPriority);
+                    setIsReportDirty(false);
+                    setReportDirtySinceAt(null);
+                    setReportLastEditAt(null);
+                    showNotification(`Auto-saved draft for ${selectedDate} after 60 seconds idle.`, 'info');
+                }, waitMs);
+                return () => window.clearTimeout(timeoutId);
+            }, [isReportDirty, reportLastEditAt, reportData, selectedDate, reportPriority, currentUser?.id]);
 
             function getReportCompletion(report) {
                 const completed = REPORT_FIELDS.reduce((count, field) => {
@@ -1605,11 +1622,12 @@
                 }
 
                 const totalShifts = Array.isArray(dayShifts) ? dayShifts.length : 0;
-                if (totalShifts > 0) {
-                    addEvent(0, 'Shift coverage', `${totalShifts} scheduled`);
-                }
-
-                const checklistItems = Array.isArray(dayChecklist) ? dayChecklist : [];
+                const now = Date.now();
+                setReportLastEditAt(now);
+                setReportDirtyClock(now);
+                setIsReportDirty(previous => {
+                    if (!previous) {
+                        setReportDirtySinceAty.isArray(dayChecklist) ? dayChecklist : [];
                 const checklistDone = checklistItems.filter(item => !!item?.checked).length;
                 if (checklistItems.length > 0) {
                     addEvent(0, 'Checklist progress', `${checklistDone}/${checklistItems.length} complete`);
@@ -1650,6 +1668,7 @@
                     setReportPriority(currentPriority);
                     setIsReportDirty(false);
                     setReportDirtySinceAt(null);
+                    setReportLastEditAt(null);
                 }
                 return payload;
             }
@@ -2049,6 +2068,7 @@
                 persistReport(reportData || {}, dateKey, reportPriority);
                 setIsReportDirty(false);
                 setReportDirtySinceAt(null);
+                setReportLastEditAt(null);
                 showNotification(`Draft saved for ${dateKey}.`, 'success', true);
             }
 
@@ -2089,6 +2109,7 @@
                 if (action === 'reload-current') {
                     setReportData(loadFromStorage(STORAGE_KEYS.REPORTS, {})[selectedDate] || {});
                     setIsReportDirty(false);
+                    setReportLastEditAt(null);
                     setReportDirtySinceAt(null);
                     showNotification('Reloaded report from saved data.', 'info');
                     return;
@@ -2896,6 +2917,9 @@
                                     )}
                                     <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
                                         Shortcuts: Ctrl/Cmd+Shift+Enter save draft, Ctrl/Cmd+Enter submit draft, Esc close open panel.
+                                    </div>
+                                    <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
+                                        Auto-save: dirty draft saves automatically after 60 seconds idle.
                                     </div>
                                 </div>
 
