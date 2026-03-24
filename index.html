@@ -958,6 +958,7 @@
             const [isPrnDashboardOpen, setIsPrnDashboardOpen] = useState(false);
             const [staffPrnStatus, setStaffPrnStatus] = useState(() => loadFromStorage('reception_prn_status', {}));
             const [reportSearchTerm, setReportSearchTerm] = useState('');
+            const [reportJumpDate, setReportJumpDate] = useState(() => new Date().toISOString().split('T')[0]);
             const [showReportHistory, setShowReportHistory] = useState(false);
             const [isShiftSwapOpen, setIsShiftSwapOpen] = useState(false);
             const [shiftSwapRequests, setShiftSwapRequests] = useState(() => loadFromStorage('reception_shift_swaps', []));
@@ -1451,6 +1452,7 @@
                 const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 setReportData(allReports[selectedDate] || {});
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
+                setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
                 const reportMeta = selectedReport.__meta || {};
                 const priority = reportMeta.priority || loadFromStorage('report_priority_' + selectedDate, 'normal');
@@ -1866,6 +1868,55 @@
                 const nextDate = cursor.toISOString().split('T')[0];
                 setSelectedDate(nextDate);
                 setCurrentDate(new Date(cursor.getFullYear(), cursor.getMonth(), 1));
+            }
+
+            function saveDraftReport(dateKey = selectedDate) {
+                persistReport(reportData || {}, dateKey, reportPriority);
+                showNotification(`Draft saved for ${dateKey}.`, 'success', true);
+            }
+
+            function openReportByDate(dateKey = reportJumpDate) {
+                if (!dateKey) {
+                    showNotification('Choose a valid report date.', 'error');
+                    return;
+                }
+                const next = new Date(`${dateKey}T12:00:00`);
+                if (Number.isNaN(next.getTime())) {
+                    showNotification('Invalid report date.', 'error');
+                    return;
+                }
+                setSelectedDate(dateKey);
+                setCurrentDate(new Date(next.getFullYear(), next.getMonth(), 1));
+                const reports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
+                if (reports[dateKey]) {
+                    showNotification(`Opened saved report for ${dateKey}.`, 'success');
+                } else {
+                    showNotification(`No saved report for ${dateKey}. You can start one now.`, 'info');
+                }
+            }
+
+            function runReportUtility(action) {
+                if (!action) return;
+                if (action === 'history') {
+                    openReportHistory();
+                    return;
+                }
+                if (action === 'copy-previous') {
+                    clonePreviousReport();
+                    return;
+                }
+                if (action === 'export-current') {
+                    exportReportByDate(selectedDate);
+                    return;
+                }
+                if (action === 'reload-current') {
+                    setReportData(loadFromStorage(STORAGE_KEYS.REPORTS, {})[selectedDate] || {});
+                    showNotification('Reloaded report from saved data.', 'info');
+                    return;
+                }
+                if (action === 'open-swap') {
+                    setIsShiftSwapOpen(true);
+                }
             }
 
             function exportFullBackup() {
@@ -2479,23 +2530,45 @@
                                             <strong>Approved by:</strong> {reportData.__meta?.approvedBy} on {new Date(reportData.__meta?.approvedAt).toLocaleString()}
                                         </div>
                                     )}
+
                                     <div className="grid grid-cols-2 gap-2">
+                                        <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0ea5e9'}}>SAVE DRAFT</button>
                                         {reportData.__meta?.status === 'draft' && (
-                                            <button type="button" onClick={() => submitReportForReview(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#3b82f6'}}>SUBMIT FOR REVIEW</button>
+                                            <button type="button" onClick={() => submitReportForReview(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#3b82f6'}}>SUBMIT</button>
                                         )}
-                                        {isAdmin && reportData.__meta?.status === 'submitted' && (
-                                            <>
-                                                <button type="button" onClick={() => approveReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#10b981'}}>APPROVE</button>
-                                                <button type="button" onClick={() => rejectReport(selectedDate, prompt('Enter rejection reason:') || '')} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#ef4444'}}>REJECT</button>
-                                            </>
+                                        {reportData.__meta?.status !== 'draft' && (
+                                            <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>REPORT BROWSER</button>
                                         )}
                                     </div>
+
+                                    {isAdmin && reportData.__meta?.status === 'submitted' && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button type="button" onClick={() => approveReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#10b981'}}>APPROVE</button>
+                                            <button type="button" onClick={() => rejectReport(selectedDate, prompt('Enter rejection reason:') || '')} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#ef4444'}}>REJECT</button>
+                                        </div>
+                                    )}
+
+                                    {reportData.__meta?.status === 'submitted' && !isAdmin && (
+                                        <div style={{background: 'rgba(59,130,246,0.16)', border: '1px solid rgba(59,130,246,0.4)', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#bfdbfe'}}>
+                                            Submitted and waiting for admin review.
+                                        </div>
+                                    )}
+
                                     <div className="grid grid-cols-2 gap-2">
-                                        <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>ARCHIVE</button>
-                                        <button type="button" onClick={clonePreviousReport} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>COPY PREVIOUS</button>
-                                        <button type="button" onClick={() => exportReportByDate(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>EXPORT REPORT</button>
-                                        <button type="button" onClick={() => setReportData(loadFromStorage(STORAGE_KEYS.REPORTS, {})[selectedDate] || {})} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>RELOAD</button>
-                                        <button type="button" onClick={() => setIsShiftSwapOpen(true)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#8b5cf6'}}>SWAP SHIFTS</button>
+                                        <input type="date" value={reportJumpDate} onChange={e => setReportJumpDate(e.target.value)} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}} />
+                                        <button type="button" onClick={() => openReportByDate(reportJumpDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>OPEN DATE</button>
+                                    </div>
+
+                                    <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
+                                        <select onChange={e => { runReportUtility(e.target.value); e.target.value = ''; }} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}} defaultValue="">
+                                            <option value="">Report Utilities</option>
+                                            <option value="history">Open Report Browser</option>
+                                            <option value="copy-previous">Copy Previous Report</option>
+                                            <option value="export-current">Export Current Report</option>
+                                            <option value="reload-current">Reload Saved Report</option>
+                                            <option value="open-swap">Open Shift Swap Portal</option>
+                                        </select>
+                                        <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>BROWSE</button>
                                     </div>
                                     <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
                                         Last saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleString() : 'Not saved yet'}
