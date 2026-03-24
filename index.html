@@ -1847,16 +1847,17 @@
         }
         /* ===== CALENDAR SURFACE ===== */
         .cal-command-bar {
-            display: flex;
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 1.25rem;
             align-items: flex-end;
-            justify-content: space-between;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding: 1rem 1.5rem;
-            border-radius: 18px;
+            margin-bottom: 1.25rem;
+            padding: 0.9rem 1.2rem;
+            border-radius: 16px;
             background: linear-gradient(155deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
             border: 1px solid rgba(255,255,255,0.1);
             box-shadow: 0 8px 28px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07);
+            overflow: hidden;
         }
         .cal-command-bar__title {
             font-size: clamp(1.8rem, 3vw, 2.6rem);
@@ -1878,9 +1879,11 @@
         }
         .cal-command-bar__controls {
             display: flex;
-            gap: 0.6rem;
-            align-items: center;
             flex-wrap: wrap;
+            gap: 0.45rem;
+            align-items: center;
+            min-width: 0;
+            flex: 1;
         }
         .cal-nav-group {
             display: flex;
@@ -1904,24 +1907,26 @@
         .cal-input {
             background: rgba(10,10,11,0.92);
             border: 1.5px solid var(--accent-soft);
-            border-radius: 8px;
-            padding: 8px 12px;
+            border-radius: 6px;
+            padding: 6px 10px;
             color: var(--accent);
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 700;
             outline: none;
             transition: border-color 0.2s;
+            min-width: 0;
+            white-space: nowrap;
         }
         .cal-input:focus { border-color: var(--accent); }
         .cal-staff-tray {
             position: relative;
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
+            border-radius: 14px;
             background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
             box-shadow: 0 4px 16px rgba(0,0,0,0.28);
-            padding: 1rem 1.25rem;
-            margin-bottom: 1.25rem;
+            padding: 0.85rem 1rem;
+            margin-bottom: 1rem;
         }
         .cal-staff-tray__kicker {
             font-size: 10px;
@@ -1934,9 +1939,10 @@
         .cal-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
+            gap: 0;
             position: relative;
             overflow: hidden;
-            border-radius: 16px;
+            border-radius: 14px;
             border: 1px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.01);
             box-shadow: 0 4px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
@@ -1954,13 +1960,17 @@
             background: rgba(255,255,255,0.02);
         }
         .day-cell {
-            padding: 12px;
+            min-height: 150px;
+            padding: 9px;
             cursor: pointer;
             position: relative;
             transition: background 0.14s, box-shadow 0.14s;
             border: 1px solid var(--accent-soft);
             background: linear-gradient(135deg, var(--panel-start), var(--panel-end));
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.45);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
         }
         .day-cell:hover { background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); }
         .day-cell--selected {
@@ -2011,19 +2021,22 @@
         }
         .shift-card {
             position: relative;
-            border-radius: 6px;
-            padding: 8px 12px;
+            border-radius: 4px;
+            padding: 6px 9px;
             cursor: pointer;
             user-select: none;
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.05em;
+            letter-spacing: 0.03em;
             text-transform: uppercase;
             color: var(--text-primary);
             background: linear-gradient(145deg, var(--accent), var(--accent-dark));
-            border: 2px solid var(--accent-dark);
-            box-shadow: 0 3px 0 rgba(0,0,0,0.35), 0 6px 15px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.2);
+            border: 1.5px solid var(--accent-dark);
+            box-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 4px 10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.15);
             transition: transform 0.12s;
+            flex-shrink: 0;
+            min-height: fit-content;
+            line-height: 1.2;
         }
         .shift-card:hover { transform: translateY(-2px); }
         .shift-card__dot {
@@ -4733,7 +4746,7 @@
                             </aside>
 
                             {/* MAIN GRID */}
-                            <main className="main-content flex-1 p-8 overflow-y-auto no-scrollbar text-center font-bold">
+                            <main className="main-content flex-1 p-6 overflow-y-auto no-scrollbar text-center font-bold">
                                 <div className="cal-command-bar no-print font-bold">
                                     <div>
                                         <div className="cal-command-bar__title">{appSettings.facilityName || 'Destiny Springs'}</div>
