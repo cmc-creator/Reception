@@ -10,13 +10,14 @@ This app is designed to be **deployed as a live web app** that multiple employee
 
 1. **Enable GitHub Pages** for this repository:
    - Go to repository Settings → Pages
-   - Source: Deploy from a branch
-   - Branch: `main` (or your default branch) → `/docs`
+   - Source: `GitHub Actions`
    - Click Save
 
 2. **Access your live app** at: `https://[your-username].github.io/Reception/`
 
-3. **Share the URL** with your employees - they can all access the same calendar!
+3. **Push to `main`** and GitHub Actions will build and deploy the latest production site automatically.
+
+4. **Share the URL** with your employees - they can all access the same calendar!
 
 ### How Multi-User Sync Works
 
@@ -70,6 +71,8 @@ This app is designed to be **deployed as a live web app** that multiple employee
    - `npm run preview`
 
 The production-ready site is generated into `docs/` and is the version intended for GitHub Pages deployment.
+
+GitHub Actions now handles Pages deployment automatically from the compiled `docs/` output whenever you push to `main`.
 
 ### For Source-Only Testing
 
@@ -155,6 +158,7 @@ Works in all modern browsers that support:
 - Production output: `docs/`
 - Build command: `npm run build`
 - Local preview command: `npm run preview`
+- Automated deploy: `.github/workflows/deploy-pages.yml`
 
 The build pipeline does three things:
 - Precompiles Tailwind into a static stylesheet in `docs/assets/app.css`
