@@ -1199,6 +1199,8 @@
             const [reportAttachments, setReportAttachments] = useState(() => loadFromStorage('report_attachments_' + selectedDate, []));
             const [allReports, setAllReports] = useState({});
             const [isReportDirty, setIsReportDirty] = useState(false);
+            const [reportDirtySinceAt, setReportDirtySinceAt] = useState(null);
+            const [reportDirtyClock, setReportDirtyClock] = useState(() => Date.now());
 
             // --- View Modes ---
             const [viewMode, setViewMode] = useState('month');
@@ -1514,6 +1516,7 @@
                 const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 setReportData(allReports[selectedDate] || {});
                 setIsReportDirty(false);
+                setReportDirtySinceAt(null);
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
                 setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
@@ -1532,6 +1535,12 @@
                 };
                 window.addEventListener('beforeunload', handleBeforeUnload);
                 return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+            }, [isReportDirty]);
+
+            useEffect(() => {
+                if (!isReportDirty) return undefined;
+                const intervalId = window.setInterval(() => setReportDirtyClock(Date.now()), 30000);
+                return () => window.clearInterval(intervalId);
             }, [isReportDirty]);
 
             function getReportCompletion(report) {
@@ -1610,6 +1619,17 @@
                 return entries.slice(0, 5);
             }
 
+            function markReportDirty() {
+                setIsReportDirty(previous => {
+                    if (!previous) {
+                        const now = Date.now();
+                        setReportDirtySinceAt(now);
+                        setReportDirtyClock(now);
+                    }
+                    return true;
+                });
+            }
+
             function persistReport(nextReport, dateKey = selectedDate, priorityOverride) {
                 const storedReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 const currentPriority = priorityOverride || reportPriority || 'normal';
@@ -1629,6 +1649,7 @@
                     setReportData(payload);
                     setReportPriority(currentPriority);
                     setIsReportDirty(false);
+                    setReportDirtySinceAt(null);
                 }
                 return payload;
             }
@@ -1950,7 +1971,7 @@
             function updateReportField(fieldId, value) {
                 const nextReport = { ...reportData, [fieldId]: value };
                 setReportData(nextReport);
-                setIsReportDirty(true);
+                markReportDirty();
             }
 
             function applyReportTemplate(templateId) {
@@ -1958,7 +1979,7 @@
                 if (!template) return;
                 const nextReport = { ...reportData, ...template.content };
                 setReportData(nextReport);
-                setIsReportDirty(true);
+                markReportDirty();
                 showNotification(`Applied ${template.label} template.`);
             }
 
@@ -1975,7 +1996,7 @@
                     cloned[field.id] = String(previousReport[field.id] || '');
                 });
                 setReportData({ ...reportData, ...cloned });
-                setIsReportDirty(true);
+                markReportDirty();
                 showNotification(`Copied report content from ${previousDate}.`);
             }
 
@@ -2027,6 +2048,7 @@
             function saveDraftReport(dateKey = selectedDate) {
                 persistReport(reportData || {}, dateKey, reportPriority);
                 setIsReportDirty(false);
+                setReportDirtySinceAt(null);
                 showNotification(`Draft saved for ${dateKey}.`, 'success', true);
             }
 
@@ -2067,6 +2089,7 @@
                 if (action === 'reload-current') {
                     setReportData(loadFromStorage(STORAGE_KEYS.REPORTS, {})[selectedDate] || {});
                     setIsReportDirty(false);
+                    setReportDirtySinceAt(null);
                     showNotification('Reloaded report from saved data.', 'info');
                     return;
                 }
@@ -2599,6 +2622,9 @@
             const selectedDayShifts = events[selectedDate] || [];
             const reportActivityTimeline = getReportActivityTimeline(selectedDate, reportData, selectedDayShifts, checklist);
             const reportLastSavedAt = reportData?.__meta?.savedAt || null;
+            const reportDirtyAgeMs = isReportDirty && reportDirtySinceAt ? Math.max(0, reportDirtyClock - reportDirtySinceAt) : 0;
+            const reportDirtyAgeMinutes = Math.floor(reportDirtyAgeMs / 60000);
+            const reportDirtyIsStale = reportDirtyAgeMs >= 15 * 60 * 1000;
 
             return (
                 <div className="app-shell flex h-screen w-screen bg-black overflow-hidden text-xs">
@@ -2774,7 +2800,7 @@
                                         <select value={reportPriority} onChange={e => {
                                             const nextPriority = e.target.value;
                                             setReportPriority(nextPriority);
-                                            setIsReportDirty(true);
+                                            markReportDirty();
                                         }} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}}>
                                             <option value="low">Low Priority</option>
                                             <option value="normal">Normal Priority</option>
@@ -2859,8 +2885,13 @@
                                         Last saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleString() : 'Not saved yet'}
                                     </div>
                                     {isReportDirty && (
-                                        <div className="text-[10px]" style={{color: '#f59e0b', fontWeight: 700}}>
-                                            Unsaved changes. Save Draft or Submit before handoff/sign out.
+                                        <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
+                                            <div className="text-[10px]" style={{color: reportDirtyIsStale ? '#fecaca' : '#fcd34d', fontWeight: 700}}>
+                                                Unsaved changes {reportDirtySinceAt ? `(${reportDirtyAgeMinutes}m)` : ''}. {reportDirtyIsStale ? 'Stale draft alert - save now.' : 'Save Draft or Submit before handoff/sign out.'}
+                                            </div>
+                                            <button type="button" className="fancy-btn" onClick={() => saveDraftReport(selectedDate)} style={{padding: '5px 8px', fontSize: '9px', background: reportDirtyIsStale ? '#dc2626' : '#0ea5e9'}}>
+                                                QUICK SAVE
+                                            </button>
                                         </div>
                                     )}
                                     <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
