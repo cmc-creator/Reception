@@ -1560,6 +1560,21 @@
                 };
             }
 
+            function getReportHandoffSummary(report) {
+                const summaryFieldOrder = ['incidents', 'handoff', 'maintenance', 'visitors', 'notes'];
+                const lines = summaryFieldOrder
+                    .map(fieldId => {
+                        const field = REPORT_FIELDS.find(item => item.id === fieldId);
+                        const value = String(report?.[fieldId] || '').trim();
+                        if (!value) return null;
+                        const compact = value.replace(/\s+/g, ' ').slice(0, 96);
+                        return `${field?.label || fieldId}: ${compact}${compact.length === 96 ? '...' : ''}`;
+                    })
+                    .filter(Boolean)
+                    .slice(0, 3);
+                return lines;
+            }
+
             function persistReport(nextReport, dateKey = selectedDate, priorityOverride) {
                 const storedReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 const currentPriority = priorityOverride || reportPriority || 'normal';
@@ -2099,9 +2114,90 @@
                         setIsCommandPaletteOpen(open => !open);
                         return;
                     }
-                    if (event.key === 'Escape' && isCommandPaletteOpen) {
-                        setIsCommandPaletteOpen(false);
-                        return;
+                    if (event.key === 'Escape') {
+                        if (isCommandPaletteOpen) {
+                            setIsCommandPaletteOpen(false);
+                            return;
+                        }
+                        if (isSignOutGuardOpen) {
+                            setIsSignOutGuardOpen(false);
+                            return;
+                        }
+                        if (isNotificationCenterOpen) {
+                            setIsNotificationCenterOpen(false);
+                            return;
+                        }
+                        if (isSettingsOpen) {
+                            setIsSettingsOpen(false);
+                            return;
+                        }
+                        if (isPersonnelModalOpen) {
+                            setIsPersonnelModalOpen(false);
+                            return;
+                        }
+                        if (isAddModalOpen) {
+                            setIsAddModalOpen(false);
+                            return;
+                        }
+                        if (isBulkAssignOpen) {
+                            setIsBulkAssignOpen(false);
+                            return;
+                        }
+                        if (isPrnDashboardOpen) {
+                            setIsPrnDashboardOpen(false);
+                            return;
+                        }
+                        if (isShiftSwapOpen) {
+                            setIsShiftSwapOpen(false);
+                            return;
+                        }
+                        if (isDocRepoOpen) {
+                            setIsDocRepoOpen(false);
+                            return;
+                        }
+                        if (isVisitationOpen) {
+                            setIsVisitationOpen(false);
+                            return;
+                        }
+                        if (isDischargeOpen) {
+                            setIsDischargeOpen(false);
+                            return;
+                        }
+                        if (showReportHistory) {
+                            setShowReportHistory(false);
+                            return;
+                        }
+                        if (showTemplateModal) {
+                            setShowTemplateModal(false);
+                            return;
+                        }
+                        if (showAchievements) {
+                            setShowAchievements(false);
+                            return;
+                        }
+                        if (showKudos) {
+                            setShowKudos(false);
+                            return;
+                        }
+                        if (showPanicAlert) {
+                            setShowPanicAlert(false);
+                            return;
+                        }
+                        if (showDeescalation) {
+                            setShowDeescalation(false);
+                        }
+                    }
+                    if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+                        if (event.shiftKey) {
+                            event.preventDefault();
+                            saveDraftReport(selectedDate);
+                            return;
+                        }
+                        if (reportData.__meta?.status === 'draft') {
+                            event.preventDefault();
+                            submitReportForReview(selectedDate);
+                            return;
+                        }
                     }
                     const tagName = String(event.target?.tagName || '').toLowerCase();
                     const isTypingTarget = tagName === 'input' || tagName === 'textarea' || tagName === 'select' || event.target?.isContentEditable;
@@ -2121,7 +2217,7 @@
                 }
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [appSettings.enableKeyboardShortcuts, selectedDate, isCommandPaletteOpen]);
+            }, [appSettings.enableKeyboardShortcuts, selectedDate, isCommandPaletteOpen, isSignOutGuardOpen, isNotificationCenterOpen, isSettingsOpen, isPersonnelModalOpen, isAddModalOpen, isBulkAssignOpen, isPrnDashboardOpen, isShiftSwapOpen, isDocRepoOpen, isVisitationOpen, isDischargeOpen, showReportHistory, showTemplateModal, showAchievements, showKudos, showPanicAlert, showDeescalation, reportData.__meta?.status]);
 
             function getStaffColor(staffId) {
                 const member = staff[staffId] || {};
@@ -2464,6 +2560,7 @@
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
+            const reportHandoffSummary = getReportHandoffSummary(reportData);
             const reportLastSavedAt = reportData?.__meta?.savedAt || null;
 
             return (
@@ -2611,6 +2708,15 @@
                                             Missing required: {reportReadiness.missingRequiredLabels.join(', ')}
                                         </div>
                                     )}
+                                    <div className="rounded-lg" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
+                                        <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{color: 'var(--accent)', fontWeight: 800}}>Handoff Snapshot</div>
+                                        {reportHandoffSummary.length > 0 && reportHandoffSummary.map((line, idx) => (
+                                            <div key={idx} className="text-[10px]" style={{color: 'var(--text-secondary)', marginTop: idx === 0 ? 0 : '3px'}}>{line}</div>
+                                        ))}
+                                        {reportHandoffSummary.length === 0 && (
+                                            <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No summary yet. Add handoff or notes to build a quick readout.</div>
+                                        )}
+                                    </div>
                                     <div className="flex items-center gap-2">
                                         <select value={reportPriority} onChange={e => {
                                             const nextPriority = e.target.value;
@@ -2704,6 +2810,9 @@
                                             Unsaved changes. Save Draft or Submit before handoff/sign out.
                                         </div>
                                     )}
+                                    <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
+                                        Shortcuts: Ctrl/Cmd+Shift+Enter save draft, Ctrl/Cmd+Enter submit draft, Esc close open panel.
+                                    </div>
                                 </div>
 
                                 <div className="space-y-3">
