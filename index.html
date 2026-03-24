@@ -969,6 +969,7 @@
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+            const [isSignOutGuardOpen, setIsSignOutGuardOpen] = useState(false);
             const [loginUsername, setLoginUsername] = useState('');
             const [loginPassword, setLoginPassword] = useState('');
             const [loginError, setLoginError] = useState('');
@@ -1065,13 +1066,31 @@
                 handleThemeChange(nextTheme);
             }
 
-            function handleLogout() {
+            function completeLogout() {
+                setIsSignOutGuardOpen(false);
                 saveToStorage(STORAGE_KEYS.SESSION, null);
                 setCurrentUser(null);
                 setLoginPassword('');
                 setLoginError('');
                 setIsAuthModalOpen(true);
                 setIsSettingsOpen(false);
+            }
+
+            function handleGuardedSignOut(action) {
+                if (action === 'save') {
+                    saveDraftReport(selectedDate);
+                } else if (action === 'submit') {
+                    submitReportForReview(selectedDate);
+                }
+                completeLogout();
+            }
+
+            function handleLogout() {
+                if (isReportDirty) {
+                    setIsSignOutGuardOpen(true);
+                    return;
+                }
+                completeLogout();
             }
 
             function handleLoginSubmit(event) {
@@ -1173,6 +1192,7 @@
             const [reportPriority, setReportPriority] = useState(() => loadFromStorage('report_priority_' + selectedDate, 'normal'));
             const [reportAttachments, setReportAttachments] = useState(() => loadFromStorage('report_attachments_' + selectedDate, []));
             const [allReports, setAllReports] = useState({});
+            const [isReportDirty, setIsReportDirty] = useState(false);
 
             // --- View Modes ---
             const [viewMode, setViewMode] = useState('month');
@@ -1487,6 +1507,7 @@
             useEffect(() => {
                 const allReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 setReportData(allReports[selectedDate] || {});
+                setIsReportDirty(false);
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
                 setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
@@ -1496,6 +1517,16 @@
                 setReportAttachments(loadFromStorage('report_attachments_' + selectedDate, []));
                 setAllReports(allReports);
             }, [selectedDate]);
+
+            useEffect(() => {
+                if (!isReportDirty) return undefined;
+                const handleBeforeUnload = (event) => {
+                    event.preventDefault();
+                    event.returnValue = '';
+                };
+                window.addEventListener('beforeunload', handleBeforeUnload);
+                return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+            }, [isReportDirty]);
 
             function getReportCompletion(report) {
                 const completed = REPORT_FIELDS.reduce((count, field) => {
@@ -1527,6 +1558,7 @@
                 if (dateKey === selectedDate) {
                     setReportData(payload);
                     setReportPriority(currentPriority);
+                    setIsReportDirty(false);
                 }
                 return payload;
             }
@@ -1834,14 +1866,16 @@
 
             function updateReportField(fieldId, value) {
                 const nextReport = { ...reportData, [fieldId]: value };
-                persistReport(nextReport);
+                setReportData(nextReport);
+                setIsReportDirty(true);
             }
 
             function applyReportTemplate(templateId) {
                 const template = REPORT_TEMPLATES.find(item => item.id === templateId);
                 if (!template) return;
                 const nextReport = { ...reportData, ...template.content };
-                persistReport(nextReport);
+                setReportData(nextReport);
+                setIsReportDirty(true);
                 showNotification(`Applied ${template.label} template.`);
             }
 
@@ -1857,7 +1891,8 @@
                 REPORT_FIELDS.forEach(field => {
                     cloned[field.id] = String(previousReport[field.id] || '');
                 });
-                persistReport(cloned);
+                setReportData({ ...reportData, ...cloned });
+                setIsReportDirty(true);
                 showNotification(`Copied report content from ${previousDate}.`);
             }
 
@@ -1908,6 +1943,7 @@
 
             function saveDraftReport(dateKey = selectedDate) {
                 persistReport(reportData || {}, dateKey, reportPriority);
+                setIsReportDirty(false);
                 showNotification(`Draft saved for ${dateKey}.`, 'success', true);
             }
 
@@ -1947,6 +1983,7 @@
                 }
                 if (action === 'reload-current') {
                     setReportData(loadFromStorage(STORAGE_KEYS.REPORTS, {})[selectedDate] || {});
+                    setIsReportDirty(false);
                     showNotification('Reloaded report from saved data.', 'info');
                     return;
                 }
@@ -2534,7 +2571,7 @@
                                         <select value={reportPriority} onChange={e => {
                                             const nextPriority = e.target.value;
                                             setReportPriority(nextPriority);
-                                            persistReport(reportData, selectedDate, nextPriority);
+                                            setIsReportDirty(true);
                                         }} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}}>
                                             <option value="low">Low Priority</option>
                                             <option value="normal">Normal Priority</option>
@@ -2609,6 +2646,11 @@
                                     <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
                                         Last saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleString() : 'Not saved yet'}
                                     </div>
+                                    {isReportDirty && (
+                                        <div className="text-[10px]" style={{color: '#f59e0b', fontWeight: 700}}>
+                                            Unsaved changes. Save Draft or Submit before handoff/sign out.
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-3">
@@ -3981,6 +4023,47 @@
                                                 </div>
                                             );
                                         })}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* SIGN OUT GUARD MODAL */}
+                    {isSignOutGuardOpen && (
+                        <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-[2450] flex items-center justify-center p-4">
+                            <div className="glass-panel w-full max-w-xl p-6 rounded-2xl text-left">
+                                <div className="text-[10px] uppercase tracking-[0.24em]" style={{color: 'var(--accent)'}}>Handoff Protection</div>
+                                <h2 className="text-2xl font-black uppercase tracking-[0.08em] mt-2">Unsaved Shift Report Changes</h2>
+                                <p className="text-sm mt-3" style={{color: 'var(--text-secondary)'}}>
+                                    You have unsaved edits for {selectedDate}. Save Draft or Submit before signing out so handoff notes are not lost.
+                                </p>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-5">
+                                    <button
+                                        type="button"
+                                        className="fancy-btn"
+                                        style={{padding: '10px 12px', fontSize: '10px', background: '#0ea5e9'}}
+                                        onClick={() => handleGuardedSignOut('save')}
+                                    >
+                                        SAVE DRAFT + SIGN OUT
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="fancy-btn"
+                                        style={{padding: '10px 12px', fontSize: '10px', background: '#3b82f6'}}
+                                        onClick={() => handleGuardedSignOut('submit')}
+                                    >
+                                        SUBMIT + SIGN OUT
+                                    </button>
+                                    <button
+                                        type="button"
+                                        style={{padding: '10px 12px', fontSize: '10px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)'}}
+                                        onClick={() => {
+                                            setIsSignOutGuardOpen(false);
+                                            showNotification('Sign out canceled. Continue editing or save when ready.', 'info');
+                                        }}
+                                    >
+                                        KEEP EDITING
+                                    </button>
                                 </div>
                             </div>
                         </div>
