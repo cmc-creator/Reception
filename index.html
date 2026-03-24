@@ -909,6 +909,9 @@
             { id: 'incident', label: '⚠️ Incident Report', content: { incidents: '[TIME] - [DESCRIPTION]\\n[ACTION TAKEN]\\n[FOLLOW-UP NEEDED]', handoff: 'Review incident notes above' }}
         ];
 
+        const REPORT_SUBMIT_REQUIRED_FIELD_IDS = ['handoff', 'notes'];
+        const REPORT_MIN_FIELDS_FOR_SUBMIT = 3;
+
         function ensureCoreDataInitialized() {
             if (!loadFromStorage(STORAGE_KEYS.USERS)) {
                 saveToStorage(STORAGE_KEYS.USERS, getDefaultUsers());
@@ -1080,7 +1083,10 @@
                 if (action === 'save') {
                     saveDraftReport(selectedDate);
                 } else if (action === 'submit') {
-                    submitReportForReview(selectedDate);
+                    const submitted = submitReportForReview(selectedDate);
+                    if (!submitted) {
+                        return;
+                    }
                 }
                 completeLogout();
             }
@@ -1540,6 +1546,20 @@
                 };
             }
 
+            function getReportReadiness(report) {
+                const completion = getReportCompletion(report);
+                const missingRequiredLabels = REPORT_SUBMIT_REQUIRED_FIELD_IDS
+                    .filter(fieldId => !String(report?.[fieldId] || '').trim())
+                    .map(fieldId => REPORT_FIELDS.find(field => field.id === fieldId)?.label || fieldId);
+                const meetsCoverage = completion.completed >= REPORT_MIN_FIELDS_FOR_SUBMIT;
+                return {
+                    ready: missingRequiredLabels.length === 0 && meetsCoverage,
+                    missingRequiredLabels,
+                    meetsCoverage,
+                    completion
+                };
+            }
+
             function persistReport(nextReport, dateKey = selectedDate, priorityOverride) {
                 const storedReports = loadFromStorage(STORAGE_KEYS.REPORTS, {});
                 const currentPriority = priorityOverride || reportPriority || 'normal';
@@ -1565,6 +1585,18 @@
 
             function submitReportForReview(dateKey = selectedDate) {
                 const report = reportData || allReports[dateKey] || {};
+                const readiness = getReportReadiness(report);
+                if (!readiness.ready) {
+                    const missingBits = [];
+                    if (readiness.missingRequiredLabels.length > 0) {
+                        missingBits.push(`Required: ${readiness.missingRequiredLabels.join(', ')}`);
+                    }
+                    if (!readiness.meetsCoverage) {
+                        missingBits.push(`Complete at least ${REPORT_MIN_FIELDS_FOR_SUBMIT} sections`);
+                    }
+                    showNotification(`Cannot submit yet. ${missingBits.join(' | ')}`, 'error', true);
+                    return false;
+                }
                 const meta = {
                     ...report.__meta,
                     status: 'submitted',
@@ -1578,6 +1610,7 @@
                 if (isAdmin) {
                     showNotification(`New report available for ${dateKey}.`, 'info', true);
                 }
+                return true;
             }
 
             function approveReport(dateKey = selectedDate) {
@@ -2430,6 +2463,7 @@
             }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd]);
 
             const reportCompletion = getReportCompletion(reportData);
+            const reportReadiness = getReportReadiness(reportData);
             const reportLastSavedAt = reportData?.__meta?.savedAt || null;
 
             return (
@@ -2567,6 +2601,16 @@
                                     <div className="w-full h-2 rounded-full" style={{background: 'rgba(255,255,255,0.08)'}}>
                                         <div className="h-2 rounded-full" style={{width: `${reportCompletion.percent}%`, background: 'linear-gradient(90deg, var(--accent), var(--highlight))'}} />
                                     </div>
+                                    <div className="text-[10px]" style={{color: reportReadiness.ready ? '#34d399' : '#f59e0b', fontWeight: 700}}>
+                                        {reportReadiness.ready
+                                            ? 'Handoff readiness: ready to submit'
+                                            : `Handoff readiness: complete required notes and at least ${REPORT_MIN_FIELDS_FOR_SUBMIT} sections`}
+                                    </div>
+                                    {reportReadiness.missingRequiredLabels.length > 0 && (
+                                        <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
+                                            Missing required: {reportReadiness.missingRequiredLabels.join(', ')}
+                                        </div>
+                                    )}
                                     <div className="flex items-center gap-2">
                                         <select value={reportPriority} onChange={e => {
                                             const nextPriority = e.target.value;
@@ -2607,7 +2651,16 @@
                                     <div className="grid grid-cols-2 gap-2">
                                         <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0ea5e9'}}>SAVE DRAFT</button>
                                         {reportData.__meta?.status === 'draft' && (
-                                            <button type="button" onClick={() => submitReportForReview(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#3b82f6'}}>SUBMIT</button>
+                                            <button
+                                                type="button"
+                                                onClick={() => submitReportForReview(selectedDate)}
+                                                disabled={!reportReadiness.ready}
+                                                title={reportReadiness.ready ? 'Submit report for review' : 'Complete required notes first'}
+                                                className="fancy-btn"
+                                                style={{padding: '8px 10px', fontSize: '10px', background: reportReadiness.ready ? '#3b82f6' : 'rgba(59,130,246,0.4)', opacity: reportReadiness.ready ? 1 : 0.72, cursor: reportReadiness.ready ? 'pointer' : 'not-allowed'}}
+                                            >
+                                                {reportReadiness.ready ? 'SUBMIT' : 'INCOMPLETE'}
+                                            </button>
                                         )}
                                         {reportData.__meta?.status !== 'draft' && (
                                             <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>REPORT BROWSER</button>
@@ -4049,7 +4102,9 @@
                                     <button
                                         type="button"
                                         className="fancy-btn"
-                                        style={{padding: '10px 12px', fontSize: '10px', background: '#3b82f6'}}
+                                        disabled={!reportReadiness.ready}
+                                        title={reportReadiness.ready ? 'Submit and sign out' : 'Finish required report fields before submitting'}
+                                        style={{padding: '10px 12px', fontSize: '10px', background: reportReadiness.ready ? '#3b82f6' : 'rgba(59,130,246,0.35)', opacity: reportReadiness.ready ? 1 : 0.72, cursor: reportReadiness.ready ? 'pointer' : 'not-allowed'}}
                                         onClick={() => handleGuardedSignOut('submit')}
                                     >
                                         SUBMIT + SIGN OUT
@@ -4065,6 +4120,11 @@
                                         KEEP EDITING
                                     </button>
                                 </div>
+                                {!reportReadiness.ready && (
+                                    <div className="text-[11px] mt-3" style={{color: 'var(--text-muted)'}}>
+                                        Submit is locked until required handoff notes are complete.
+                                    </div>
+                                )}
                             </div>
                         </div>
                     )}
