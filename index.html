@@ -323,6 +323,36 @@
             border-radius: 4px;
             padding: 6px;
         }
+
+        /* Linen: tone down all white-glass surfaces in the sidebar */
+        body[data-theme="linen"] .report-sidebar .crew-pulse-card,
+        body[data-theme="linen"] .report-sidebar .sidebar-section,
+        body[data-theme="linen"] .report-sidebar .report-field-card,
+        body[data-theme="linen"] .report-sidebar .report-checklist-card,
+        body[data-theme="linen"] .report-sidebar .intel-feed-card {
+            background: rgba(180, 145, 100, 0.10);
+            border-color: rgba(140, 105, 65, 0.28);
+            box-shadow: 0 2px 8px rgba(100,70,40,0.08);
+        }
+
+        body[data-theme="linen"] .report-sidebar .report-mini-card {
+            background: rgba(180, 145, 100, 0.12) !important;
+            border-color: rgba(140, 105, 65, 0.28) !important;
+        }
+
+        body[data-theme="linen"] .report-sidebar .report-safety-bar {
+            background: rgba(180, 145, 100, 0.12);
+            border-color: rgba(140, 105, 65, 0.28);
+        }
+
+        body[data-theme="linen"] .report-sidebar .sidebar-quick-btn {
+            background: rgba(180, 145, 100, 0.10);
+            border-color: rgba(140, 105, 65, 0.28);
+        }
+
+        body[data-theme="linen"] .report-sidebar .fancy-btn {
+            color: #fff8f0;
+        }
         
         * {
             font-family: 'IBM Plex Sans', 'Segoe UI', Tahoma, sans-serif !important;
