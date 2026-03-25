@@ -4574,161 +4574,20 @@
 
 
 
-                                <div className="report-command-deck text-left flex flex-col gap-3">
-                                    <div className="report-safety-bar">
-                                        <div>
-                                            <div className="report-safety-title">Shift Report Safety</div>
-                                            <div className="report-safety-note">
-                                                {reportLastSavedAt
-                                                    ? `Last saved ${new Date(reportLastSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}. Keep saving before handoff.`
-                                                    : 'No save yet for this report. Save draft now to protect handoff notes.'}
-                                            </div>
-                                        </div>
-                                        <button type="button" onClick={() => saveDraftReport(selectedDate)} className="report-save-cta">
-                                            Save Draft Now
-                                        </button>
-                                    </div>
-                                    <div className="readiness-beam"><span style={{width: `${reportCompletion.percent}%`}} /></div>
-                                    <div className="text-[10px]" style={{color: reportReadiness.ready ? '#34d399' : '#f59e0b', fontWeight: 700}}>
-                                        {reportReadiness.ready
-                                            ? 'Handoff readiness: ready to submit'
-                                            : `Handoff readiness: complete required notes and at least ${REPORT_MIN_FIELDS_FOR_SUBMIT} sections`}
-                                    </div>
-                                    {reportReadiness.missingRequiredLabels.length > 0 && (
-                                        <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
-                                            Missing required: {reportReadiness.missingRequiredLabels.join(', ')}
-                                        </div>
-                                    )}
-                                    <div className="rounded-lg report-mini-card" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
-                                        <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{color: 'var(--accent)', fontWeight: 800}}>Handoff Snapshot</div>
-                                        {reportHandoffSummary.length > 0 && reportHandoffSummary.map((line, idx) => (
-                                            <div key={idx} className="text-[10px]" style={{color: 'var(--text-secondary)', marginTop: idx === 0 ? 0 : '3px'}}>{line}</div>
-                                        ))}
-                                        {reportHandoffSummary.length === 0 && (
-                                            <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No summary yet. Add handoff or notes to build a quick readout.</div>
-                                        )}
-                                    </div>
-                                    <div className="rounded-lg report-mini-card" style={{border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.03)', padding: '8px'}}>
-                                        <div className="text-[10px] uppercase tracking-[0.18em] mb-1" style={{color: 'var(--accent)', fontWeight: 800}}>Recent Activity</div>
-                                        {reportActivityTimeline.length === 0 && (
-                                            <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No activity yet for this report day.</div>
-                                        )}
-                                        {reportActivityTimeline.map((entry, idx) => (
-                                            <div key={`${entry.label}-${idx}`} className="flex items-start justify-between gap-2 text-[10px]" style={{marginTop: idx === 0 ? 0 : '4px'}}>
-                                                <div style={{color: 'var(--text-secondary)'}}>
-                                                    <strong style={{color: 'var(--text-primary)'}}>{entry.label}:</strong> {entry.detail}
-                                                </div>
-                                                <div style={{color: 'var(--text-muted)', whiteSpace: 'nowrap'}}>
-                                                    {entry.time ? new Date(entry.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'today'}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <select value={reportPriority} onChange={e => {
-                                            const nextPriority = e.target.value;
-                                            setReportPriority(nextPriority);
-                                            markReportDirty();
-                                        }} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}}>
-                                            <option value="low">Low Priority</option>
-                                            <option value="normal">Normal Priority</option>
-                                            <option value="high">High Priority</option>
-                                            <option value="critical">Critical Priority</option>
-                                        </select>
-                                        <select onChange={e => { if (e.target.value) applyReportTemplate(e.target.value); e.target.value = ''; }} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}} defaultValue="">
-                                            <option value="">Apply Template</option>
-                                            {REPORT_TEMPLATES.map(template => <option key={template.id} value={template.id}>{template.label}</option>)}
-                                        </select>
-                                    </div>
-                                    <div className="report-meta-grid">
-                                        <div className="report-meta-card">
-                                            <div className="report-meta-label">Status</div>
-                                            <div className="report-meta-value" style={{textTransform: 'capitalize'}}>{reportData.__meta?.status || 'draft'}</div>
-                                        </div>
-                                        <div className="report-meta-card">
-                                            <div className="report-meta-label">Prepared By</div>
-                                            <div className="report-meta-value">{reportData.__meta?.savedBy || 'N/A'}</div>
-                                        </div>
-                                    </div>
-                                    {reportData.__meta?.status === 'rejected' && (
-                                        <div style={{background: '#fca5a5', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#7f1d1d'}}>
-                                            <strong>Rejection Reason:</strong> {reportData.__meta?.rejectionReason}
-                                        </div>
-                                    )}
-                                    {reportData.__meta?.approvedBy && (
-                                        <div style={{background: '#86efac', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#15803d'}}>
-                                            <strong>Approved by:</strong> {reportData.__meta?.approvedBy} on {new Date(reportData.__meta?.approvedAt).toLocaleString()}
-                                        </div>
-                                    )}
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0ea5e9'}}>SAVE DRAFT</button>
-                                        {reportData.__meta?.status === 'draft' && (
-                                            <button
-                                                type="button"
-                                                onClick={() => submitReportForReview(selectedDate)}
-                                                disabled={!reportReadiness.ready}
-                                                title={reportReadiness.ready ? 'Submit report for review' : 'Complete required notes first'}
-                                                className="fancy-btn"
-                                                style={{padding: '8px 10px', fontSize: '10px', background: reportReadiness.ready ? '#3b82f6' : 'rgba(59,130,246,0.4)', opacity: reportReadiness.ready ? 1 : 0.72, cursor: reportReadiness.ready ? 'pointer' : 'not-allowed'}}
-                                            >
-                                                {reportReadiness.ready ? 'SUBMIT' : 'INCOMPLETE'}
-                                            </button>
-                                        )}
-                                        {reportData.__meta?.status !== 'draft' && (
-                                            <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>REPORT BROWSER</button>
-                                        )}
-                                    </div>
-
-                                    {isAdmin && reportData.__meta?.status === 'submitted' && (
-                                        <div className="grid grid-cols-2 gap-2">
-                                            <button type="button" onClick={() => approveReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#10b981'}}>APPROVE</button>
-                                            <button type="button" onClick={() => rejectReport(selectedDate, prompt('Enter rejection reason:') || '')} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#ef4444'}}>REJECT</button>
-                                        </div>
-                                    )}
-
-                                    {reportData.__meta?.status === 'submitted' && !isAdmin && (
-                                        <div style={{background: 'rgba(59,130,246,0.16)', border: '1px solid rgba(59,130,246,0.4)', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#bfdbfe'}}>
-                                            Submitted and waiting for admin review.
-                                        </div>
-                                    )}
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input type="date" value={reportJumpDate} onChange={e => setReportJumpDate(e.target.value)} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}} />
-                                        <button type="button" onClick={() => openReportByDate(reportJumpDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>OPEN DATE</button>
-                                    </div>
-
-                                    <div className="grid grid-cols-[1fr_auto] gap-2 items-center">
-                                        <select onChange={e => { runReportUtility(e.target.value); e.target.value = ''; }} className="panel-input" style={{padding: '8px 10px', fontSize: '11px'}} defaultValue="">
-                                            <option value="">Report Utilities</option>
-                                            <option value="history">Open Report Browser</option>
-                                            <option value="copy-previous">Copy Previous Report</option>
-                                            <option value="export-current">Export Current Report</option>
-                                            <option value="reload-current">Reload Saved Report</option>
-                                            <option value="open-swap">Open Shift Swap Portal</option>
-                                        </select>
-                                        <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>BROWSE</button>
-                                    </div>
-                                    <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
-                                        Last saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleString() : 'Not saved yet'}
-                                    </div>
-                                    {isReportDirty && (
-                                        <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
-                                            <div className="text-[10px]" style={{color: reportDirtyIsStale ? '#fecaca' : '#fcd34d', fontWeight: 700}}>
-                                                Unsaved changes {reportDirtySinceAt ? `(${reportDirtyAgeMinutes}m)` : ''}. {reportDirtyIsStale ? 'Stale draft alert - save now.' : 'Save Draft or Submit before handoff/sign out.'}
-                                            </div>
-                                            <button type="button" className="fancy-btn" onClick={() => saveDraftReport(selectedDate)} style={{padding: '5px 8px', fontSize: '9px', background: reportDirtyIsStale ? '#dc2626' : '#0ea5e9'}}>
-                                                QUICK SAVE
-                                            </button>
-                                        </div>
-                                    )}
-                                    <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
-                                        Shortcuts: Ctrl/Cmd+Shift+Enter save draft, Ctrl/Cmd+Enter submit draft, Esc close open panel.
-                                    </div>
-                                    <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
-                                        Auto-save: dirty draft saves automatically after 60 seconds idle.
-                                    </div>
+                                {/* compact day nav + save strip */}
+                                <div className="grid grid-cols-3 gap-2" style={{marginTop: '-0.5rem'}}>
+                                    <button type="button" onClick={() => shiftReportDay(-1)} className="fancy-btn" style={{padding: '6px 8px', fontSize: '10px'}}>◀ PREV</button>
+                                    <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '6px 8px', fontSize: '10px', background: '#0ea5e9'}}>SAVE</button>
+                                    <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '6px 8px', fontSize: '10px'}}>NEXT ▶</button>
                                 </div>
+                                {isReportDirty && (
+                                    <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
+                                        <div className="text-[10px]" style={{color: reportDirtyIsStale ? '#fecaca' : '#fcd34d', fontWeight: 700}}>
+                                            {reportDirtyIsStale ? 'Stale draft — save now.' : `Unsaved changes${reportDirtySinceAt ? ` (${reportDirtyAgeMinutes}m)` : ''}`}
+                                        </div>
+                                        <button type="button" className="fancy-btn" onClick={() => saveDraftReport(selectedDate)} style={{padding: '5px 8px', fontSize: '9px', background: reportDirtyIsStale ? '#dc2626' : '#0ea5e9'}}>SAVE</button>
+                                    </div>
+                                )}
 
                                 <div className="space-y-3">
                                     {REPORT_FIELDS.map(f => (
@@ -4781,7 +4640,7 @@
                                 </div>
                                 <div className="intel-feed-card">
                                     <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
-                                    <div className="text-[10px] mb-2" style={{color: 'var(--text-secondary)'}}>Team chat only. Shift report saves are managed in Report Controls above.</div>
+                                    <div className="text-[10px] mb-2" style={{color: 'var(--text-secondary)'}}>Team chat only.</div>
                                     <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
                                         {messages.length === 0 && <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No messages yet for this shift.</div>}
                                         {messages.map(m => <div key={m.id}><span style={{color: 'var(--accent)', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
@@ -4806,6 +4665,68 @@
                                         <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Broadcast..." />
                                         <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>OK</button>
                                     </form>
+                                </div>
+
+                                {/* ── REPORT CONTROLS (bottom) ── */}
+                                <div className="sidebar-section p-3 rounded-lg text-left flex flex-col gap-3" style={{borderTop: '1px solid var(--accent-soft)'}}>
+                                    <div className="text-[9px] uppercase tracking-[0.2em]" style={{color: 'var(--text-muted)', fontWeight: 800}}>Report Controls</div>
+                                    <div className="readiness-beam"><span style={{width: `${reportCompletion.percent}%`}} /></div>
+                                    <div className="text-[10px]" style={{color: reportReadiness.ready ? '#34d399' : '#f59e0b', fontWeight: 700}}>
+                                        {reportReadiness.ready ? 'Ready to submit' : `${reportCompletion.completed}/${reportCompletion.total} fields complete`}
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <select value={reportPriority} onChange={e => { setReportPriority(e.target.value); markReportDirty(); }} className="panel-input" style={{padding: '7px 8px', fontSize: '10px', flex: 1}}>
+                                            <option value="low">Low Priority</option>
+                                            <option value="normal">Normal</option>
+                                            <option value="high">High Priority</option>
+                                            <option value="critical">Critical</option>
+                                        </select>
+                                        <select onChange={e => { if (e.target.value) applyReportTemplate(e.target.value); e.target.value = ''; }} className="panel-input" style={{padding: '7px 8px', fontSize: '10px', flex: 1}} defaultValue="">
+                                            <option value="">Template</option>
+                                            {REPORT_TEMPLATES.map(template => <option key={template.id} value={template.id}>{template.label}</option>)}
+                                        </select>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0ea5e9'}}>SAVE DRAFT</button>
+                                        {reportData.__meta?.status === 'draft' && (
+                                            <button type="button" onClick={() => submitReportForReview(selectedDate)} disabled={!reportReadiness.ready} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: reportReadiness.ready ? '#3b82f6' : 'rgba(59,130,246,0.4)', opacity: reportReadiness.ready ? 1 : 0.72, cursor: reportReadiness.ready ? 'pointer' : 'not-allowed'}}>
+                                                {reportReadiness.ready ? 'SUBMIT' : 'INCOMPLETE'}
+                                            </button>
+                                        )}
+                                        {reportData.__meta?.status !== 'draft' && (
+                                            <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}}>HISTORY</button>
+                                        )}
+                                    </div>
+                                    {isAdmin && reportData.__meta?.status === 'submitted' && (
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button type="button" onClick={() => approveReport(selectedDate)} className="fancy-btn" style={{padding: '8px', fontSize: '10px', background: '#10b981'}}>APPROVE</button>
+                                            <button type="button" onClick={() => rejectReport(selectedDate, prompt('Rejection reason:') || '')} className="fancy-btn" style={{padding: '8px', fontSize: '10px', background: '#ef4444'}}>REJECT</button>
+                                        </div>
+                                    )}
+                                    {reportData.__meta?.status === 'submitted' && !isAdmin && (
+                                        <div style={{background: 'rgba(59,130,246,0.16)', border: '1px solid rgba(59,130,246,0.4)', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#bfdbfe'}}>Awaiting admin review.</div>
+                                    )}
+                                    {reportData.__meta?.status === 'rejected' && (
+                                        <div style={{background: '#fca5a5', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#7f1d1d'}}><strong>Rejected:</strong> {reportData.__meta?.rejectionReason}</div>
+                                    )}
+                                    {reportData.__meta?.approvedBy && (
+                                        <div style={{background: '#86efac', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#15803d'}}><strong>Approved by:</strong> {reportData.__meta?.approvedBy}</div>
+                                    )}
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <input type="date" value={reportJumpDate} onChange={e => setReportJumpDate(e.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '10px'}} />
+                                        <button type="button" onClick={() => openReportByDate(reportJumpDate)} className="fancy-btn" style={{padding: '7px 8px', fontSize: '10px'}}>OPEN</button>
+                                    </div>
+                                    <select onChange={e => { runReportUtility(e.target.value); e.target.value = ''; }} className="panel-input" style={{padding: '7px 8px', fontSize: '10px'}} defaultValue="">
+                                        <option value="">Report Utilities</option>
+                                        <option value="history">Open Report Browser</option>
+                                        <option value="copy-previous">Copy Previous</option>
+                                        <option value="export-current">Export Current</option>
+                                        <option value="reload-current">Reload Saved</option>
+                                        <option value="open-swap">Open Shift Swap</option>
+                                    </select>
+                                    <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
+                                        Saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : 'Not yet'}
+                                    </div>
                                 </div>
                             </aside>
 
