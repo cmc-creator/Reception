@@ -4611,29 +4611,6 @@
                                     <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px'}}>NEXT ▶</button>
                                 </div>
 
-                                {/* ── TEAM CHAT (top, always visible) ── */}
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
-                                    <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
-                                    <div className="overflow-y-auto no-scrollbar" style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: '1px solid var(--accent-soft)'}}>
-                                        {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
-                                        {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
-                                        <div ref={chatEndRef} />
-                                    </div>
-                                    <form onSubmit={e => {
-                                        e.preventDefault();
-                                        if (chatInput.trim()) {
-                                            const newMessage = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' };
-                                            const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt||0)-(b.createdAt||0));
-                                            setMessages(updatedMessages);
-                                            saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
-                                            setChatInput('');
-                                            setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-                                        }
-                                    }} style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
-                                        <button type="submit" className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
-                                    </form>
-                                </div>
                                 {isReportDirty && (
                                     <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
                                         <div className="text-[10px]" style={{color: reportDirtyIsStale ? '#fecaca' : '#fcd34d', fontWeight: 700}}>
