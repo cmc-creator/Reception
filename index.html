@@ -4611,6 +4611,20 @@
                                     <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px'}}>NEXT ▶</button>
                                 </div>
 
+                                {/* ── TEAM CHAT ── */}
+                                <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                    <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
+                                    <div className="overflow-y-auto no-scrollbar" style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: '1px solid var(--accent-soft)'}}>
+                                        {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
+                                        {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
+                                        <div ref={chatEndRef} />
+                                    </div>
+                                    <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                        <button type="button" onClick={() => { if (chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
+                                    </div>
+                                </div>
+
                                 {isReportDirty && (
                                     <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
                                         <div className="text-[10px]" style={{color: reportDirtyIsStale ? '#fecaca' : '#fcd34d', fontWeight: 700}}>
@@ -4628,45 +4642,7 @@
                                         </div>
                                     ))}
                                 </div>
-                                <div className="report-checklist-card">
-                                    <div className="mb-2 flex items-center justify-between gap-2">
-                                        <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="block flex items-center gap-2"><IconActivity className="inline mr-2"/>Daily Checklist</label>
-                                        <div className="flex items-center gap-1">
-                                            <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '5px 8px', fontSize: '9px'}}>SAVE</button>
-                                            <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '5px 8px', fontSize: '9px'}}>SAVED</button>
-                                        </div>
-                                    </div>
 
-                                    <div className="flex flex-col gap-1 mb-2">
-                                        {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
-                                        {checklist.map((item, idx) => (
-                                            <div key={idx} className="flex items-center gap-2 group">
-                                                <input type="checkbox" checked={!!item.checked} onChange={e => {
-                                                    const updated = checklist.map((it, i) => i === idx ? { ...it, checked: !it.checked } : it);
-                                                    setChecklist(updated);
-                                                    saveToStorage('reception_checklist_' + selectedDate, updated);
-                                                }} />
-                                                <span className={`text-[11px] flex-1 ${item.checked ? 'line-through text-slate-500' : ''}`}>{item.text}</span>
-                                                <button onClick={() => {
-                                                    const updated = checklist.filter((_, i) => i !== idx);
-                                                    setChecklist(updated);
-                                                    saveToStorage('reception_checklist_' + selectedDate, updated);
-                                                }} className="text-rose-400 text-xs font-bold opacity-60 hover:opacity-100">&times;</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <form onSubmit={e => {
-                                        e.preventDefault();
-                                        if (!newChecklistItem.trim()) return;
-                                        const updated = [...checklist, { text: newChecklistItem, checked: false }];
-                                        setChecklist(updated);
-                                        saveToStorage('reception_checklist_' + selectedDate, updated);
-                                        setNewChecklistItem('');
-                                    }} className="flex gap-1 mb-2">
-                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} style={{flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Add task..." />
-                                        <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>ADD</button>
-                                    </form>
-                                </div>
 
 
                                 {/* ── REPORT CONTROLS (bottom) ── */}
