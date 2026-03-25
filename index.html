@@ -2393,6 +2393,22 @@
             } catch (e) {
                 console.error('Failed to save to localStorage:', e);
             }
+            // Auto-sync shared keys to Firestore whenever they are saved locally
+            if (isFirebaseAvailable && db) {
+                try {
+                    if (key === STORAGE_KEYS.SHIFTS) {
+                        db.collection('shared').doc('shifts').set(data).catch(() => {});
+                    } else if (key === STORAGE_KEYS.STAFF) {
+                        db.collection('shared').doc('staff').set(data).catch(() => {});
+                    } else if (key === STORAGE_KEYS.USERS) {
+                        db.collection('shared').doc('users').set(data).catch(() => {});
+                    } else if (key === STORAGE_KEYS.SETTINGS) {
+                        db.collection('shared').doc('settings').set(data).catch(() => {});
+                    } else if (key === STORAGE_KEYS.ALERT) {
+                        db.collection('shared').doc('alert').set({ text: data }).catch(() => {});
+                    }
+                } catch (e) { /* ignore */ }
+            }
         }
 
         function loadFromStorage(key, defaultValue = null) {
@@ -3207,6 +3223,25 @@
                 setAllReports(allReports);
             }, [selectedDate]);
 
+            // Live report sync: subscribe to this date's report from Firestore
+            useEffect(() => {
+                if (!isFirebaseAvailable || !db) return;
+                const unsub = db.collection('reports').doc(selectedDate).onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data) {
+                        setReportData(data);
+                        setAllReports(prev => {
+                            const next = { ...prev, [selectedDate]: data };
+                            try { localStorage.setItem(STORAGE_KEYS.REPORTS, JSON.stringify(next)); } catch(e) {}
+                            return next;
+                        });
+                        if (data.__meta?.priority) setReportPriority(data.__meta.priority);
+                    }
+                });
+                return () => unsub();
+            }, [selectedDate]);
+
             useEffect(() => {
                 if (!isReportDirty) return undefined;
                 const handleBeforeUnload = (event) => {
@@ -3349,6 +3384,10 @@
                 storedReports[dateKey] = payload;
                 saveToStorage(STORAGE_KEYS.REPORTS, storedReports);
                 saveToStorage('report_priority_' + dateKey, currentPriority);
+                // Sync this specific report to Firestore
+                if (isFirebaseAvailable && db) {
+                    db.collection('reports').doc(dateKey).set(payload).catch(() => {});
+                }
                 setAllReports(storedReports);
                 if (dateKey === selectedDate) {
                     setReportData(payload);
@@ -3997,40 +4036,72 @@
                 return '#94a3b8';
             }
 
-            // --- FIRESTORE SYNC HOOKS (OPTIONAL) ---
-            // Load shared shifts and staff from Firestore on mount (only if Firebase available)
+            // --- FIRESTORE REAL-TIME SYNC ---
             useEffect(() => {
-                async function fetchSharedData() {
-                    if (!isFirebaseAvailable) {
-                        console.log('Skipping Firestore sync - Firebase not available');
-                        return;
+                if (!isFirebaseAvailable || !db) return;
+                const unsubs = [];
+
+                // Shifts
+                unsubs.push(db.collection('shared').doc('shifts').onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data && Object.keys(data).length > 0) {
+                        // Use localStorage.setItem directly to avoid re-triggering Firestore write in saveToStorage
+                        try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(data)); } catch(e) {}
+                        setEvents(data);
                     }
-                    const loadedShifts = await loadFromFirestore('shared', 'shifts', null);
-                    const loadedStaff = await loadFromFirestore('shared', 'staff', null);
-                    // Only update state if we got valid data from Firestore
-                    if (loadedShifts && typeof loadedShifts === 'object' && Object.keys(loadedShifts).length > 0) {
-                        setEvents(loadedShifts);
+                }));
+
+                // Staff
+                unsubs.push(db.collection('shared').doc('staff').onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data && Object.keys(data).length > 0) {
+                        try { localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(data)); } catch(e) {}
+                        setStaff(data);
                     }
-                    if (loadedStaff && typeof loadedStaff === 'object' && Object.keys(loadedStaff).length > 0) {
-                        setStaff(loadedStaff);
+                }));
+
+                // Users (so accounts work on any device)
+                unsubs.push(db.collection('shared').doc('users').onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data && Object.keys(data).length > 0) {
+                        const normalized = normalizeUsers(data);
+                        try { localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(normalized)); } catch(e) {}
+                        setUsers(normalized);
                     }
-                }
-                fetchSharedData();
+                }));
+
+                // Settings
+                unsubs.push(db.collection('shared').doc('settings').onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data && Object.keys(data).length > 0) {
+                        const normalized = normalizeSettings(data);
+                        try { localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(normalized)); } catch(e) {}
+                        setAppSettings(normalized);
+                    }
+                }));
+
+                // Team chat messages (real-time collection)
+                unsubs.push(db.collection('messages').orderBy('createdAt', 'asc').onSnapshot(snap => {
+                    const msgs = snap.docs.map(d => d.data());
+                    setMessages(msgs);
+                }));
+
+                // Global alert broadcast
+                unsubs.push(db.collection('shared').doc('alert').onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (typeof data?.text === 'string') {
+                        try { localStorage.setItem(STORAGE_KEYS.ALERT, JSON.stringify(data.text)); } catch(e) {}
+                        setGlobalAlert(data.text);
+                    }
+                }));
+
+                return () => unsubs.forEach(u => u());
             }, []);
-
-            // Save shifts to Firestore when events change (only if Firebase available)
-            useEffect(() => {
-                if (isFirebaseAvailable && Object.keys(events).length > 0) {
-                    saveToFirestore('shared', 'shifts', events);
-                }
-            }, [events]);
-
-            // Save staff to Firestore when staff changes (only if Firebase available)
-            useEffect(() => {
-                if (isFirebaseAvailable && Object.keys(staff).length > 0) {
-                    saveToFirestore('shared', 'staff', staff);
-                }
-            }, [staff]);
 
             // --- Admin Master Reset Pattern ---
             // --- Baseline Save/Restore ---
@@ -4620,8 +4691,8 @@
                                         <div ref={chatEndRef} />
                                     </div>
                                     <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
-                                        <button type="button" onClick={() => { if (chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                        <button type="button" onClick={() => { if (chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
                                     </div>
                                 </div>
 
