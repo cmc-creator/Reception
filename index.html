@@ -4668,8 +4668,7 @@
                                 </div>
 
                                 {/* ── REPORT CONTROLS (bottom) ── */}
-                                <div className="sidebar-section p-3 rounded-lg text-left flex flex-col gap-3" style={{borderTop: '1px solid var(--accent-soft)'}}>
-                                    <div className="text-[9px] uppercase tracking-[0.2em]" style={{color: 'var(--text-muted)', fontWeight: 800}}>Report Controls</div>
+                                <div className="text-left flex flex-col gap-3" style={{borderTop: '1px solid var(--accent-soft)', paddingTop: '1rem'}}>
                                     <div className="readiness-beam"><span style={{width: `${reportCompletion.percent}%`}} /></div>
                                     <div className="text-[10px]" style={{color: reportReadiness.ready ? '#34d399' : '#f59e0b', fontWeight: 700}}>
                                         {reportReadiness.ready ? 'Ready to submit' : `${reportCompletion.completed}/${reportCompletion.total} fields complete`}
