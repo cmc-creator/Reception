@@ -4248,7 +4248,7 @@
                 const minCellHeight = appSettings.compactCalendar ? '140px' : '180px';
                 const coverageStartMinutes = toMinutes(appSettings.defaultShiftStart || '08:00');
                 const coverageEndMinutes = Math.max(coverageStartMinutes + 60, toMinutes(appSettings.defaultShiftEnd || '20:00'));
-                const largeGapAlertMinutes = 180;
+                const largeGapAlertMinutes = 60;
 
                 const formatGapDuration = (minutes) => {
                     const safe = Math.max(0, Math.round(minutes || 0));
@@ -4327,7 +4327,7 @@
                         });
                     }
                     const coverageGapStats = getCoverageGapStats(allDayShifts);
-                    const hasLargeCoverageGap = allDayShifts.length > 0 && coverageGapStats.largestGapMinutes >= largeGapAlertMinutes;
+                    const hasLargeCoverageGap = coverageGapStats.largestGapMinutes >= largeGapAlertMinutes;
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
                         <div key={dk}
@@ -4799,7 +4799,16 @@
                                     ))}
                                 </div>
                                 <div className="report-checklist-card">
-                                    <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconActivity className="inline mr-2"/>Daily Checklist</label>
+                                    <div className="mb-2 flex items-center justify-between gap-2">
+                                        <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="block flex items-center gap-2"><IconActivity className="inline mr-2"/>Daily Checklist</label>
+                                        <div className="flex items-center gap-1">
+                                            <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '5px 8px', fontSize: '9px'}}>SAVE</button>
+                                            <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '5px 8px', fontSize: '9px'}}>SAVED</button>
+                                        </div>
+                                    </div>
+                                    <div className="text-[10px] mb-2" style={{color: 'var(--text-secondary)'}}>
+                                        Shift report fields are above this section. Save anytime with <strong>Save</strong> and open previous entries with <strong>Saved</strong>.
+                                    </div>
                                     <div className="flex flex-col gap-1 mb-2">
                                         {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
                                         {checklist.map((item, idx) => (
@@ -4831,8 +4840,10 @@
                                     </form>
                                 </div>
                                 <div className="intel-feed-card">
-                                    <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-2 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
+                                    <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
+                                    <div className="text-[10px] mb-2" style={{color: 'var(--text-secondary)'}}>Team chat only. Shift report saves are managed in Report Controls above.</div>
                                     <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
+                                        {messages.length === 0 && <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No messages yet for this shift.</div>}
                                         {messages.map(m => <div key={m.id}><span style={{color: 'var(--accent)', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
