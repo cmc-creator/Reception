@@ -2330,6 +2330,7 @@
 
         // --- FIREBASE INIT (OPTIONAL) ---
         let db = null;
+        let auth = null;
         let isFirebaseAvailable = false;
         
         try {
@@ -2345,6 +2346,7 @@
                 };
                 firebase.initializeApp(firebaseConfig);
                 db = firebase.firestore();
+                auth = firebase.auth();
                 isFirebaseAvailable = true;
                 console.log('Firebase initialized successfully');
             } else {
@@ -2525,6 +2527,7 @@
             const [isSettingsOpen, setIsSettingsOpen] = useState(false);
             const [isBulkAssignOpen, setIsBulkAssignOpen] = useState(false);
             const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+            const [loginMode, setLoginMode] = useState('signin'); // 'signin' | 'register'
             const [isSignOutGuardOpen, setIsSignOutGuardOpen] = useState(false);
             const [loginUsername, setLoginUsername] = useState('');
             const [loginPassword, setLoginPassword] = useState('');
@@ -2694,9 +2697,40 @@
                 completeLogout();
             }
 
-            function handleLoginSubmit(event) {
+            async function handleLoginSubmit(event) {
                 event.preventDefault();
-                const normalizedUsername = loginUsername.trim().toLowerCase();
+                const emailInput = loginUsername.trim().toLowerCase();
+                setLoginError('');
+
+                // If Firebase Auth is available, use email login
+                if (isFirebaseAvailable && auth && emailInput.includes('@')) {
+                    try {
+                        const cred = await auth.signInWithEmailAndPassword(emailInput, loginPassword);
+                        const firebaseUser = cred.user;
+                        // Look up or build profile from Firestore users map
+                        const allUsers = loadFromStorage(STORAGE_KEYS.USERS, {});
+                        const profile = Object.values(allUsers).find(u => u.email === firebaseUser.email || u.username === firebaseUser.email.split('@')[0]);
+                        const account = profile || {
+                            id: firebaseUser.uid,
+                            username: firebaseUser.email.split('@')[0],
+                            displayName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
+                            email: firebaseUser.email,
+                            role: 'staff',
+                            password: ''
+                        };
+                        setCurrentUser(account);
+                        saveToStorage(STORAGE_KEYS.SESSION, { userId: account.id, loggedInAt: Date.now() });
+                        setLoginPassword('');
+                        setIsAuthModalOpen(false);
+                        showNotification(`Signed in as ${account.displayName}.`);
+                    } catch (err) {
+                        setLoginError(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? 'Email or password is incorrect.' : err.message);
+                    }
+                    return;
+                }
+
+                // Fallback: legacy username/password lookup
+                const normalizedUsername = emailInput;
                 const account = Object.values(users).find(user => user.username.toLowerCase() === normalizedUsername && user.password === loginPassword);
                 if (!account) {
                     setLoginError('Username or password did not match an account.');
@@ -2708,6 +2742,47 @@
                 setLoginPassword('');
                 setIsAuthModalOpen(false);
                 showNotification(`Signed in as ${account.displayName}.`);
+            }
+
+            async function handleRegister(event) {
+                event.preventDefault();
+                setLoginError('');
+                const email = loginUsername.trim().toLowerCase();
+                if (!email.endsWith('@destinysprings.com')) {
+                    setLoginError('You must use a @destinysprings.com email to register.');
+                    return;
+                }
+                if (loginPassword.length < 6) {
+                    setLoginError('Password must be at least 6 characters.');
+                    return;
+                }
+                if (!isFirebaseAvailable || !auth) {
+                    setLoginError('Registration requires a network connection.');
+                    return;
+                }
+                try {
+                    const cred = await auth.createUserWithEmailAndPassword(email, loginPassword);
+                    const firebaseUser = cred.user;
+                    const displayName = email.split('@')[0].replace(/\./g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+                    const newProfile = {
+                        id: firebaseUser.uid,
+                        username: email.split('@')[0],
+                        displayName,
+                        email,
+                        role: 'staff',
+                        password: ''
+                    };
+                    // Save profile into users map and sync to Firestore
+                    const nextUsers = { ...users, [newProfile.id]: newProfile };
+                    persistUsers(nextUsers);
+                    setCurrentUser(newProfile);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: newProfile.id, loggedInAt: Date.now() });
+                    setLoginPassword('');
+                    setIsAuthModalOpen(false);
+                    showNotification(`Welcome, ${displayName}! Account created.`);
+                } catch (err) {
+                    setLoginError(err.code === 'auth/email-already-in-use' ? 'An account with that email already exists. Sign in instead.' : err.message);
+                }
             }
 
             function handleQuickStaffAccess() {
@@ -6372,20 +6447,39 @@
                             <div className="modal-panel modal-panel--sm modal-card-enter text-left text-white">
                                 <div className="modal-panel__header">
                                     <div className="modal-panel__kicker">Secure Access</div>
-                                    <h2 className="modal-panel__title">Sign In</h2>
+                                    <h2 className="modal-panel__title">{loginMode === 'register' ? 'Create Account' : 'Sign In'}</h2>
                                 </div>
                                 <div className="modal-panel__body">
-                                <div className="text-sm text-white/65 mt-3">Use an admin account to manage staff, settings, and access rules. Staff accounts still have scheduling and reporting access.</div>
-                                <form onSubmit={handleLoginSubmit} className="space-y-4 mt-6">
-                                    <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="Username" autoFocus />
-                                    <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Password" />
-                                    {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
-                                    <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
-                                    <button type="button" onClick={handleQuickStaffAccess} className="w-full" style={{padding: '10px 16px', fontSize: '11px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)'}}>QUICK STAFF ACCESS</button>
-                                </form>
-                                <div className="mt-6 rounded-2xl border border-white/10 p-4 bg-white/[0.02] text-[11px] text-white/68 leading-relaxed">
-                                    Credentials are intentionally hidden. Contact your administrator for account access.
-                                </div>
+                                {loginMode === 'register' ? (
+                                    <>
+                                    <div className="text-sm text-white/65 mt-3">Register with your <strong>@destinysprings.com</strong> work email to get access.</div>
+                                    <form onSubmit={handleRegister} className="space-y-4 mt-6">
+                                        <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="yourname@destinysprings.com" type="email" autoFocus />
+                                        <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Choose a password (min 6 chars)" />
+                                        {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
+                                        <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>CREATE ACCOUNT</button>
+                                    </form>
+                                    <div className="mt-5 text-center text-[12px] text-white/50">
+                                        Already have an account?{' '}
+                                        <button type="button" onClick={() => { setLoginMode('signin'); setLoginError(''); }} className="text-[var(--accent)] underline bg-transparent border-0 cursor-pointer p-0">Sign in</button>
+                                    </div>
+                                    </>
+                                ) : (
+                                    <>
+                                    <div className="text-sm text-white/65 mt-3">Sign in with your work email, or use Quick Staff Access to skip login.</div>
+                                    <form onSubmit={handleLoginSubmit} className="space-y-4 mt-6">
+                                        <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="Email or username" autoFocus />
+                                        <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Password" />
+                                        {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
+                                        <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
+                                        <button type="button" onClick={handleQuickStaffAccess} className="w-full" style={{padding: '10px 16px', fontSize: '11px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)'}}>QUICK STAFF ACCESS</button>
+                                    </form>
+                                    <div className="mt-5 text-center text-[12px] text-white/50">
+                                        No account yet?{' '}
+                                        <button type="button" onClick={() => { setLoginMode('register'); setLoginError(''); }} className="text-[var(--accent)] underline bg-transparent border-0 cursor-pointer p-0">Create one</button>
+                                    </div>
+                                    </>
+                                )}
                                 </div>
                             </div>
                         </div>
