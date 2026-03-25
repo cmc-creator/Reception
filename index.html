@@ -4562,8 +4562,7 @@
                                 <header className="sidebar-hero-card p-4 text-left text-white font-black flex flex-col gap-4">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
-                                            <div className="sidebar-kicker">Crew Wing</div>
-                                            <h1 className="report-heading-glow" style={{fontSize: '1.2rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)', marginTop: '0.35rem'}}>Shift Report</h1>
+                                            <h1 className="report-heading-glow" style={{fontSize: '1.2rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)'}}>Shift Report</h1>
                                         </div>
                                         <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-orb-btn shrink-0" style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '6px 10px', fontSize: '10px', letterSpacing: '0.08em'}}>Portal</button>
                                     </div>
@@ -4589,46 +4588,9 @@
                                     </div>
                                 </header>
 
-                                {appSettings.enableGamification && (
-                                    <section className="crew-pulse-card p-4 text-left flex flex-col gap-3">
-                                        <div className="flex items-center justify-between gap-3">
-                                            <div>
-                                                <div className="sidebar-kicker">Crew Pulse</div>
-                                                <div className="text-[12px] font-black uppercase tracking-[0.16em] mt-1" style={{color: 'var(--text-primary)'}}>Leaderboard + challenge</div>
-                                            </div>
-                                            <div className="mini-stat-pill">{crewPulse.totalKudos}/{crewPulse.goal} Kudos</div>
-                                        </div>
-                                        <div className="readiness-beam"><span style={{width: `${crewPulse.progressPercent}%`}} /></div>
-                                        <div className="text-[10px]" style={{color: 'var(--text-secondary)'}}>{crewPulse.challengeText}</div>
-                                        <div className="flex flex-col gap-2">
-                                            {crewPulse.hasData ? crewPulse.leaderboard.slice(0, 3).map((entry, index) => (
-                                                <div key={entry.key} className="leaderboard-row">
-                                                    <div className="leaderboard-row__place">{index + 1}</div>
-                                                    <div>
-                                                        <div className="leaderboard-row__name">{entry.name}</div>
-                                                        <div className="leaderboard-row__meta">{entry.shifts} shifts • {entry.reports} reports • {entry.kudosReceived} kudos</div>
-                                                    </div>
-                                                    <div className="mini-stat-pill" style={{padding: '0.35rem 0.55rem'}}>{entry.points} pts</div>
-                                                </div>
-                                            )) : (
-                                                <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>Crew points will populate as shifts, reports, and kudos build up.</div>
-                                            )}
-                                        </div>
-                                        {appSettings.showMotivationalQuote && currentUserPreferences.showQuoteCard && (
-                                            <div className="sidebar-section p-3" style={{background: 'rgba(255,255,255,0.04)'}}>
-                                                <div className="text-[10px] uppercase tracking-[0.18em] mb-2" style={{color: 'var(--accent)', fontWeight: 800}}>Daily Spark</div>
-                                                <div className="text-[11px] leading-relaxed" style={{color: 'var(--text-primary)'}}>{motivationalQuote.text}</div>
-                                                <div className="text-[10px] mt-2" style={{color: 'var(--text-muted)'}}>- {motivationalQuote.author}</div>
-                                            </div>
-                                        )}
-                                    </section>
-                                )}
+
 
                                 <div className="sidebar-section report-command-deck p-3 rounded-lg text-left flex flex-col gap-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="text-[10px] uppercase tracking-[0.2em]" style={{color: 'var(--accent)', fontWeight: 900}}>Report Controls</div>
-                                        <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>{reportCompletion.completed}/{reportCompletion.total} fields</div>
-                                    </div>
                                     <div className="report-safety-bar">
                                         <div>
                                             <div className="report-safety-title">Shift Report Safety</div>
