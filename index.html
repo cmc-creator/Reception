@@ -1315,7 +1315,7 @@
 
         .sidebar-identity-card {
             display: grid;
-            grid-template-columns: auto 1fr auto;
+            grid-template-columns: auto 1fr;
             gap: 0.8rem;
             align-items: center;
             padding: 0.8rem;
@@ -4502,7 +4502,7 @@
                         </div>
                     </nav>
 
-                    <div className="main-stack flex-1 flex flex-col">
+                    <div className="main-stack flex-1 flex flex-col min-h-0">
                         <header className="top-header command-strip no-print min-h-10 bg-rose-950/20 border-b border-rose-500/30 text-left font-bold">
                             <div className="header-cluster">
                                 <div>
@@ -4556,21 +4556,16 @@
                             </div>
                         </header>
 
-                        <div className="work-area flex-1 flex overflow-hidden">
+                        <div className="work-area flex-1 flex overflow-hidden min-h-0">
                             {/* SIDEBAR LOGS */}
-                            <aside className="report-sidebar no-print p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar" style={{width: reportSidebarWidth, background: 'linear-gradient(180deg, var(--panel-start), var(--panel-end))', borderRight: '1px solid var(--accent-soft)'}}>
+                            <aside className="report-sidebar no-print p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar min-h-0" style={{width: reportSidebarWidth, background: 'linear-gradient(180deg, var(--panel-start), var(--panel-end))', borderRight: '1px solid var(--accent-soft)'}}>
                                 <header className="sidebar-hero-card p-4 text-left text-white font-black flex flex-col gap-4">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
                                             <div className="sidebar-kicker">Crew Wing</div>
                                             <h1 className="report-heading-glow" style={{fontSize: '1.2rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)', marginTop: '0.35rem'}}>Shift Report</h1>
                                         </div>
-                                        <button type="button" onClick={() => setIsSettingsOpen(true)} className="mini-stat-pill shrink-0" style={{background: 'rgba(255,255,255,0.12)', padding: '0.36rem 0.62rem', fontSize: '9px', letterSpacing: '0.08em', lineHeight: 1.1}}>Portal</button>
-                                    </div>
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                                        <div className="sidebar-date-chip">{selectedDate}</div>
-                                        <div className="mini-stat-pill">{activeThemeOption.label}</div>
-                                        <div className="mini-stat-pill">{layoutOption.label}</div>
+                                        <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-orb-btn shrink-0" style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '6px 10px', fontSize: '10px', letterSpacing: '0.08em'}}>Portal</button>
                                     </div>
                                     <div className="sidebar-identity-card">
                                         <div className="sidebar-avatar">{sidebarIdentity.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</div>
@@ -4578,7 +4573,6 @@
                                             <div className="sidebar-identity-name">{sidebarIdentity}</div>
                                             <div className="sidebar-identity-meta">{effectsOption.label} • {densityOption.label} • {isAdmin ? 'Admin lane' : 'Staff lane'}</div>
                                         </div>
-                                        <div className="sidebar-rank-pill">{crewRank > 0 ? `#${crewRank}` : 'Ready'}</div>
                                     </div>
                                     <div className="sidebar-quick-grid">
                                         {sidebarQuickActions.map(action => (
