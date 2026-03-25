@@ -871,29 +871,33 @@
         }
 
         .nav-action-btn--danger {
-            background: linear-gradient(155deg, rgba(127,29,29,0.82), rgba(69,10,10,0.95));
-            border-color: rgba(248,113,113,0.42);
-            box-shadow: 0 10px 20px rgba(127,29,29,0.45), inset 0 1px 0 rgba(255,255,255,0.14);
+            background: linear-gradient(155deg, rgba(58, 23, 23, 0.88), rgba(28, 14, 14, 0.96));
+            border-color: rgba(255,255,255,0.12);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 18px rgba(0,0,0,0.3);
         }
 
         .nav-action-btn--accent {
-            background: linear-gradient(155deg, var(--accent), var(--accent-dark));
-            border-color: rgba(255,255,255,0.18);
+            background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border-color: rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 18px rgba(0,0,0,0.26);
         }
 
         .nav-action-btn--blue {
-            background: linear-gradient(155deg, #3b82f6, #1d4ed8);
-            border-color: rgba(147,197,253,0.25);
+            background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border-color: rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 18px rgba(0,0,0,0.26);
         }
 
         .nav-action-btn--pink {
-            background: linear-gradient(155deg, #ec4899, #be185d);
-            border-color: rgba(244,114,182,0.25);
+            background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border-color: rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 18px rgba(0,0,0,0.26);
         }
 
         .nav-action-btn--gold {
-            background: linear-gradient(155deg, #f59e0b, #b45309);
-            border-color: rgba(252,211,77,0.25);
+            background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
+            border-color: rgba(255,255,255,0.14);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 18px rgba(0,0,0,0.26);
         }
 
         .nav-action-icon {
@@ -1300,12 +1304,12 @@
             gap: 0.35rem;
             padding: 0.35rem 0.75rem;
             border-radius: 999px;
-            background: rgba(255,255,255,0.08);
-            border: 1px solid rgba(255,255,255,0.12);
+            background: rgba(255,255,255,0.045);
+            border: 1px solid rgba(255,255,255,0.1);
             color: var(--text-primary);
             font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.18em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
         }
 
@@ -1360,15 +1364,16 @@
             justify-content: center;
             padding: 0.4rem 0.7rem;
             border-radius: 999px;
-            border: 1px solid rgba(255,255,255,0.14);
-            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
             color: var(--text-primary);
             font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.1em;
             text-transform: uppercase;
             white-space: nowrap;
             line-height: 1.2;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
         }
 
         .sidebar-quick-grid {
@@ -1382,22 +1387,29 @@
             text-align: left;
             padding: 0.85rem;
             border-radius: 16px;
-            border: 1px solid rgba(255,255,255,0.14);
-            background: linear-gradient(145deg, rgba(255,255,255,0.09), rgba(255,255,255,0.03));
-            box-shadow: 0 10px 24px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(145deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018));
+            box-shadow: 0 8px 18px rgba(0,0,0,0.24);
             transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
         }
 
         .sidebar-quick-btn:hover {
             transform: translateY(-2px);
-            border-color: rgba(255,255,255,0.24);
-            box-shadow: 0 16px 32px rgba(0,0,0,0.34), 0 0 18px var(--accent-soft);
+            border-color: rgba(255,255,255,0.18);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.28);
         }
 
         .sidebar-quick-btn__icon {
-            font-size: 18px;
-            display: block;
+            width: 30px;
+            height: 30px;
+            font-size: 15px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             margin-bottom: 0.45rem;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.055);
+            border: 1px solid rgba(255,255,255,0.08);
         }
 
         .sidebar-quick-btn__title {
@@ -1427,48 +1439,48 @@
             display: block;
             height: 100%;
             border-radius: inherit;
-            background: linear-gradient(90deg, var(--accent), var(--highlight));
-            box-shadow: 0 0 16px var(--highlight-glow);
+            background: linear-gradient(90deg, rgba(184,115,51,0.9), rgba(212,175,122,0.9));
+            box-shadow: 0 0 10px rgba(184,115,51,0.25);
         }
 
         .report-safety-bar {
-            border: 1px solid rgba(56, 189, 248, 0.35);
+            border: 1px solid rgba(255,255,255,0.12);
             border-radius: 14px;
-            background: linear-gradient(145deg, rgba(14, 116, 144, 0.3), rgba(30, 64, 175, 0.16));
+            background: linear-gradient(145deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02));
             padding: 0.7rem;
             display: grid;
             grid-template-columns: 1fr auto;
             gap: 0.65rem;
             align-items: center;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 10px 20px rgba(0,0,0,0.28);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 18px rgba(0,0,0,0.22);
         }
 
         .report-safety-title {
-            color: #dbeafe;
+            color: var(--text-primary);
             font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.12em;
             text-transform: uppercase;
         }
 
         .report-safety-note {
-            color: #bfdbfe;
+            color: var(--text-secondary);
             font-size: 10px;
             margin-top: 0.2rem;
             line-height: 1.35;
         }
 
         .report-save-cta {
-            border: 1px solid rgba(125, 211, 252, 0.5);
+            border: 1px solid rgba(255,255,255,0.14);
             border-radius: 12px;
-            background: linear-gradient(145deg, #0284c7, #0369a1);
-            color: #f0f9ff;
+            background: linear-gradient(145deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            color: var(--text-primary);
             font-size: 10px;
             font-weight: 900;
-            letter-spacing: 0.1em;
+            letter-spacing: 0.08em;
             text-transform: uppercase;
             padding: 0.55rem 0.8rem;
-            box-shadow: 0 6px 16px rgba(2,132,199,0.45), inset 0 1px 0 rgba(255,255,255,0.24);
+            box-shadow: 0 6px 16px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.14);
         }
 
         .report-save-cta:hover {
@@ -1992,6 +2004,10 @@
             border: 2px solid var(--highlight) !important;
             box-shadow: 0 0 24px var(--highlight-glow), inset 0 2px 0 rgba(255,255,255,0.08) !important;
         }
+        .day-cell--coverage-risk {
+            border-color: rgba(239,68,68,0.6) !important;
+            box-shadow: 0 0 0 1px rgba(127,29,29,0.75), 0 0 20px rgba(239,68,68,0.3), inset 0 1px 0 rgba(255,255,255,0.06) !important;
+        }
         .day-cell__num {
             font-size: 1.4rem;
             font-weight: 900;
@@ -2027,6 +2043,22 @@
             gap: 4px;
             margin-top: 8px;
             animation: pulse 2s ease-in-out infinite;
+        }
+        .day-cell__gap-alert {
+            margin-top: 6px;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 3px 7px;
+            border-radius: 999px;
+            border: 1px solid rgba(248,113,113,0.55);
+            background: rgba(127,29,29,0.5);
+            color: #fecaca;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 0 12px rgba(239,68,68,0.25);
         }
         .shift-card {
             position: relative;
@@ -4214,11 +4246,77 @@
                 const weekOffset = appSettings.weekStartsOnMonday ? 1 : 0;
                 const start = (new Date(yIdx, mIdx, 1).getDay() - weekOffset + 7) % 7;
                 const minCellHeight = appSettings.compactCalendar ? '140px' : '180px';
+                const coverageStartMinutes = toMinutes(appSettings.defaultShiftStart || '08:00');
+                const coverageEndMinutes = Math.max(coverageStartMinutes + 60, toMinutes(appSettings.defaultShiftEnd || '20:00'));
+                const largeGapAlertMinutes = 180;
+
+                const formatGapDuration = (minutes) => {
+                    const safe = Math.max(0, Math.round(minutes || 0));
+                    const hours = Math.floor(safe / 60);
+                    const mins = safe % 60;
+                    if (hours > 0 && mins > 0) return `${hours}h ${mins}m`;
+                    if (hours > 0) return `${hours}h`;
+                    return `${mins}m`;
+                };
+
+                const getCoverageGapStats = (sourceShifts) => {
+                    const ranges = (sourceShifts || [])
+                        .map(shift => {
+                            const rawStart = toMinutes(shift.start || shift.time || appSettings.defaultShiftStart || '08:00');
+                            const rawEnd = toMinutes(shift.end || appSettings.defaultShiftEnd || '20:00');
+                            let startMinute = Math.min(rawStart, rawEnd);
+                            let endMinute = Math.max(rawStart, rawEnd);
+                            if (startMinute === endMinute) endMinute = startMinute + 30;
+                            startMinute = Math.max(coverageStartMinutes, startMinute);
+                            endMinute = Math.min(coverageEndMinutes, endMinute);
+                            if (endMinute <= startMinute) return null;
+                            return [startMinute, endMinute];
+                        })
+                        .filter(Boolean)
+                        .sort((a, b) => a[0] - b[0]);
+
+                    if (ranges.length === 0) {
+                        return {
+                            largestGapMinutes: coverageEndMinutes - coverageStartMinutes,
+                            totalGapMinutes: coverageEndMinutes - coverageStartMinutes
+                        };
+                    }
+
+                    const merged = [];
+                    ranges.forEach(([startMinute, endMinute]) => {
+                        if (!merged.length || startMinute > merged[merged.length - 1][1]) {
+                            merged.push([startMinute, endMinute]);
+                            return;
+                        }
+                        merged[merged.length - 1][1] = Math.max(merged[merged.length - 1][1], endMinute);
+                    });
+
+                    let cursor = coverageStartMinutes;
+                    let largestGapMinutes = 0;
+                    let totalGapMinutes = 0;
+                    merged.forEach(([startMinute, endMinute]) => {
+                        if (startMinute > cursor) {
+                            const gap = startMinute - cursor;
+                            totalGapMinutes += gap;
+                            largestGapMinutes = Math.max(largestGapMinutes, gap);
+                        }
+                        cursor = Math.max(cursor, endMinute);
+                    });
+                    if (cursor < coverageEndMinutes) {
+                        const tailGap = coverageEndMinutes - cursor;
+                        totalGapMinutes += tailGap;
+                        largestGapMinutes = Math.max(largestGapMinutes, tailGap);
+                    }
+
+                    return { largestGapMinutes, totalGapMinutes };
+                };
+
                 const cells = [];
                 for (let i = 0; i < start; i++) cells.push(<div key={`e-${i}`} style={{minHeight: minCellHeight}} className="bg-white/[0.01] border border-white/[0.03]" />);
                 for (let d = 1; d <= total; d++) {
                     const dk = `${yIdx}-${String(mIdx + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-                    let dayShifts = events[dk] || [];
+                    const allDayShifts = events[dk] || [];
+                    let dayShifts = allDayShifts;
                     if (shiftStatusFilter === 'confirmed') dayShifts = dayShifts.filter(s => s.confirmed);
                     if (shiftStatusFilter === 'pending') dayShifts = dayShifts.filter(s => !s.confirmed);
                     if (shiftSearch.trim()) {
@@ -4228,6 +4326,8 @@
                             return emp.includes(search) || dk.includes(search);
                         });
                     }
+                    const coverageGapStats = getCoverageGapStats(allDayShifts);
+                    const hasLargeCoverageGap = allDayShifts.length > 0 && coverageGapStats.largestGapMinutes >= largeGapAlertMinutes;
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
                         <div key={dk}
@@ -4236,7 +4336,7 @@
                             onDrop={(event) => handleCalendarDrop(event, dk)}
                             onDragLeave={() => handleCalendarDragLeave(dk)}
                             style={{minHeight: minCellHeight}}
-                            className={`day-cell group ${isToday ? 'day-cell--today' : ''} ${selectedDate === dk ? 'day-cell--selected' : ''} ${dragOverDate === dk ? 'day-cell--drag-over' : ''}`}>
+                            className={`day-cell group ${isToday ? 'day-cell--today' : ''} ${selectedDate === dk ? 'day-cell--selected' : ''} ${dragOverDate === dk ? 'day-cell--drag-over' : ''} ${hasLargeCoverageGap ? 'day-cell--coverage-risk' : ''}`}>
                             {isToday && <div className="rivet" style={{top: '4px', left: '4px'}} />}
                             <div className="flex justify-between items-start">
                                 <span className="day-cell__num">{d}</span>
@@ -4247,6 +4347,11 @@
                                     <IconPlus />
                                 </button>
                             </div>
+                            {hasLargeCoverageGap && (
+                                <div className="day-cell__gap-alert" title={`Largest uncovered block: ${formatGapDuration(coverageGapStats.largestGapMinutes)}. Total uncovered: ${formatGapDuration(coverageGapStats.totalGapMinutes)}.`}>
+                                    <IconAlert /> OPEN GAP {formatGapDuration(coverageGapStats.largestGapMinutes)}
+                                </div>
+                            )}
                             <div className="space-y-2 mt-3">
                                 {dayShifts.length === 0
                                     ? <div className="day-cell__empty"><IconAlert /> NEEDS COVERAGE</div>
@@ -4824,12 +4929,12 @@
                                                 draggable
                                                 onDragStart={(event) => handleStaffDragStart(event, id)}
                                                 onDragEnd={() => { setDraggedStaff(null); setDragOverDate(null); }}
-                                                style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid var(--accent-dark)', borderRadius: '999px', padding: '10px 15px', color: 'var(--text-primary)', fontWeight: 900, fontSize: '12px', letterSpacing: '0.06em', textTransform: 'uppercase'}}
+                                                style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid var(--accent-dark)', borderRadius: '999px', padding: '12px 16px', color: 'var(--text-primary)', fontWeight: 900, fontSize: '13px', letterSpacing: '0.05em', textTransform: 'uppercase'}}
                                                 className="transition-all hover:translate-y-[-1px]"
                                             >
                                                 <span className="flex items-center gap-2">
                                                     {appSettings.showStaffColorMarkers && <span style={{width: '9px', height: '9px', borderRadius: '999px', background: getStaffColor(id), boxShadow: '0 0 8px rgba(255,255,255,0.35), inset 0 0 0 1px rgba(0,0,0,0.35)'}} />}
-                                                    <span style={{color: appSettings.showStaffColorMarkers ? getStaffColor(id) : 'var(--text-primary)', fontSize: '12px', lineHeight: 1.15}}>{String(s.name)}</span>
+                                                    <span style={{color: appSettings.showStaffColorMarkers ? getStaffColor(id) : 'var(--text-primary)', fontSize: '13px', lineHeight: 1.18}}>{String(s.name)}</span>
                                                 </span>
                                             </button>
                                         ))}
