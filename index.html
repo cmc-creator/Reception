@@ -4605,10 +4605,34 @@
 
 
                                 {/* compact day nav + save strip */}
-                                <div className="grid grid-cols-3 gap-2" style={{marginTop: '-0.5rem'}}>
-                                    <button type="button" onClick={() => shiftReportDay(-1)} className="fancy-btn" style={{padding: '6px 8px', fontSize: '10px'}}>◀ PREV</button>
-                                    <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '6px 8px', fontSize: '10px', background: '#0ea5e9'}}>SAVE</button>
-                                    <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '6px 8px', fontSize: '10px'}}>NEXT ▶</button>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <button type="button" onClick={() => shiftReportDay(-1)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px'}}>◀ PREV</button>
+                                    <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px', background: '#0ea5e9'}}>SAVE</button>
+                                    <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px'}}>NEXT ▶</button>
+                                </div>
+
+                                {/* ── TEAM CHAT (top, always visible) ── */}
+                                <div style={{border: '1px solid var(--accent-soft)', borderRadius: '12px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                    <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
+                                    <div className="overflow-y-auto no-scrollbar" style={{maxHeight: '100px', display: 'flex', flexDirection: 'column', gap: '3px'}}>
+                                        {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
+                                        {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
+                                        <div ref={chatEndRef} />
+                                    </div>
+                                    <form onSubmit={e => {
+                                        e.preventDefault();
+                                        if (chatInput.trim()) {
+                                            const newMessage = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' };
+                                            const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt||0)-(b.createdAt||0));
+                                            setMessages(updatedMessages);
+                                            saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
+                                            setChatInput('');
+                                            setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+                                        }
+                                    }} className="flex gap-1">
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                        <button type="submit" className="fancy-btn" style={{padding: '7px 14px', fontSize: '11px'}}>SEND</button>
+                                    </form>
                                 </div>
                                 {isReportDirty && (
                                     <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
@@ -4623,7 +4647,7 @@
                                     {REPORT_FIELDS.map(f => (
                                         <div key={f.id} className="report-field-card">
                                             <label className="report-field-card__label"><IconActivity /> {f.label}</label>
-                                            <textarea value={String(reportData[f.id] || '')} onChange={e => updateReportField(f.id, e.target.value)} className="report-field-input w-full bg-transparent border-none text-xs h-14 outline-none resize-none font-bold" placeholder={f.placeholder || '...'} />
+                                            <textarea value={String(reportData[f.id] || '')} onChange={e => updateReportField(f.id, e.target.value)} className="report-field-input w-full bg-transparent border-none text-xs h-20 outline-none resize-none font-bold" placeholder={f.placeholder || '...'} />
                                         </div>
                                     ))}
                                 </div>
@@ -4635,9 +4659,7 @@
                                             <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '5px 8px', fontSize: '9px'}}>SAVED</button>
                                         </div>
                                     </div>
-                                    <div className="text-[10px] mb-2" style={{color: 'var(--text-secondary)'}}>
-                                        Shift report fields are above this section. Save anytime with <strong>Save</strong> and open previous entries with <strong>Saved</strong>.
-                                    </div>
+
                                     <div className="flex flex-col gap-1 mb-2">
                                         {checklist.length === 0 && <div className="text-[10px] text-slate-400 italic">No tasks yet for this day.</div>}
                                         {checklist.map((item, idx) => (
@@ -4664,45 +4686,15 @@
                                         saveToStorage('reception_checklist_' + selectedDate, updated);
                                         setNewChecklistItem('');
                                     }} className="flex gap-1 mb-2">
-                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Add task..." />
+                                        <input value={newChecklistItem} onChange={e => setNewChecklistItem(e.target.value)} style={{flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Add task..." />
                                         <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>ADD</button>
                                     </form>
                                 </div>
-                                <div className="intel-feed-card">
-                                    <label style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}} className="mb-1 block flex items-center gap-2"><IconTerminal className="inline mr-2"/>Live Intel Feed</label>
-                                    <div className="text-[10px] mb-2" style={{color: 'var(--text-secondary)'}}>Team chat only.</div>
-                                    <div className="flex-1 overflow-y-auto space-y-1.5 mb-2 text-[10px] no-scrollbar text-slate-300 font-medium">
-                                        {messages.length === 0 && <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>No messages yet for this shift.</div>}
-                                        {messages.map(m => <div key={m.id}><span style={{color: 'var(--accent)', fontWeight: 900}} className="mr-1 uppercase">{String(m.user)}:</span>{String(m.text)}</div>)}
-                                        <div ref={chatEndRef} />
-                                    </div>
-                                    <form onSubmit={e => { 
-                                        e.preventDefault(); 
-                                        if (chatInput.trim()) { 
-                                            const newMessage = { 
-                                                id: `msg-${Date.now()}`, 
-                                                text: chatInput, 
-                                                createdAt: Date.now(), 
-                                                user: currentUser?.displayName || currentUser?.username || 'USER' 
-                                            };
-                                            const updatedMessages = [...messages, newMessage].sort((a,b) => (a.createdAt || 0) - (b.createdAt || 0));
-                                            setMessages(updatedMessages);
-                                            saveToStorage(STORAGE_KEYS.MESSAGES, updatedMessages);
-                                            setChatInput('');
-                                            setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-                                        }
-                                    }} className="flex gap-1 shrink-0 pt-2 text-left">
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} style={{flex: 1, background: 'rgba(26,26,27,0.95)', border: '2px solid var(--accent-soft)', borderRadius: '2px', padding: '6px', fontSize: '10px', color: 'var(--text-primary)', fontWeight: 700}} className="outline-none" placeholder="Broadcast..." />
-                                        <button type="submit" className="fancy-btn" style={{padding: '6px 12px', fontSize: '10px'}}>OK</button>
-                                    </form>
-                                </div>
+
 
                                 {/* ── REPORT CONTROLS (bottom) ── */}
                                 <div className="text-left flex flex-col gap-3" style={{borderTop: '1px solid var(--accent-soft)', paddingTop: '1rem'}}>
                                     <div className="readiness-beam"><span style={{width: `${reportCompletion.percent}%`}} /></div>
-                                    <div className="text-[10px]" style={{color: reportReadiness.ready ? '#34d399' : '#f59e0b', fontWeight: 700}}>
-                                        {reportReadiness.ready ? 'Ready to submit' : `${reportCompletion.completed}/${reportCompletion.total} fields complete`}
-                                    </div>
                                     <div className="flex items-center gap-2">
                                         <select value={reportPriority} onChange={e => { setReportPriority(e.target.value); markReportDirty(); }} className="panel-input" style={{padding: '7px 8px', fontSize: '10px', flex: 1}}>
                                             <option value="low">Low Priority</option>
