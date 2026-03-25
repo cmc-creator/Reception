@@ -1267,7 +1267,6 @@
             opacity: 0.9;
         }
 
-        .sidebar-hero-card,
         .crew-pulse-card,
         .sidebar-section {
             position: relative;
@@ -1279,7 +1278,11 @@
             box-shadow: 0 16px 36px rgba(0,0,0,0.36);
         }
 
-        .sidebar-hero-card::before,
+        .sidebar-hero-card {
+            position: relative;
+            overflow: hidden;
+        }
+
         .crew-pulse-card::before,
         .sidebar-section::before {
             content: '';
@@ -4559,33 +4562,9 @@
                         <div className="work-area flex-1 flex overflow-hidden min-h-0">
                             {/* SIDEBAR LOGS */}
                             <aside className="report-sidebar no-print p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar min-h-0" style={{width: reportSidebarWidth, background: 'linear-gradient(180deg, var(--panel-start), var(--panel-end))', borderRight: '1px solid var(--accent-soft)'}}>
-                                <header className="sidebar-hero-card p-4 text-left text-white font-black flex flex-col gap-4">
-                                    <div className="flex items-center justify-between gap-3">
-                                        <div>
-                                            <h1 className="report-heading-glow" style={{fontSize: '1.2rem', letterSpacing: '-0.05em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)'}}>Shift Report</h1>
-                                        </div>
-                                        <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-orb-btn shrink-0" style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '6px 10px', fontSize: '10px', letterSpacing: '0.08em'}}>Portal</button>
-                                    </div>
-                                    <div className="sidebar-identity-card">
-                                        <div className="sidebar-avatar">{sidebarIdentity.split(' ').map(part => part[0]).join('').slice(0, 2).toUpperCase()}</div>
-                                        <div>
-                                            <div className="sidebar-identity-name">{sidebarIdentity}</div>
-                                            <div className="sidebar-identity-meta">{effectsOption.label} • {densityOption.label} • {isAdmin ? 'Admin lane' : 'Staff lane'}</div>
-                                        </div>
-                                    </div>
-                                    <div className="sidebar-quick-grid">
-                                        {sidebarQuickActions.map(action => (
-                                            <button key={action.id} type="button" onClick={action.run} className="sidebar-quick-btn">
-                                                <span className="sidebar-quick-btn__icon">{action.icon}</span>
-                                                <span className="sidebar-quick-btn__title">{action.title}</span>
-                                                <div className="sidebar-quick-btn__hint">{action.hint}</div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <button type="button" onClick={() => shiftReportDay(-1)} className="fancy-btn" style={{padding: '7px 10px', fontSize: '10px'}}>PREV DAY</button>
-                                        <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '7px 10px', fontSize: '10px'}}>NEXT DAY</button>
-                                    </div>
+                                <header className="sidebar-hero-card px-2 pt-2 pb-1 text-left text-white font-black flex items-center justify-between gap-3">
+                                    <h1 className="report-heading-glow" style={{fontSize: '1.1rem', letterSpacing: '-0.04em', textTransform: 'uppercase', color: 'var(--accent)', textShadow: '0 0 10px var(--accent-glow)'}}>Shift Report</h1>
+                                    <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-orb-btn shrink-0" style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '6px 10px', fontSize: '10px', letterSpacing: '0.08em'}}>Portal</button>
                                 </header>
 
 
