@@ -1685,6 +1685,323 @@
             gap: 0.85rem;
         }
 
+        .checklist-modal-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .checklist-section-card {
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 22px;
+            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18));
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 12px 28px rgba(0,0,0,0.18);
+            padding: 1rem;
+        }
+
+        .checklist-section-card--today {
+            background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(0,0,0,0.22));
+            border-color: var(--accent-soft);
+        }
+
+        .checklist-section-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.9rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .checklist-section-kicker {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .checklist-section-title {
+            font-size: 1.05rem;
+            line-height: 1.15;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            margin-top: 0.25rem;
+        }
+
+        .checklist-section-copy {
+            font-size: 11px;
+            line-height: 1.45;
+            color: var(--text-soft);
+            margin-top: 0.35rem;
+        }
+
+        .checklist-composer-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 2fr) minmax(160px, 1fr) minmax(0, 1.7fr) auto auto;
+            gap: 0.8rem;
+            align-items: end;
+        }
+
+        .checklist-input-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .checklist-input-label {
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            color: var(--text-muted);
+        }
+
+        .checklist-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 48px;
+            padding: 0 0.4rem;
+            font-size: 11px;
+            font-weight: 800;
+            color: var(--text-soft);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .checklist-toggle input {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--accent);
+        }
+
+        .checklist-table-shell {
+            max-height: 52vh;
+            overflow: auto;
+            border: 1px solid var(--accent-soft);
+            border-radius: 18px;
+            background: linear-gradient(180deg, rgba(0,0,0,0.18), rgba(255,255,255,0.03));
+        }
+
+        .checklist-table {
+            width: 100%;
+            min-width: 880px;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+
+        .checklist-table thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            padding: 0.9rem 0.8rem;
+            font-size: 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            text-align: left;
+            color: var(--text-muted);
+            background: linear-gradient(180deg, rgba(10, 10, 12, 0.96), rgba(18, 18, 22, 0.9));
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .checklist-table tbody tr td {
+            padding: 0.85rem 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.08);
+            vertical-align: middle;
+        }
+
+        .checklist-table tbody tr:hover td {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .checklist-action-btn {
+            border: none;
+            background: transparent;
+            color: #f87171;
+            font-size: 11px;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            cursor: pointer;
+        }
+
+        .checklist-action-btn:hover {
+            color: #fca5a5;
+        }
+
+        .checklist-summary-strip {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 0.85rem;
+        }
+
+        .checklist-summary-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.72rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
+
+        .checklist-summary-pill strong {
+            color: var(--accent);
+        }
+
+        .checklist-progress-track {
+            height: 10px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: inset 0 1px 4px rgba(0,0,0,0.35);
+            margin-bottom: 0.9rem;
+        }
+
+        .checklist-progress-track > span {
+            display: block;
+            height: 100%;
+            border-radius: inherit;
+            background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+            box-shadow: 0 0 18px var(--accent-glow);
+        }
+
+        .checklist-today-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 320px;
+            overflow-y: auto;
+        }
+
+        .checklist-today-item {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            gap: 0.85rem;
+            align-items: start;
+            padding: 0.9rem 0.95rem;
+            border-radius: 18px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(0,0,0,0.18));
+            transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+        }
+
+        .checklist-today-item:hover {
+            border-color: var(--accent-soft);
+            transform: translateY(-1px);
+        }
+
+        .checklist-today-item--done {
+            background: linear-gradient(155deg, rgba(255,255,255,0.04), rgba(0,0,0,0.12));
+            border-color: rgba(255,255,255,0.08);
+        }
+
+        .checklist-today-check {
+            width: 18px;
+            height: 18px;
+            margin-top: 0.1rem;
+            accent-color: var(--accent);
+        }
+
+        .checklist-today-title {
+            font-size: 13px;
+            line-height: 1.35;
+            font-weight: 800;
+            color: var(--text-primary);
+        }
+
+        .checklist-today-item--done .checklist-today-title {
+            color: var(--text-muted);
+            text-decoration: line-through;
+        }
+
+        .checklist-today-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.45rem;
+            margin-top: 0.55rem;
+        }
+
+        .checklist-meta-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.28rem 0.55rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-soft);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .checklist-meta-pill--required {
+            color: var(--accent);
+            border-color: var(--accent-soft);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .checklist-note-card {
+            margin-top: 0.65rem;
+            padding: 0.65rem 0.75rem;
+            border-radius: 14px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        .checklist-note-card__label {
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 0.25rem;
+        }
+
+        .checklist-note-card__text {
+            font-size: 11px;
+            line-height: 1.45;
+            color: var(--text-soft);
+        }
+
+        .checklist-empty-state {
+            border-radius: 16px;
+            border: 1px dashed var(--accent-soft);
+            background: rgba(255,255,255,0.03);
+            padding: 1rem;
+            font-size: 11px;
+            color: var(--text-soft);
+        }
+
+        @media (max-width: 980px) {
+            .checklist-composer-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 680px) {
+            .checklist-composer-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .checklist-section-head {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
         .settings-stack-note {
             color: rgba(255,255,255,0.65);
             font-size: 11px;
@@ -4912,6 +5229,9 @@
             const activeAlertLabel = globalAlert?.trim() || 'No critical directives posted.';
             const platformModeLabel = isFirebaseAvailable ? 'Live sync' : 'Local safe mode';
             const facilityMonogram = (appSettings.facilityName || 'DS').split(' ').map(part => part[0]).join('').slice(0, 2);
+            const checklistReadiness = getChecklistReadiness(checklist);
+            const checklistCompletedCount = checklist.filter(item => !!item.checked).length;
+            const checklistCompletionPercent = checklist.length > 0 ? Math.round((checklistCompletedCount / checklist.length) * 100) : 0;
 
             return (
                 <div className="app-shell flex h-screen w-screen overflow-hidden text-xs">
@@ -6728,109 +7048,161 @@
                                     </div>
                                     <button type="button" className="modal-panel__close" onClick={() => setIsChecklistManagerOpen(false)}>&times;</button>
                                 </div>
-                                <div className="modal-panel__body" style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
-                                    <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr 2fr auto auto', gap: '8px', alignItems: 'center'}}>
-                                        <input
-                                            value={newChecklistTemplateRow.text}
-                                            onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, text: event.target.value }))}
-                                            className="panel-input"
-                                            placeholder="Task"
-                                        />
-                                        <select
-                                            value={newChecklistTemplateRow.assignee}
-                                            onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, assignee: event.target.value }))}
-                                            className="panel-input"
-                                        >
-                                            <option value="all">Everyone</option>
-                                            {Object.entries(staff).map(([staffId, member]) => (
-                                                <option key={staffId} value={staffId}>{member.name}</option>
-                                            ))}
-                                        </select>
-                                        <input
-                                            value={newChecklistTemplateRow.note}
-                                            onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, note: event.target.value }))}
-                                            className="panel-input"
-                                            placeholder="Note"
-                                        />
-                                        <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)'}}>
-                                            <input
-                                                type="checkbox"
-                                                checked={newChecklistTemplateRow.required}
-                                                onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, required: event.target.checked }))}
-                                                style={{accentColor: 'var(--accent)'}}
-                                            />
-                                            Required
-                                        </label>
-                                        <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px'}} onClick={addChecklistTemplateRow}>ADD</button>
-                                    </div>
+                                <div className="modal-panel__body checklist-modal-layout">
+                                    <section className="checklist-section-card">
+                                        <div className="checklist-section-head">
+                                            <div>
+                                                <div className="checklist-section-kicker">Template Builder</div>
+                                                <div className="checklist-section-title">Set Up The Daily Task List</div>
+                                                <div className="checklist-section-copy">Create the shared checklist staff will work from each day. Keep task names short, use notes for context, and mark only the must-finish items as required.</div>
+                                            </div>
+                                            <div className="checklist-summary-pill"><strong>{checklistTemplateRows.length}</strong> template tasks</div>
+                                        </div>
+                                        <div className="checklist-composer-grid">
+                                            <div className="checklist-input-stack">
+                                                <label className="checklist-input-label">Task</label>
+                                                <input
+                                                    value={newChecklistTemplateRow.text}
+                                                    onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, text: event.target.value }))}
+                                                    className="panel-input"
+                                                    placeholder="Complete visitor log audit"
+                                                />
+                                            </div>
+                                            <div className="checklist-input-stack">
+                                                <label className="checklist-input-label">Assigned To</label>
+                                                <select
+                                                    value={newChecklistTemplateRow.assignee}
+                                                    onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, assignee: event.target.value }))}
+                                                    className="panel-input"
+                                                >
+                                                    <option value="all">Everyone</option>
+                                                    {Object.entries(staff).map(([staffId, member]) => (
+                                                        <option key={staffId} value={staffId}>{member.name}</option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                            <div className="checklist-input-stack">
+                                                <label className="checklist-input-label">Note</label>
+                                                <input
+                                                    value={newChecklistTemplateRow.note}
+                                                    onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, note: event.target.value }))}
+                                                    className="panel-input"
+                                                    placeholder="Include names from overnight admits"
+                                                />
+                                            </div>
+                                            <label className="checklist-toggle">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={newChecklistTemplateRow.required}
+                                                    onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, required: event.target.checked }))}
+                                                />
+                                                Required
+                                            </label>
+                                            <button type="button" className="fancy-btn" style={{padding: '11px 14px', fontSize: '11px', minHeight: '48px'}} onClick={addChecklistTemplateRow}>ADD TASK</button>
+                                        </div>
+                                    </section>
 
-                                    <div style={{maxHeight: '52vh', overflowY: 'auto', border: '1px solid var(--accent-soft)', borderRadius: '10px'}}>
-                                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                                            <thead>
-                                                <tr style={{background: 'rgba(255,255,255,0.04)'}}>
-                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Task</th>
-                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Assigned</th>
-                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Note</th>
-                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Req</th>
-                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Actions</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {checklistTemplateRows.length === 0 && (
+                                    <section className="checklist-section-card">
+                                        <div className="checklist-section-head">
+                                            <div>
+                                                <div className="checklist-section-kicker">Template Editor</div>
+                                                <div className="checklist-section-title">Review, Edit, And Delete Tasks</div>
+                                            </div>
+                                        </div>
+                                        <div className="checklist-table-shell">
+                                            <table className="checklist-table">
+                                                <thead>
                                                     <tr>
-                                                        <td colSpan="5" style={{padding: '12px', fontSize: '11px', color: 'var(--text-muted)'}}>No checklist tasks yet.</td>
+                                                        <th>Task</th>
+                                                        <th>Assigned</th>
+                                                        <th>Note</th>
+                                                        <th>Required</th>
+                                                        <th>Actions</th>
                                                     </tr>
-                                                )}
-                                                {checklistTemplateRows.map(row => (
-                                                    <tr key={row.id} style={{borderTop: '1px solid rgba(255,255,255,0.08)'}}>
-                                                        <td style={{padding: '8px'}}>
-                                                            <input value={row.text} onChange={event => updateChecklistTemplateRow(row.id, 'text', event.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '11px'}} />
-                                                        </td>
-                                                        <td style={{padding: '8px'}}>
-                                                            <select value={row.assignee} onChange={event => updateChecklistTemplateRow(row.id, 'assignee', event.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '11px'}}>
-                                                                <option value="all">Everyone</option>
-                                                                {Object.entries(staff).map(([staffId, member]) => (
-                                                                    <option key={staffId} value={staffId}>{member.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </td>
-                                                        <td style={{padding: '8px'}}>
-                                                            <input value={row.note || ''} onChange={event => updateChecklistTemplateRow(row.id, 'note', event.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '11px'}} placeholder="Optional note" />
-                                                        </td>
-                                                        <td style={{padding: '8px'}}>
-                                                            <input type="checkbox" checked={row.required !== false} onChange={event => updateChecklistTemplateRow(row.id, 'required', event.target.checked)} style={{accentColor: 'var(--accent)'}} />
-                                                        </td>
-                                                        <td style={{padding: '8px'}}>
-                                                            <button type="button" onClick={() => removeChecklistTemplateRow(row.id)} style={{border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 800, cursor: 'pointer'}}>DELETE</button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                                </thead>
+                                                <tbody>
+                                                    {checklistTemplateRows.length === 0 && (
+                                                        <tr>
+                                                            <td colSpan="5">
+                                                                <div className="checklist-empty-state">No checklist tasks yet. Add the first task above to start building the template.</div>
+                                                            </td>
+                                                        </tr>
+                                                    )}
+                                                    {checklistTemplateRows.map(row => (
+                                                        <tr key={row.id}>
+                                                            <td>
+                                                                <input value={row.text} onChange={event => updateChecklistTemplateRow(row.id, 'text', event.target.value)} className="panel-input" style={{padding: '0.7rem 0.8rem', fontSize: '11px'}} />
+                                                            </td>
+                                                            <td>
+                                                                <select value={row.assignee} onChange={event => updateChecklistTemplateRow(row.id, 'assignee', event.target.value)} className="panel-input" style={{padding: '0.7rem 0.8rem', fontSize: '11px'}}>
+                                                                    <option value="all">Everyone</option>
+                                                                    {Object.entries(staff).map(([staffId, member]) => (
+                                                                        <option key={staffId} value={staffId}>{member.name}</option>
+                                                                    ))}
+                                                                </select>
+                                                            </td>
+                                                            <td>
+                                                                <input value={row.note || ''} onChange={event => updateChecklistTemplateRow(row.id, 'note', event.target.value)} className="panel-input" style={{padding: '0.7rem 0.8rem', fontSize: '11px'}} placeholder="Optional note" />
+                                                            </td>
+                                                            <td>
+                                                                <label className="checklist-toggle" style={{minHeight: 'auto', padding: 0}}>
+                                                                    <input type="checkbox" checked={row.required !== false} onChange={event => updateChecklistTemplateRow(row.id, 'required', event.target.checked)} />
+                                                                    Yes
+                                                                </label>
+                                                            </td>
+                                                            <td>
+                                                                <button type="button" onClick={() => removeChecklistTemplateRow(row.id)} className="checklist-action-btn">Delete</button>
+                                                            </td>
+                                                        </tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </section>
 
-                                    <div style={{border: '1px solid var(--accent-soft)', borderRadius: '10px', padding: '10px'}}>
-                                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
-                                            <div style={{fontSize: '11px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Today&apos;s Checklist ({selectedDate})</div>
-                                            <button type="button" className="fancy-btn" style={{padding: '7px 10px', fontSize: '10px'}} onClick={() => ensureDailyChecklistSeeded(true)}>RESET TODAY</button>
+                                    <section className="checklist-section-card checklist-section-card--today">
+                                        <div className="checklist-section-head">
+                                            <div>
+                                                <div className="checklist-section-kicker">Today&apos;s Checklist</div>
+                                                <div className="checklist-section-title">{selectedDate}</div>
+                                                <div className="checklist-section-copy">Use this view to verify what staff will actually see for today and mark completion without leaving the checklist page.</div>
+                                            </div>
+                                            <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '10px'}} onClick={() => ensureDailyChecklistSeeded(true)}>RESET TODAY</button>
+                                        </div>
+                                        <div className="checklist-summary-strip">
+                                            <div className="checklist-summary-pill"><strong>{checklistCompletedCount}</strong> completed</div>
+                                            <div className="checklist-summary-pill"><strong>{checklist.length}</strong> total tasks</div>
+                                            <div className="checklist-summary-pill"><strong>{checklistReadiness.incompleteRequiredItems.length}</strong> required left</div>
+                                            <div className="checklist-summary-pill"><strong>{checklistCompletionPercent}%</strong> done</div>
+                                        </div>
+                                        <div className="checklist-progress-track">
+                                            <span style={{width: `${checklistCompletionPercent}%`}} />
                                         </div>
                                         {checklist.length === 0 && (
-                                            <div style={{fontSize: '11px', color: 'var(--text-muted)'}}>No tasks on today&apos;s checklist yet. Save a template and apply it.</div>
+                                            <div className="checklist-empty-state">No tasks on today&apos;s checklist yet. Save the template and apply it to today when you are ready.</div>
                                         )}
-                                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '210px', overflowY: 'auto'}} className="no-scrollbar">
+                                        <div className="checklist-today-list no-scrollbar">
                                             {checklist.map(item => (
-                                                <label key={item.id} style={{display: 'flex', alignItems: 'flex-start', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px'}}>
-                                                    <input type="checkbox" checked={!!item.checked} onChange={() => toggleChecklistItem(item.id)} style={{marginTop: '2px', accentColor: 'var(--accent)'}} />
-                                                    <span style={{flex: 1, minWidth: 0}}>
-                                                        <span style={{display: 'block', fontSize: '12px', color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none'}}>{item.text}</span>
-                                                        <span style={{display: 'block', fontSize: '10px', color: 'var(--text-muted)'}}>
-                                                            Assigned: {checklistAssigneeLabel(item)}{item.note ? ` | Note: ${item.note}` : ''}
+                                                <label key={item.id} className={`checklist-today-item ${item.checked ? 'checklist-today-item--done' : ''}`}>
+                                                    <input type="checkbox" checked={!!item.checked} onChange={() => toggleChecklistItem(item.id)} className="checklist-today-check" />
+                                                    <span style={{minWidth: 0}}>
+                                                        <span className="checklist-today-title">{item.text}</span>
+                                                        <span className="checklist-today-meta">
+                                                            <span className="checklist-meta-pill">Assigned: {checklistAssigneeLabel(item)}</span>
+                                                            {item.required !== false && <span className="checklist-meta-pill checklist-meta-pill--required">Required</span>}
+                                                            {item.completedBy && item.checked && <span className="checklist-meta-pill">Done by: {item.completedBy}</span>}
                                                         </span>
+                                                        {item.note && (
+                                                            <span className="checklist-note-card">
+                                                                <span className="checklist-note-card__label">Note</span>
+                                                                <span className="checklist-note-card__text">{item.note}</span>
+                                                            </span>
+                                                        )}
                                                     </span>
                                                 </label>
                                             ))}
                                         </div>
-                                    </div>
+                                    </section>
 
                                     <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap'}}>
                                         <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px'}} onClick={loadChecklistTemplate}>RELOAD</button>
