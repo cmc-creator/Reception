@@ -1,12 +1,12 @@
 import { spawn } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import { transformAsync } from '@babel/core';
 import { build as esbuild } from 'esbuild';
 
-const repoDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+// Use process.cwd() so the script works reliably when run from a mapped UNC drive
+const repoDir = process.cwd();
 const sourceHtmlPath = path.join(repoDir, 'index.html');
 const manifestPath = path.join(repoDir, 'manifest.json');
 const serviceWorkerPath = path.join(repoDir, 'sw.js');
@@ -27,8 +27,11 @@ function runCommand(command, args) {
     const child = spawn(command, args, {
       cwd: repoDir,
       shell: false,
-      stdio: 'inherit'
+      stdio: ['ignore', 'pipe', 'pipe']
     });
+
+    child.stdout?.on('data', (data) => process.stdout.write(data));
+    child.stderr?.on('data', (data) => process.stderr.write(data));
 
     child.on('exit', (code) => {
       if (code === 0) {

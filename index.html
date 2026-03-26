@@ -2520,6 +2520,9 @@
             // Daily checklist state
             const [checklist, setChecklist] = useState(() => loadFromStorage('reception_checklist_' + selectedDate, []));
             const [newChecklistItem, setNewChecklistItem] = useState('');
+            // Daily census state
+            const [censusCount, setCensusCount] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return String(d.count || ''); } catch(e) { return ''; } });
+            const [censusNames, setCensusNames] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return d.names || ''; } catch(e) { return ''; } });
             const [globalAlert, setGlobalAlert] = useState('');
             const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -2568,6 +2571,7 @@
             const [graphAuthToken, setGraphAuthToken] = useState(() => loadFromStorage('reception_graph_token', null));
             const dischargeFileRef = useRef(null);
             const chatEndRef = useRef(null);
+            const chatMsgsRef = useRef(null);
             const importBackupRef = useRef(null);
             const isAdmin = currentUser?.role === 'admin';
             const currentUserPreferences = { ...getDefaultUserPreferences(), ...((currentUser && currentUser.preferences) || {}) };
@@ -3289,6 +3293,9 @@
                 setReportLastEditAt(null);
                 setReportReadinessSnapshot(null);
                 setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
+                const censusData = loadFromStorage('reception_census_' + selectedDate, {});
+                setCensusCount(String(censusData.count || ''));
+                setCensusNames(censusData.names || '');
                 setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
                 const reportMeta = selectedReport.__meta || {};
@@ -3317,6 +3324,80 @@
                 return () => unsub();
             }, [selectedDate]);
 
+            // --- Daily Checklist functions ---
+            function saveChecklist(items) {
+                try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(items)); } catch(e) {}
+                if (isFirebaseAvailable && db) {
+                    db.collection('checklists').doc(selectedDate).set({ items, updatedAt: Date.now() }).catch(() => {});
+                }
+            }
+            function addChecklistItem() {
+                const text = (newChecklistItem || '').trim();
+                if (!text) return;
+                const next = [...checklist, { id: `cl-${Date.now()}`, text, checked: false }];
+                setChecklist(next);
+                saveChecklist(next);
+                setNewChecklistItem('');
+            }
+            function toggleChecklistItem(id) {
+                const next = checklist.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
+                setChecklist(next);
+                saveChecklist(next);
+            }
+            function removeChecklistItem(id) {
+                const next = checklist.filter(item => item.id !== id);
+                setChecklist(next);
+                saveChecklist(next);
+            }
+            function saveChecklistTemplate() {
+                const template = checklist.map(item => ({ text: item.text }));
+                try { localStorage.setItem('reception_checklist_template', JSON.stringify(template)); } catch(e) {}
+                if (isFirebaseAvailable && db) {
+                    db.collection('shared').doc('checklistTemplate').set({ items: template, updatedAt: Date.now() }).catch(() => {});
+                }
+                showNotification('Checklist template saved!');
+            }
+            function loadChecklistTemplate() {
+                const template = loadFromStorage('reception_checklist_template', []);
+                if (!template.length) { showNotification('No template saved yet. Add tasks and save as template first.', 'error'); return; }
+                const next = template.map(t => ({ id: `cl-${Date.now()}-${Math.random().toString(36).slice(2)}`, text: t.text, checked: false }));
+                setChecklist(next);
+                saveChecklist(next);
+                showNotification(`Loaded ${next.length} tasks from template.`);
+            }
+            // --- Census functions ---
+            function saveCensus(count, names) {
+                const data = { count: count || '', names: names || '', updatedAt: Date.now() };
+                try { localStorage.setItem('reception_census_' + selectedDate, JSON.stringify(data)); } catch(e) {}
+                if (isFirebaseAvailable && db) {
+                    db.collection('census').doc(selectedDate).set(data).catch(() => {});
+                }
+            }
+
+            // Live checklist + census sync per date
+            useEffect(() => {
+                if (!isFirebaseAvailable || !db) return;
+                const unsubs = [];
+                unsubs.push(db.collection('checklists').doc(selectedDate).onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data?.items) {
+                        setChecklist(data.items);
+                        try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(data.items)); } catch(e) {}
+                    }
+                }));
+                unsubs.push(db.collection('census').doc(selectedDate).onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data) {
+                        if (data.count !== undefined) setCensusCount(String(data.count || ''));
+                        if (data.names !== undefined) setCensusNames(data.names || '');
+                        try { localStorage.setItem('reception_census_' + selectedDate, JSON.stringify(data)); } catch(e) {}
+                    }
+                }));
+                return () => unsubs.forEach(u => u());
+            }, [selectedDate]);
+
             useEffect(() => {
                 if (!isReportDirty) return undefined;
                 const handleBeforeUnload = (event) => {
@@ -3332,6 +3413,19 @@
                 const intervalId = window.setInterval(() => setReportDirtyClock(Date.now()), 30000);
                 return () => window.clearInterval(intervalId);
             }, [isReportDirty]);
+
+            // Unconditional auto-save every 2 minutes whenever there are unsaved changes
+            useEffect(() => {
+                if (!isReportDirty || !currentUser) return undefined;
+                const intervalId = window.setInterval(() => {
+                    persistReport(reportData || {}, selectedDate, reportPriority);
+                    setIsReportDirty(false);
+                    setReportDirtySinceAt(null);
+                    setReportLastEditAt(null);
+                    showNotification(`Auto-saved shift report for ${selectedDate}.`, 'info');
+                }, 120000); // every 2 minutes
+                return () => window.clearInterval(intervalId);
+            }, [isReportDirty, reportData, selectedDate, reportPriority, currentUser?.id]);
 
             useEffect(() => {
                 if (!isReportDirty || !reportLastEditAt || !currentUser) return undefined;
@@ -4165,6 +4259,15 @@
                     setMessages(msgs);
                 }));
 
+                // Checklist template (shared, so any device can load it)
+                unsubs.push(db.collection('shared').doc('checklistTemplate').onSnapshot(snap => {
+                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
+                    const data = snap.data();
+                    if (data?.items) {
+                        try { localStorage.setItem('reception_checklist_template', JSON.stringify(data.items)); } catch(e) {}
+                    }
+                }));
+
                 // Global alert broadcast
                 unsubs.push(db.collection('shared').doc('alert').onSnapshot(snap => {
                     if (!snap.exists || snap.metadata.hasPendingWrites) return;
@@ -4760,15 +4863,57 @@
                                 {/* ── TEAM CHAT ── */}
                                 <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
                                     <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
-                                    <div className="overflow-y-auto no-scrollbar" style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: '1px solid var(--accent-soft)'}}>
+                                    <div ref={chatMsgsRef} className="overflow-y-auto no-scrollbar" style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: '1px solid var(--accent-soft)'}}>
                                         {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
                                         {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
                                     <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter' && chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
-                                        <button type="button" onClick={() => { if (chatInput.trim()) { const nm = { id: `msg-${Date.now()}`, text: chatInput, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>chatEndRef.current?.scrollIntoView({behavior:'smooth'}),100); }}} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
+                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                        <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
                                     </div>
+                                </div>
+
+                                {/* ── DAILY CHECKLIST ── */}
+                                <div className="report-checklist-card">
+                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'6px'}}>
+                                        <div style={{fontSize:'9px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em'}}>Daily Checklist</div>
+                                        {checklist.length > 0 && (
+                                            <div style={{fontSize:'10px', fontWeight:800, color: checklist.filter(i=>i.checked).length===checklist.length ? '#10b981' : 'var(--text-muted)'}}>
+                                                {checklist.filter(i=>i.checked).length}/{checklist.length}
+                                            </div>
+                                        )}
+                                    </div>
+                                    {checklist.length === 0 && <div style={{fontSize:'10px', color:'var(--text-muted)', fontStyle:'italic', marginBottom:'6px'}}>No tasks yet. Add one below.</div>}
+                                    <div style={{display:'flex', flexDirection:'column', gap:'3px', maxHeight:'160px', overflowY:'auto'}} className="no-scrollbar">
+                                        {checklist.map(item => (
+                                            <div key={item.id} style={{display:'flex', alignItems:'center', gap:'6px', padding:'2px 0'}}>
+                                                <input type="checkbox" checked={!!item.checked} onChange={()=>toggleChecklistItem(item.id)} style={{accentColor:'var(--accent)', width:'13px', height:'13px', cursor:'pointer', flexShrink:0}} />
+                                                <span style={{flex:1, fontSize:'11px', color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none', fontWeight:600, lineHeight:1.3}}>{item.text}</span>
+                                                <button type="button" onClick={()=>removeChecklistItem(item.id)} style={{background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:'13px', padding:'0 2px', lineHeight:1, flexShrink:0}}>×</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div style={{display:'flex', gap:'5px', marginTop:'8px'}}>
+                                        <input value={newChecklistItem} onChange={e=>setNewChecklistItem(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter' && newChecklistItem.trim()) addChecklistItem(); }} style={{flex:1, minWidth:0, background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'5px 8px', fontSize:'11px', color:'var(--text-primary)', fontWeight:600}} className="outline-none" placeholder="Add task..." />
+                                        <button type="button" onClick={addChecklistItem} className="fancy-btn" style={{flexShrink:0, padding:'5px 10px', fontSize:'10px'}}>ADD</button>
+                                    </div>
+                                    {isAdmin && (
+                                        <div style={{display:'flex', gap:'5px', marginTop:'6px'}}>
+                                            <button type="button" onClick={saveChecklistTemplate} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>SAVE TEMPLATE</button>
+                                            <button type="button" onClick={loadChecklistTemplate} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>LOAD TEMPLATE</button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* ── DAILY CENSUS ── */}
+                                <div className="report-checklist-card">
+                                    <div style={{fontSize:'9px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:'8px'}}>Daily Census</div>
+                                    <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'7px'}}>
+                                        <label style={{fontSize:'10px', fontWeight:700, color:'var(--text-muted)', flexShrink:0}}>Count</label>
+                                        <input type="number" min="0" value={censusCount} onChange={e=>setCensusCount(e.target.value)} onBlur={e=>saveCensus(e.target.value, censusNames)} style={{width:'64px', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'5px 7px', fontSize:'13px', color:'var(--text-primary)', fontWeight:800, textAlign:'center'}} className="outline-none" placeholder="0" />
+                                    </div>
+                                    <textarea value={censusNames} onChange={e=>setCensusNames(e.target.value)} onBlur={e=>saveCensus(censusCount, e.target.value)} style={{width:'100%', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'6px 8px', fontSize:'10px', color:'var(--text-primary)', fontWeight:600, height:'72px', resize:'vertical', boxSizing:'border-box'}} className="outline-none no-scrollbar" placeholder="Paste or type resident names (one per line)..." />
                                 </div>
 
                                 {isReportDirty && (
