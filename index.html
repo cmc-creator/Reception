@@ -2918,9 +2918,6 @@
             const [isChecklistManagerOpen, setIsChecklistManagerOpen] = useState(false);
             const [checklistTemplateRows, setChecklistTemplateRows] = useState(() => normalizeChecklistTemplateRows(loadFromStorage('reception_checklist_template', STANDARD_DAILY_CHECKLIST_TEMPLATE)));
             const [newChecklistTemplateRow, setNewChecklistTemplateRow] = useState({ text: '', assignee: 'all', note: '', required: true });
-            // Daily census state
-            const [censusCount, setCensusCount] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return String(d.count || ''); } catch(e) { return ''; } });
-            const [censusNames, setCensusNames] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return d.names || ''; } catch(e) { return ''; } });
             const [globalAlert, setGlobalAlert] = useState('');
             const [isPersonnelModalOpen, setIsPersonnelModalOpen] = useState(false);
             const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -3713,9 +3710,6 @@
                 setReportReadinessSnapshot(null);
                 const dayChecklist = normalizeChecklistItems(loadFromStorage('reception_checklist_' + selectedDate, []));
                 setChecklist(dayChecklist);
-                const censusData = loadFromStorage('reception_census_' + selectedDate, {});
-                setCensusCount(String(censusData.count || ''));
-                setCensusNames(censusData.names || '');
                 setReportJumpDate(selectedDate);
                 const selectedReport = allReports[selectedDate] || {};
                 const reportMeta = selectedReport.__meta || {};
@@ -3858,16 +3852,7 @@
                 saveChecklist(next);
                 showNotification(`Applied ${next.length} checklist task${next.length === 1 ? '' : 's'} to ${selectedDate}.`, 'success');
             }
-            // --- Census functions ---
-            function saveCensus(count, names) {
-                const data = { count: count || '', names: names || '', updatedAt: Date.now() };
-                try { localStorage.setItem('reception_census_' + selectedDate, JSON.stringify(data)); } catch(e) {}
-                if (isFirebaseAvailable && db) {
-                    db.collection('census').doc(selectedDate).set(data).catch(() => {});
-                }
-            }
-
-            // Live checklist + census sync per date
+            // Live checklist sync per date
             useEffect(() => {
                 if (!isFirebaseAvailable || !db) return;
                 const unsubs = [];
@@ -3878,15 +3863,6 @@
                         const normalized = normalizeChecklistItems(data.items);
                         setChecklist(normalized);
                         try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(normalized)); } catch(e) {}
-                    }
-                }));
-                unsubs.push(db.collection('census').doc(selectedDate).onSnapshot(snap => {
-                    if (!snap.exists || snap.metadata.hasPendingWrites) return;
-                    const data = snap.data();
-                    if (data) {
-                        if (data.count !== undefined) setCensusCount(String(data.count || ''));
-                        if (data.names !== undefined) setCensusNames(data.names || '');
-                        try { localStorage.setItem('reception_census_' + selectedDate, JSON.stringify(data)); } catch(e) {}
                     }
                 }));
                 return () => unsubs.forEach(u => u());
@@ -4814,8 +4790,6 @@
 
             // --- Schedule Failsafe (accessible directly on calendar, no admin gate) ---
             // NOTE: These operate on SHIFTS/SCHEDULE data only.
-            // The Daily Census (resident count + names in the sidebar) is a completely
-            // separate feature and shares no data with the staff calendar schedule.
             function saveScheduleSnapshot() {
                 const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
                 const key = `schedule_snapshot_${yIdx}_${String(mIdx+1).padStart(2,'0')}`;
@@ -5465,16 +5439,6 @@
                                         <input value={chatInput} onFocus={() => markChatSeen(Date.now())} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
                                         <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
                                     </div>
-                                </div>
-
-                                {/* -- DAILY CENSUS -- */}
-                                <div className="report-checklist-card">
-                                    <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:'10px'}}>Daily Census</div>
-                                    <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'7px'}}>
-                                        <label style={{fontSize:'10px', fontWeight:700, color:'var(--text-primary)', opacity:0.72, flexShrink:0}}>Count</label>
-                                        <input type="number" min="0" value={censusCount} onChange={e=>setCensusCount(e.target.value)} onBlur={e=>saveCensus(e.target.value, censusNames)} style={{width:'64px', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'5px 7px', fontSize:'13px', color:'var(--text-primary)', fontWeight:800, textAlign:'center'}} className="outline-none" placeholder="0" />
-                                    </div>
-                                    <textarea value={censusNames} onChange={e=>setCensusNames(e.target.value)} onBlur={e=>saveCensus(censusCount, e.target.value)} style={{width:'100%', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'6px 8px', fontSize:'10px', color:'var(--text-primary)', fontWeight:600, height:'72px', resize:'vertical', boxSizing:'border-box'}} className="outline-none no-scrollbar" placeholder="Paste or type resident names (one per line)..." />
                                 </div>
 
                                 {isReportDirty && (
