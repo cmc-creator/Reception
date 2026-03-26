@@ -2656,6 +2656,7 @@
             const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
             const [commandQuery, setCommandQuery] = useState('');
             const [achievementWindow, setAchievementWindow] = useState('month');
+            const [chatLastSeenAt, setChatLastSeenAt] = useState(0);
             
             function showNotification(msg, type = 'info', persistent = false) {
                 const id = Date.now();
@@ -2675,6 +2676,14 @@
             }
             function markNotificationRead(id) {
                 setNotifications(n => n.map(notif => notif.id === id ? {...notif, read: true} : notif));
+            }
+
+            function markChatSeen(seenAt = Date.now()) {
+                const safeSeenAt = Math.max(Number(seenAt) || 0, Number(chatLastSeenAt) || 0);
+                setChatLastSeenAt(safeSeenAt);
+                try {
+                    localStorage.setItem(`reception_chat_last_seen_${currentUser?.id || 'guest'}`, String(safeSeenAt));
+                } catch (_) {}
             }
 
             function updateSettings(partialSettings) {
@@ -3353,6 +3362,12 @@
                 setGlobalAlert(loadedAlert);
                 setAllReports(loadedReports);
             }
+
+            useEffect(() => {
+                const key = `reception_chat_last_seen_${currentUser?.id || 'guest'}`;
+                const saved = Number(loadFromStorage(key, 0)) || 0;
+                setChatLastSeenAt(saved);
+            }, [currentUser?.id]);
 
             // --- Load report data and checklist when selected date changes ---
             useEffect(() => {
@@ -4881,6 +4896,13 @@
                 { id: 'history', icon: '🗂', title: 'Report Browser', hint: 'Jump to a saved handoff instantly', run: openReportHistory }
             ];
             const unreadNotificationCount = notifications.filter(n => !n.read).length;
+            const currentChatIdentity = String(currentUser?.displayName || currentUser?.username || 'USER').toLowerCase();
+            const unreadChatCount = messages.filter(message => {
+                const createdAt = Number(message?.createdAt || 0);
+                if (!createdAt || createdAt <= chatLastSeenAt) return false;
+                const author = String(message?.user || '').toLowerCase();
+                return !!author && author !== currentChatIdentity;
+            }).length;
             const activeMonthShiftCount = Object.keys(events).reduce((count, dateKey) => {
                 const date = new Date(`${dateKey}T00:00:00`);
                 if (date.getFullYear() !== currentDate.getFullYear() || date.getMonth() !== currentDate.getMonth()) return count;
@@ -4997,7 +5019,6 @@
                                     <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
                                         {isFirebaseAvailable ? '🌐 LIVE SYNC' : '💾 LOCAL MODE'}
                                     </div>
-                                    <div className="data-chip header-chip">{platformModeLabel}</div>
                                 </div>
                                 <input value={globalAlert} onChange={e => {
                                     if (!isAdmin && !appSettings.allowStaffAlertEdits) return;
@@ -5011,7 +5032,7 @@
                                 </div>
                             </div>
                             <div className="header-action-bank">
-                                <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Command Palette (Ctrl/Cmd + K)">⌘K Command</button>
+                                <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>
@@ -5049,15 +5070,27 @@
 
                                 {/* ── TEAM CHAT ── */}
                                 <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
-                                    <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
-                                    <div ref={chatMsgsRef} className="overflow-y-auto no-scrollbar" style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: '1px solid var(--accent-soft)'}}>
+                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'}}>
+                                        <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
+                                        {unreadChatCount > 0 && (
+                                            <div style={{fontSize: '9px', fontWeight: 900, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.06em'}}>
+                                                {unreadChatCount} new
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div
+                                        ref={chatMsgsRef}
+                                        className="overflow-y-auto no-scrollbar"
+                                        onClick={() => markChatSeen(Date.now())}
+                                        style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: unreadChatCount > 0 ? '1px solid rgba(248,113,113,0.65)' : '1px solid var(--accent-soft)'}}
+                                    >
                                         {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
                                         {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
                                         <div ref={chatEndRef} />
                                     </div>
                                     <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
-                                        <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
-                                        <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
+                                        <input value={chatInput} onFocus={() => markChatSeen(Date.now())} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                        <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
                                     </div>
                                 </div>
 
