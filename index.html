@@ -5431,6 +5431,16 @@
                                     </div>
                                 </div>
 
+                                {/* -- DAILY CENSUS -- */}
+                                <div className="report-checklist-card">
+                                    <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:'10px'}}>Daily Census</div>
+                                    <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'7px'}}>
+                                        <label style={{fontSize:'10px', fontWeight:700, color:'var(--text-primary)', opacity:0.72, flexShrink:0}}>Count</label>
+                                        <input type="number" min="0" value={censusCount} onChange={e=>setCensusCount(e.target.value)} onBlur={e=>saveCensus(e.target.value, censusNames)} style={{width:'64px', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'5px 7px', fontSize:'13px', color:'var(--text-primary)', fontWeight:800, textAlign:'center'}} className="outline-none" placeholder="0" />
+                                    </div>
+                                    <textarea value={censusNames} onChange={e=>setCensusNames(e.target.value)} onBlur={e=>saveCensus(censusCount, e.target.value)} style={{width:'100%', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'6px 8px', fontSize:'10px', color:'var(--text-primary)', fontWeight:600, height:'72px', resize:'vertical', boxSizing:'border-box'}} className="outline-none no-scrollbar" placeholder="Paste or type resident names (one per line)..." />
+                                </div>
+
                                 {isReportDirty && (
                                     <div className="rounded-md flex items-center justify-between gap-2" style={{padding: '6px 8px', border: `1px solid ${reportDirtyIsStale ? 'rgba(239,68,68,0.6)' : 'rgba(245,158,11,0.45)'}`, background: reportDirtyIsStale ? 'rgba(127,29,29,0.35)' : 'rgba(120,53,15,0.32)'}}>
                                         <div className="text-[10px]" style={{color: reportDirtyIsStale ? '#fecaca' : '#fcd34d', fontWeight: 700}}>
