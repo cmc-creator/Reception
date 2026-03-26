@@ -4812,6 +4812,42 @@
                 return () => unsubs.forEach(u => u());
             }, []);
 
+            // --- Schedule Failsafe (accessible directly on calendar, no admin gate) ---
+            // NOTE: These operate on SHIFTS/SCHEDULE data only.
+            // The Daily Census (resident count + names in the sidebar) is a completely
+            // separate feature and shares no data with the staff calendar schedule.
+            function saveScheduleSnapshot() {
+                const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                const key = `schedule_snapshot_${yIdx}_${String(mIdx+1).padStart(2,'0')}`;
+                saveToStorage(key, events);
+                showNotification(`Schedule snapshot saved for ${currentDate.toLocaleDateString(undefined, {month:'long', year:'numeric'})}.`);
+            }
+
+            function restoreScheduleSnapshot() {
+                const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                const key = `schedule_snapshot_${yIdx}_${String(mIdx+1).padStart(2,'0')}`;
+                const snapshot = loadFromStorage(key);
+                if (!snapshot) {
+                    showNotification('No snapshot found for this month. Save one first.', 'error');
+                    return;
+                }
+                if (!window.confirm('Restore saved schedule snapshot? This will overwrite all current shifts for every month.')) return;
+                setEvents(snapshot);
+                saveToStorage(STORAGE_KEYS.SHIFTS, snapshot);
+                showNotification('Schedule snapshot restored.');
+            }
+
+            function clearMonthSchedule() {
+                const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
+                const monthLabel = currentDate.toLocaleDateString(undefined, {month:'long', year:'numeric'});
+                if (!window.confirm(`Clear ALL shifts for ${monthLabel}? This cannot be undone unless you have a saved snapshot.`)) return;
+                const prefix = `${yIdx}-${String(mIdx+1).padStart(2,'0')}-`;
+                const updated = Object.fromEntries(Object.entries(events).filter(([k]) => !k.startsWith(prefix)));
+                setEvents(updated);
+                saveToStorage(STORAGE_KEYS.SHIFTS, updated);
+                showNotification(`All shifts cleared for ${monthLabel}.`, 'error');
+            }
+
             // --- Admin Master Reset Pattern ---
             // --- Baseline Save/Restore ---
             function saveBaseline() {
@@ -5585,6 +5621,31 @@
                                             setIsBulkAssignOpen(true);
                                         }}>BULK ASSIGN</button>
                                     </div>
+                                </div>
+                                {/* SCHEDULE FAILSAFE STRIP */}
+                                <div className="no-print" style={{display:'flex', alignItems:'center', gap:'8px', padding:'8px 2px', marginBottom:'4px', borderBottom:'1px solid var(--accent-soft)'}}>
+                                    <div style={{fontSize:'9px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.18em', flexShrink:0}}>Schedule Failsafe</div>
+                                    <div style={{display:'flex', gap:'6px', flexWrap:'wrap'}}>
+                                        <button
+                                            onClick={saveScheduleSnapshot}
+                                            className="fancy-btn"
+                                            style={{padding:'6px 12px', fontSize:'9px', background:'#0284c7'}}
+                                            title="Save a snapshot of this month's shifts so you can restore later"
+                                        >💾 SAVE SNAPSHOT</button>
+                                        <button
+                                            onClick={restoreScheduleSnapshot}
+                                            className="fancy-btn"
+                                            style={{padding:'6px 12px', fontSize:'9px', background:'#0ea5e9'}}
+                                            title="Restore this month's shifts from the last saved snapshot"
+                                        >♻️ RESTORE SNAPSHOT</button>
+                                        <button
+                                            onClick={clearMonthSchedule}
+                                            className="fancy-btn"
+                                            style={{padding:'6px 12px', fontSize:'9px', background:'#dc2626'}}
+                                            title="Clear all shifts for the current month only"
+                                        >🗑 CLEAR THIS MONTH</button>
+                                    </div>
+                                    <div style={{fontSize:'9px', color:'var(--text-primary)', opacity:0.5, marginLeft:'auto', flexShrink:0}}>Separate from Daily Census</div>
                                 </div>
                                 <div className="cal-staff-tray no-print">
                                     <div className="cal-staff-tray__kicker">Drag Staff Badges To Calendar</div>
