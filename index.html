@@ -4973,7 +4973,7 @@
                             </div>
                             <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Command Palette (Ctrl/Cmd + K)">⌘K Command</button>
-                                <button onClick={openChecklistBuilder} className="fancy-btn" style={{padding: '8px 12px', fontSize: '10px', background: '#0284c7'}} title="Jump to checklist builder">CHECKLIST BUILDER</button>
+                                <button onClick={openChecklistBuilder} className="fancy-btn" style={{padding: '9px 14px', fontSize: '11px', background: '#0284c7'}} title="Jump to checklist builder">CHECKLIST BUILDER</button>
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>
@@ -5022,43 +5022,41 @@
 
                                 {/* ── DAILY CHECKLIST ── */}
                                 <div ref={checklistBuilderRef} className="report-checklist-card">
-                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'6px', marginBottom:'8px'}}>
-                                        <div style={{fontSize:'10px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.12em', minWidth:0, flex:'1 1 auto'}}>Daily Checklist</div>
+                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px', marginBottom:'8px'}}>
+                                        <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.12em', minWidth:0, flex:'1 1 auto'}}>Daily Checklist</div>
                                         <div style={{display:'flex', alignItems:'center', gap:'6px', flex:'0 1 auto', minWidth:0}}>
                                             {checklist.length > 0 && (
                                                 <div style={{fontSize:'10px', fontWeight:800, color: checklist.filter(i=>i.checked).length===checklist.length ? '#10b981' : 'var(--text-muted)'}}>
                                                     {checklist.filter(i=>i.checked).length}/{checklist.length}
                                                 </div>
                                             )}
-                                            <button type="button" onClick={() => setIsChecklistCreatorOpen(open => !open)} className="fancy-btn" style={{padding:'3px 7px', fontSize:'8px', lineHeight:1.2, whiteSpace:'nowrap', background:'rgba(59,130,246,0.9)'}}>
-                                                {isChecklistCreatorOpen ? 'HIDE CREATOR' : 'CREATE TASK'}
+                                            <button type="button" onClick={() => setIsChecklistCreatorOpen(open => !open)} className="fancy-btn" style={{padding:'6px 10px', fontSize:'10px', lineHeight:1.2, whiteSpace:'nowrap', background:'rgba(59,130,246,0.9)'}}>
+                                                {isChecklistCreatorOpen ? 'HIDE BUILDER' : 'SHOW BUILDER'}
                                             </button>
                                         </div>
                                     </div>
 
-                                    {isChecklistCreatorOpen && (
-                                        <div style={{display:'flex', flexDirection:'column', gap:'6px', marginBottom:'8px', background:'rgba(15,23,42,0.35)', border:'1px solid var(--accent-soft)', borderRadius:'8px', padding:'8px'}}>
-                                            <div style={{fontSize:'9px', color:'var(--text-muted)', letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:800}}>Checklist Builder</div>
-                                            <input value={newChecklistItem} onChange={e=>setNewChecklistItem(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter' && newChecklistItem.trim()) addChecklistItem(); }} style={{width:'100%', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'6px 8px', fontSize:'11px', color:'var(--text-primary)', fontWeight:600, boxSizing:'border-box'}} className="outline-none" placeholder="Task your lead wants staff to complete..." />
-                                            <div style={{display:'flex', gap:'6px', alignItems:'center'}}>
-                                                <select value={newChecklistAssignee} onChange={e=>setNewChecklistAssignee(e.target.value)} className="panel-input" style={{padding:'5px 8px', fontSize:'10px', flex:1}}>
+                                    <div style={{display:isChecklistCreatorOpen ? 'flex' : 'none', flexDirection:'column', gap:'8px', marginBottom:'10px', background:'rgba(15,23,42,0.35)', border:'1px solid var(--accent-soft)', borderRadius:'8px', padding:'10px'}}>
+                                            <div style={{fontSize:'10px', color:'var(--text-muted)', letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:800}}>Checklist Builder</div>
+                                            <input value={newChecklistItem} onChange={e=>setNewChecklistItem(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter' && newChecklistItem.trim()) addChecklistItem(); }} style={{width:'100%', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'8px 10px', fontSize:'12px', color:'var(--text-primary)', fontWeight:600, boxSizing:'border-box'}} className="outline-none" placeholder="Task your lead wants staff to complete..." />
+                                            <div style={{display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap'}}>
+                                                <select value={newChecklistAssignee} onChange={e=>setNewChecklistAssignee(e.target.value)} className="panel-input" style={{padding:'7px 10px', fontSize:'11px', flex:'1 1 180px'}}>
                                                     <option value="all">Assign to Everyone</option>
                                                     {Object.entries(staff).map(([staffId, member]) => (
                                                         <option key={staffId} value={staffId}>{member.name}</option>
                                                     ))}
                                                 </select>
-                                                <label style={{display:'flex', alignItems:'center', gap:'4px', fontSize:'10px', color:'var(--text-muted)', whiteSpace:'nowrap'}}>
+                                                <label style={{display:'flex', alignItems:'center', gap:'5px', fontSize:'11px', color:'var(--text-muted)', whiteSpace:'nowrap'}}>
                                                     <input type="checkbox" checked={newChecklistRequired} onChange={e=>setNewChecklistRequired(e.target.checked)} style={{accentColor:'var(--accent)'}} />
                                                     Required
                                                 </label>
-                                                <button type="button" onClick={addChecklistItem} className="fancy-btn" style={{padding:'6px 10px', fontSize:'10px', flexShrink:0}}>ADD TASK</button>
+                                                <button type="button" onClick={addChecklistItem} className="fancy-btn" style={{padding:'8px 12px', fontSize:'11px', flexShrink:0}}>ADD TASK</button>
                                             </div>
-                                        </div>
-                                    )}
+                                    </div>
 
                                     <div style={{display:'flex', gap:'5px', marginBottom:'6px'}}>
-                                        <button type="button" onClick={() => setChecklistView('all')} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'all' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'all' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>ALL TASKS</button>
-                                        <button type="button" onClick={() => setChecklistView('mine')} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'mine' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'mine' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>MY TASKS</button>
+                                        <button type="button" onClick={() => setChecklistView('all')} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'all' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'all' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>ALL TASKS</button>
+                                        <button type="button" onClick={() => setChecklistView('mine')} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'mine' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'mine' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>MY TASKS</button>
                                     </div>
 
                                     {checklist.length === 0 && <div style={{fontSize:'10px', color:'var(--text-muted)', fontStyle:'italic', marginBottom:'6px'}}>No tasks yet. Load a template or add tasks for today.</div>}
@@ -5089,9 +5087,9 @@
                                     </div>
                                     {isAdmin && (
                                         <div style={{display:'flex', gap:'5px', marginTop:'6px'}}>
-                                            <button type="button" onClick={saveChecklistTemplate} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>SAVE TEMPLATE</button>
-                                            <button type="button" onClick={loadChecklistTemplate} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>LOAD TEMPLATE</button>
-                                            <button type="button" onClick={() => ensureDailyChecklistSeeded(true)} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>RESET TODAY</button>
+                                            <button type="button" onClick={saveChecklistTemplate} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>SAVE TEMPLATE</button>
+                                            <button type="button" onClick={loadChecklistTemplate} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>LOAD TEMPLATE</button>
+                                            <button type="button" onClick={() => ensureDailyChecklistSeeded(true)} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>RESET TODAY</button>
                                         </div>
                                     )}
                                 </div>
