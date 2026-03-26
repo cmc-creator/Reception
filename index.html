@@ -2464,6 +2464,53 @@
             { id: 'incident', label: '⚠️ Incident Report', content: { incidents: '[TIME] - [DESCRIPTION]\\n[ACTION TAKEN]\\n[FOLLOW-UP NEEDED]', handoff: 'Review incident notes above' }}
         ];
 
+        const STANDARD_DAILY_CHECKLIST_TEMPLATE = [
+            { text: 'Verify overnight handoff and critical alerts', assignee: 'all', required: true },
+            { text: 'Complete morning census and update names', assignee: 'all', required: true },
+            { text: 'Restock front desk forms, pens, and badges', assignee: 'all', required: true },
+            { text: 'Audit visitor log for completeness', assignee: 'all', required: true },
+            { text: 'Confirm lobby readiness and safety sweep', assignee: 'all', required: true },
+            { text: 'Prepare end-of-shift handoff note', assignee: 'all', required: true }
+        ];
+
+        function createChecklistItem(text, assignee = 'all', required = true) {
+            return {
+                id: `cl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                text: String(text || '').trim(),
+                assignee: assignee || 'all',
+                required: required !== false,
+                checked: false,
+                completedBy: null,
+                completedAt: null
+            };
+        }
+
+        function normalizeChecklistItems(rawItems) {
+            const safeItems = Array.isArray(rawItems) ? rawItems : [];
+            return safeItems
+                .map(item => {
+                    const text = String(item?.text || '').trim();
+                    if (!text) return null;
+                    return {
+                        id: item?.id || `cl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        text,
+                        assignee: item?.assignee || 'all',
+                        required: item?.required !== false,
+                        checked: !!item?.checked,
+                        completedBy: item?.completedBy || null,
+                        completedAt: item?.completedAt || null
+                    };
+                })
+                .filter(Boolean);
+        }
+
+        function buildChecklistFromTemplate(templateItems) {
+            return normalizeChecklistItems(
+                (Array.isArray(templateItems) ? templateItems : [])
+                    .map(entry => createChecklistItem(entry?.text, entry?.assignee || 'all', entry?.required !== false))
+            );
+        }
+
         const REPORT_SUBMIT_REQUIRED_FIELD_IDS = ['handoff', 'notes'];
         const REPORT_MIN_FIELDS_FOR_SUBMIT = 3;
 
@@ -2518,8 +2565,10 @@
             const [messages, setMessages] = useState([]);
             const [reportData, setReportData] = useState({});
             // Daily checklist state
-            const [checklist, setChecklist] = useState(() => loadFromStorage('reception_checklist_' + selectedDate, []));
+            const [checklist, setChecklist] = useState(() => normalizeChecklistItems(loadFromStorage('reception_checklist_' + selectedDate, [])));
             const [newChecklistItem, setNewChecklistItem] = useState('');
+            const [newChecklistAssignee, setNewChecklistAssignee] = useState('all');
+            const [checklistView, setChecklistView] = useState('all');
             // Daily census state
             const [censusCount, setCensusCount] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return String(d.count || ''); } catch(e) { return ''; } });
             const [censusNames, setCensusNames] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return d.names || ''; } catch(e) { return ''; } });
@@ -3292,7 +3341,8 @@
                 setReportDirtySinceAt(null);
                 setReportLastEditAt(null);
                 setReportReadinessSnapshot(null);
-                setChecklist(loadFromStorage('reception_checklist_' + selectedDate, []));
+                const dayChecklist = normalizeChecklistItems(loadFromStorage('reception_checklist_' + selectedDate, []));
+                setChecklist(dayChecklist);
                 const censusData = loadFromStorage('reception_census_' + selectedDate, {});
                 setCensusCount(String(censusData.count || ''));
                 setCensusNames(censusData.names || '');
@@ -3326,31 +3376,74 @@
 
             // --- Daily Checklist functions ---
             function saveChecklist(items) {
-                try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(items)); } catch(e) {}
+                const normalized = normalizeChecklistItems(items);
+                try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(normalized)); } catch(e) {}
                 if (isFirebaseAvailable && db) {
-                    db.collection('checklists').doc(selectedDate).set({ items, updatedAt: Date.now() }).catch(() => {});
+                    db.collection('checklists').doc(selectedDate).set({ items: normalized, updatedAt: Date.now() }).catch(() => {});
                 }
             }
+
+            function getChecklistTemplate() {
+                const savedTemplate = loadFromStorage('reception_checklist_template', []);
+                if (Array.isArray(savedTemplate) && savedTemplate.length > 0) {
+                    return savedTemplate;
+                }
+                return STANDARD_DAILY_CHECKLIST_TEMPLATE;
+            }
+
+            function ensureDailyChecklistSeeded(force = false) {
+                const template = getChecklistTemplate();
+                if (!template.length) return;
+                if (!force && checklist.length > 0) return;
+                const seeded = buildChecklistFromTemplate(template);
+                setChecklist(seeded);
+                saveChecklist(seeded);
+            }
+
             function addChecklistItem() {
                 const text = (newChecklistItem || '').trim();
                 if (!text) return;
-                const next = [...checklist, { id: `cl-${Date.now()}`, text, checked: false }];
+                const next = [...checklist, createChecklistItem(text, newChecklistAssignee, true)];
                 setChecklist(next);
                 saveChecklist(next);
                 setNewChecklistItem('');
             }
+
+            function checklistAssigneeLabel(item) {
+                if (!item?.assignee || item.assignee === 'all') return 'Everyone';
+                return staff[item.assignee]?.name || users[item.assignee]?.displayName || item.assignee;
+            }
+
             function toggleChecklistItem(id) {
-                const next = checklist.map(item => item.id === id ? { ...item, checked: !item.checked } : item);
+                const actor = currentUser?.displayName || currentUser?.username || 'Staff';
+                const now = Date.now();
+                const next = checklist.map(item => {
+                    if (item.id !== id) return item;
+                    const checked = !item.checked;
+                    return {
+                        ...item,
+                        checked,
+                        completedBy: checked ? actor : null,
+                        completedAt: checked ? now : null
+                    };
+                });
                 setChecklist(next);
                 saveChecklist(next);
             }
+
+            function updateChecklistAssignee(id, assignee) {
+                const next = checklist.map(item => item.id === id ? { ...item, assignee: assignee || 'all' } : item);
+                setChecklist(next);
+                saveChecklist(next);
+            }
+
             function removeChecklistItem(id) {
                 const next = checklist.filter(item => item.id !== id);
                 setChecklist(next);
                 saveChecklist(next);
             }
             function saveChecklistTemplate() {
-                const template = checklist.map(item => ({ text: item.text }));
+                const template = checklist.map(item => ({ text: item.text, assignee: item.assignee || 'all', required: item.required !== false }));
                 try { localStorage.setItem('reception_checklist_template', JSON.stringify(template)); } catch(e) {}
                 if (isFirebaseAvailable && db) {
                     db.collection('shared').doc('checklistTemplate').set({ items: template, updatedAt: Date.now() }).catch(() => {});
@@ -3358,9 +3451,9 @@
                 showNotification('Checklist template saved!');
             }
             function loadChecklistTemplate() {
-                const template = loadFromStorage('reception_checklist_template', []);
+                const template = getChecklistTemplate();
                 if (!template.length) { showNotification('No template saved yet. Add tasks and save as template first.', 'error'); return; }
-                const next = template.map(t => ({ id: `cl-${Date.now()}-${Math.random().toString(36).slice(2)}`, text: t.text, checked: false }));
+                const next = buildChecklistFromTemplate(template);
                 setChecklist(next);
                 saveChecklist(next);
                 showNotification(`Loaded ${next.length} tasks from template.`);
@@ -3382,8 +3475,9 @@
                     if (!snap.exists || snap.metadata.hasPendingWrites) return;
                     const data = snap.data();
                     if (data?.items) {
-                        setChecklist(data.items);
-                        try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(data.items)); } catch(e) {}
+                        const normalized = normalizeChecklistItems(data.items);
+                        setChecklist(normalized);
+                        try { localStorage.setItem('reception_checklist_' + selectedDate, JSON.stringify(normalized)); } catch(e) {}
                     }
                 }));
                 unsubs.push(db.collection('census').doc(selectedDate).onSnapshot(snap => {
@@ -3396,6 +3490,10 @@
                     }
                 }));
                 return () => unsubs.forEach(u => u());
+            }, [selectedDate]);
+
+            useEffect(() => {
+                ensureDailyChecklistSeeded(false);
             }, [selectedDate]);
 
             useEffect(() => {
@@ -4884,12 +4982,34 @@
                                             </div>
                                         )}
                                     </div>
-                                    {checklist.length === 0 && <div style={{fontSize:'10px', color:'var(--text-muted)', fontStyle:'italic', marginBottom:'6px'}}>No tasks yet. Add one below.</div>}
+
+                                    <div style={{display:'flex', gap:'5px', marginBottom:'6px'}}>
+                                        <button type="button" onClick={() => setChecklistView('all')} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'all' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'all' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>ALL TASKS</button>
+                                        <button type="button" onClick={() => setChecklistView('mine')} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'mine' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'mine' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>MY TASKS</button>
+                                    </div>
+
+                                    {checklist.length === 0 && <div style={{fontSize:'10px', color:'var(--text-muted)', fontStyle:'italic', marginBottom:'6px'}}>No tasks yet. Load a template or add tasks for today.</div>}
                                     <div style={{display:'flex', flexDirection:'column', gap:'3px', maxHeight:'160px', overflowY:'auto'}} className="no-scrollbar">
-                                        {checklist.map(item => (
+                                        {checklist
+                                            .filter(item => checklistView === 'all' || item.assignee === 'all' || item.assignee === currentUser?.id)
+                                            .map(item => (
                                             <div key={item.id} style={{display:'flex', alignItems:'center', gap:'6px', padding:'2px 0'}}>
                                                 <input type="checkbox" checked={!!item.checked} onChange={()=>toggleChecklistItem(item.id)} style={{accentColor:'var(--accent)', width:'13px', height:'13px', cursor:'pointer', flexShrink:0}} />
-                                                <span style={{flex:1, fontSize:'11px', color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none', fontWeight:600, lineHeight:1.3}}>{item.text}</span>
+                                                <div style={{flex:1, minWidth:0}}>
+                                                    <div style={{fontSize:'11px', color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none', fontWeight:600, lineHeight:1.3}}>{item.text}</div>
+                                                    <div style={{fontSize:'9px', color:'var(--text-muted)', marginTop:'1px', lineHeight:1.2}}>
+                                                        Assigned: {checklistAssigneeLabel(item)}
+                                                        {item.completedBy ? ` • Done by ${item.completedBy}${item.completedAt ? ` at ${new Date(item.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}` : ''}
+                                                    </div>
+                                                    {isAdmin && (
+                                                        <select value={item.assignee || 'all'} onChange={e => updateChecklistAssignee(item.id, e.target.value)} className="panel-input" style={{marginTop:'3px', padding:'3px 5px', fontSize:'9px', width:'100%', maxWidth:'140px'}}>
+                                                            <option value="all">Assign to Everyone</option>
+                                                            {Object.entries(staff).map(([staffId, member]) => (
+                                                                <option key={staffId} value={staffId}>{member.name}</option>
+                                                            ))}
+                                                        </select>
+                                                    )}
+                                                </div>
                                                 <button type="button" onClick={()=>removeChecklistItem(item.id)} style={{background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:'13px', padding:'0 2px', lineHeight:1, flexShrink:0}}>×</button>
                                             </div>
                                         ))}
@@ -4898,10 +5018,19 @@
                                         <input value={newChecklistItem} onChange={e=>setNewChecklistItem(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter' && newChecklistItem.trim()) addChecklistItem(); }} style={{flex:1, minWidth:0, background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'5px 8px', fontSize:'11px', color:'var(--text-primary)', fontWeight:600}} className="outline-none" placeholder="Add task..." />
                                         <button type="button" onClick={addChecklistItem} className="fancy-btn" style={{flexShrink:0, padding:'5px 10px', fontSize:'10px'}}>ADD</button>
                                     </div>
+                                    <div style={{marginTop:'5px'}}>
+                                        <select value={newChecklistAssignee} onChange={e=>setNewChecklistAssignee(e.target.value)} className="panel-input" style={{padding:'5px 8px', fontSize:'10px'}}>
+                                            <option value="all">Assign new task to Everyone</option>
+                                            {Object.entries(staff).map(([staffId, member]) => (
+                                                <option key={staffId} value={staffId}>{member.name}</option>
+                                            ))}
+                                        </select>
+                                    </div>
                                     {isAdmin && (
                                         <div style={{display:'flex', gap:'5px', marginTop:'6px'}}>
                                             <button type="button" onClick={saveChecklistTemplate} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>SAVE TEMPLATE</button>
                                             <button type="button" onClick={loadChecklistTemplate} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>LOAD TEMPLATE</button>
+                                            <button type="button" onClick={() => ensureDailyChecklistSeeded(true)} style={{flex:1, padding:'4px 6px', fontSize:'9px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>RESET TODAY</button>
                                         </div>
                                     )}
                                 </div>
