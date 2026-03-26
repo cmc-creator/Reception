@@ -2465,19 +2465,20 @@
         ];
 
         const STANDARD_DAILY_CHECKLIST_TEMPLATE = [
-            { text: 'Verify overnight handoff and critical alerts', assignee: 'all', required: true },
-            { text: 'Complete morning census and update names', assignee: 'all', required: true },
-            { text: 'Restock front desk forms, pens, and badges', assignee: 'all', required: true },
-            { text: 'Audit visitor log for completeness', assignee: 'all', required: true },
-            { text: 'Confirm lobby readiness and safety sweep', assignee: 'all', required: true },
-            { text: 'Prepare end-of-shift handoff note', assignee: 'all', required: true }
+            { text: 'Verify overnight handoff and critical alerts', assignee: 'all', note: '', required: true },
+            { text: 'Complete morning census and update names', assignee: 'all', note: '', required: true },
+            { text: 'Restock front desk forms, pens, and badges', assignee: 'all', note: '', required: true },
+            { text: 'Audit visitor log for completeness', assignee: 'all', note: '', required: true },
+            { text: 'Confirm lobby readiness and safety sweep', assignee: 'all', note: '', required: true },
+            { text: 'Prepare end-of-shift handoff note', assignee: 'all', note: '', required: true }
         ];
 
-        function createChecklistItem(text, assignee = 'all', required = true) {
+        function createChecklistItem(text, assignee = 'all', required = true, note = '') {
             return {
                 id: `cl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                 text: String(text || '').trim(),
                 assignee: assignee || 'all',
+                note: String(note || '').trim(),
                 required: required !== false,
                 checked: false,
                 completedBy: null,
@@ -2495,6 +2496,7 @@
                         id: item?.id || `cl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
                         text,
                         assignee: item?.assignee || 'all',
+                        note: String(item?.note || '').trim(),
                         required: item?.required !== false,
                         checked: !!item?.checked,
                         completedBy: item?.completedBy || null,
@@ -2507,8 +2509,21 @@
         function buildChecklistFromTemplate(templateItems) {
             return normalizeChecklistItems(
                 (Array.isArray(templateItems) ? templateItems : [])
-                    .map(entry => createChecklistItem(entry?.text, entry?.assignee || 'all', entry?.required !== false))
+                    .map(entry => createChecklistItem(entry?.text, entry?.assignee || 'all', entry?.required !== false, entry?.note || ''))
             );
+        }
+
+        function normalizeChecklistTemplateRows(rows) {
+            const safeRows = Array.isArray(rows) ? rows : [];
+            return safeRows
+                .map((row, index) => ({
+                    id: row?.id || `tmpl-${Date.now()}-${index}`,
+                    text: String(row?.text || '').trim(),
+                    assignee: row?.assignee || 'all',
+                    note: String(row?.note || '').trim(),
+                    required: row?.required !== false
+                }))
+                .filter(row => row.text);
         }
 
         const REPORT_SUBMIT_REQUIRED_FIELD_IDS = ['handoff', 'notes'];
@@ -2566,11 +2581,9 @@
             const [reportData, setReportData] = useState({});
             // Daily checklist state
             const [checklist, setChecklist] = useState(() => normalizeChecklistItems(loadFromStorage('reception_checklist_' + selectedDate, [])));
-            const [newChecklistItem, setNewChecklistItem] = useState('');
-            const [newChecklistAssignee, setNewChecklistAssignee] = useState('all');
-            const [newChecklistRequired, setNewChecklistRequired] = useState(true);
-            const [checklistView, setChecklistView] = useState('all');
-            const [isChecklistCreatorOpen, setIsChecklistCreatorOpen] = useState(true);
+            const [isChecklistManagerOpen, setIsChecklistManagerOpen] = useState(false);
+            const [checklistTemplateRows, setChecklistTemplateRows] = useState(() => normalizeChecklistTemplateRows(loadFromStorage('reception_checklist_template', STANDARD_DAILY_CHECKLIST_TEMPLATE)));
+            const [newChecklistTemplateRow, setNewChecklistTemplateRow] = useState({ text: '', assignee: 'all', note: '', required: true });
             // Daily census state
             const [censusCount, setCensusCount] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return String(d.count || ''); } catch(e) { return ''; } });
             const [censusNames, setCensusNames] = useState(() => { try { const d = JSON.parse(localStorage.getItem('reception_census_' + selectedDate) || '{}'); return d.names || ''; } catch(e) { return ''; } });
@@ -2624,7 +2637,6 @@
             const chatEndRef = useRef(null);
             const chatMsgsRef = useRef(null);
             const importBackupRef = useRef(null);
-            const checklistBuilderRef = useRef(null);
             const isAdmin = currentUser?.role === 'admin';
             const currentUserPreferences = { ...getDefaultUserPreferences(), ...((currentUser && currentUser.preferences) || {}) };
             const canCustomizeExperience = !!currentUser && (isAdmin || appSettings.staffCanCustomizeExperience);
@@ -2724,11 +2736,9 @@
             }
 
             function openChecklistBuilder() {
-                setChecklistView('all');
-                setIsChecklistCreatorOpen(true);
-                setTimeout(() => {
-                    checklistBuilderRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 60);
+                const template = normalizeChecklistTemplateRows(getChecklistTemplate());
+                setChecklistTemplateRows(template);
+                setIsChecklistManagerOpen(true);
             }
 
             function completeLogout() {
@@ -3411,16 +3421,6 @@
                 saveChecklist(seeded);
             }
 
-            function addChecklistItem() {
-                const text = (newChecklistItem || '').trim();
-                if (!text) return;
-                const next = [...checklist, createChecklistItem(text, newChecklistAssignee, newChecklistRequired)];
-                setChecklist(next);
-                saveChecklist(next);
-                setNewChecklistItem('');
-                setNewChecklistRequired(true);
-            }
-
             function checklistAssigneeLabel(item) {
                 if (!item?.assignee || item.assignee === 'all') return 'Everyone';
                 return staff[item.assignee]?.name || users[item.assignee]?.displayName || item.assignee;
@@ -3443,32 +3443,71 @@
                 saveChecklist(next);
             }
 
-            function updateChecklistAssignee(id, assignee) {
-                const next = checklist.map(item => item.id === id ? { ...item, assignee: assignee || 'all' } : item);
-                setChecklist(next);
-                saveChecklist(next);
+            function addChecklistTemplateRow() {
+                const text = String(newChecklistTemplateRow.text || '').trim();
+                if (!text) {
+                    showNotification('Enter a task before adding.', 'error');
+                    return;
+                }
+                setChecklistTemplateRows(prev => ([
+                    ...prev,
+                    {
+                        id: `tmpl-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                        text,
+                        assignee: newChecklistTemplateRow.assignee || 'all',
+                        note: String(newChecklistTemplateRow.note || '').trim(),
+                        required: newChecklistTemplateRow.required !== false
+                    }
+                ]));
+                setNewChecklistTemplateRow({ text: '', assignee: 'all', note: '', required: true });
             }
 
-            function removeChecklistItem(id) {
-                const next = checklist.filter(item => item.id !== id);
-                setChecklist(next);
-                saveChecklist(next);
+            function updateChecklistTemplateRow(rowId, field, value) {
+                setChecklistTemplateRows(prev => prev.map(row => row.id === rowId ? { ...row, [field]: value } : row));
             }
+
+            function removeChecklistTemplateRow(rowId) {
+                setChecklistTemplateRows(prev => prev.filter(row => row.id !== rowId));
+            }
+
             function saveChecklistTemplate() {
-                const template = checklist.map(item => ({ text: item.text, assignee: item.assignee || 'all', required: item.required !== false }));
+                const template = normalizeChecklistTemplateRows(checklistTemplateRows);
+                if (!template.length) {
+                    showNotification('Add at least one checklist task before saving.', 'error');
+                    return;
+                }
+                setChecklistTemplateRows(template);
                 try { localStorage.setItem('reception_checklist_template', JSON.stringify(template)); } catch(e) {}
                 if (isFirebaseAvailable && db) {
                     db.collection('shared').doc('checklistTemplate').set({ items: template, updatedAt: Date.now() }).catch(() => {});
                 }
-                showNotification('Checklist template saved!');
+                showNotification('Checklist template saved.', 'success');
             }
+
             function loadChecklistTemplate() {
-                const template = getChecklistTemplate();
-                if (!template.length) { showNotification('No template saved yet. Add tasks and save as template first.', 'error'); return; }
+                const template = normalizeChecklistTemplateRows(getChecklistTemplate());
+                if (!template.length) {
+                    showNotification('No saved checklist template found.', 'error');
+                    return;
+                }
+                setChecklistTemplateRows(template);
+                showNotification(`Loaded ${template.length} template task${template.length === 1 ? '' : 's'}.`, 'info');
+            }
+
+            function applyChecklistTemplateToToday() {
+                const template = normalizeChecklistTemplateRows(checklistTemplateRows);
+                if (!template.length) {
+                    showNotification('Add tasks before applying to today.', 'error');
+                    return;
+                }
+                try { localStorage.setItem('reception_checklist_template', JSON.stringify(template)); } catch(e) {}
+                if (isFirebaseAvailable && db) {
+                    db.collection('shared').doc('checklistTemplate').set({ items: template, updatedAt: Date.now() }).catch(() => {});
+                }
                 const next = buildChecklistFromTemplate(template);
                 setChecklist(next);
                 saveChecklist(next);
-                showNotification(`Loaded ${next.length} tasks from template.`);
+                showNotification(`Applied ${next.length} checklist task${next.length === 1 ? '' : 's'} to ${selectedDate}.`, 'success');
             }
             // --- Census functions ---
             function saveCensus(count, names) {
@@ -4973,7 +5012,7 @@
                             </div>
                             <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Command Palette (Ctrl/Cmd + K)">⌘K Command</button>
-                                <button onClick={openChecklistBuilder} className="fancy-btn" style={{padding: '9px 14px', fontSize: '11px', background: '#0284c7'}} title="Jump to checklist builder">CHECKLIST BUILDER</button>
+                                <button onClick={openChecklistBuilder} className="fancy-btn" style={{padding: '9px 14px', fontSize: '11px', background: '#0284c7'}} title="Open checklist page">CHECKLIST PAGE</button>
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>
@@ -5020,78 +5059,15 @@
                                     </div>
                                 </div>
 
-                                {/* ── DAILY CHECKLIST ── */}
-                                <div ref={checklistBuilderRef} className="report-checklist-card">
-                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:'8px', marginBottom:'8px'}}>
-                                        <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.12em', minWidth:0, flex:'1 1 auto'}}>Daily Checklist</div>
-                                        <div style={{display:'flex', alignItems:'center', gap:'6px', flex:'0 1 auto', minWidth:0}}>
-                                            {checklist.length > 0 && (
-                                                <div style={{fontSize:'10px', fontWeight:800, color: checklist.filter(i=>i.checked).length===checklist.length ? '#10b981' : 'var(--text-muted)'}}>
-                                                    {checklist.filter(i=>i.checked).length}/{checklist.length}
-                                                </div>
-                                            )}
-                                            <button type="button" onClick={() => setIsChecklistCreatorOpen(open => !open)} className="fancy-btn" style={{padding:'6px 10px', fontSize:'10px', lineHeight:1.2, whiteSpace:'nowrap', background:'rgba(59,130,246,0.9)'}}>
-                                                {isChecklistCreatorOpen ? 'HIDE BUILDER' : 'SHOW BUILDER'}
-                                            </button>
-                                        </div>
+                                {/* ── CHECKLIST PAGE SHORTCUT ── */}
+                                <div className="report-checklist-card" style={{display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                                    <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.12em'}}>Checklist Tasks</div>
+                                    <div style={{fontSize:'10px', color:'var(--text-muted)'}}>
+                                        Manage daily tasks on the Checklist page.
                                     </div>
-
-                                    <div style={{display:isChecklistCreatorOpen ? 'flex' : 'none', flexDirection:'column', gap:'8px', marginBottom:'10px', background:'rgba(15,23,42,0.35)', border:'1px solid var(--accent-soft)', borderRadius:'8px', padding:'10px'}}>
-                                            <div style={{fontSize:'10px', color:'var(--text-muted)', letterSpacing:'0.08em', textTransform:'uppercase', fontWeight:800}}>Checklist Builder</div>
-                                            <input value={newChecklistItem} onChange={e=>setNewChecklistItem(e.target.value)} onKeyDown={e=>{ if(e.key==='Enter' && newChecklistItem.trim()) addChecklistItem(); }} style={{width:'100%', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'8px 10px', fontSize:'12px', color:'var(--text-primary)', fontWeight:600, boxSizing:'border-box'}} className="outline-none" placeholder="Task your lead wants staff to complete..." />
-                                            <div style={{display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap'}}>
-                                                <select value={newChecklistAssignee} onChange={e=>setNewChecklistAssignee(e.target.value)} className="panel-input" style={{padding:'7px 10px', fontSize:'11px', flex:'1 1 180px'}}>
-                                                    <option value="all">Assign to Everyone</option>
-                                                    {Object.entries(staff).map(([staffId, member]) => (
-                                                        <option key={staffId} value={staffId}>{member.name}</option>
-                                                    ))}
-                                                </select>
-                                                <label style={{display:'flex', alignItems:'center', gap:'5px', fontSize:'11px', color:'var(--text-muted)', whiteSpace:'nowrap'}}>
-                                                    <input type="checkbox" checked={newChecklistRequired} onChange={e=>setNewChecklistRequired(e.target.checked)} style={{accentColor:'var(--accent)'}} />
-                                                    Required
-                                                </label>
-                                                <button type="button" onClick={addChecklistItem} className="fancy-btn" style={{padding:'8px 12px', fontSize:'11px', flexShrink:0}}>ADD TASK</button>
-                                            </div>
-                                    </div>
-
-                                    <div style={{display:'flex', gap:'5px', marginBottom:'6px'}}>
-                                        <button type="button" onClick={() => setChecklistView('all')} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'all' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'all' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>ALL TASKS</button>
-                                        <button type="button" onClick={() => setChecklistView('mine')} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'999px', border:'1px solid var(--accent-soft)', color: checklistView === 'mine' ? 'var(--accent)' : 'var(--text-muted)', background: checklistView === 'mine' ? 'rgba(184,115,51,0.1)' : 'transparent', cursor:'pointer', letterSpacing:'0.06em', fontWeight:800}}>MY TASKS</button>
-                                    </div>
-
-                                    {checklist.length === 0 && <div style={{fontSize:'10px', color:'var(--text-muted)', fontStyle:'italic', marginBottom:'6px'}}>No tasks yet. Load a template or add tasks for today.</div>}
-                                    <div style={{display:'flex', flexDirection:'column', gap:'3px', maxHeight:'160px', overflowY:'auto'}} className="no-scrollbar">
-                                        {checklist
-                                            .filter(item => checklistView === 'all' || item.assignee === 'all' || item.assignee === currentUser?.id)
-                                            .map(item => (
-                                            <div key={item.id} style={{display:'flex', alignItems:'center', gap:'6px', padding:'2px 0'}}>
-                                                <input type="checkbox" checked={!!item.checked} onChange={()=>toggleChecklistItem(item.id)} style={{accentColor:'var(--accent)', width:'13px', height:'13px', cursor:'pointer', flexShrink:0}} />
-                                                <div style={{flex:1, minWidth:0}}>
-                                                    <div style={{fontSize:'11px', color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none', fontWeight:600, lineHeight:1.3}}>{item.text}</div>
-                                                    <div style={{fontSize:'9px', color:'var(--text-muted)', marginTop:'1px', lineHeight:1.2}}>
-                                                        Assigned: {checklistAssigneeLabel(item)}
-                                                        {item.completedBy ? ` • Done by ${item.completedBy}${item.completedAt ? ` at ${new Date(item.completedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` : ''}` : ''}
-                                                    </div>
-                                                    {isAdmin && (
-                                                        <select value={item.assignee || 'all'} onChange={e => updateChecklistAssignee(item.id, e.target.value)} className="panel-input" style={{marginTop:'3px', padding:'3px 5px', fontSize:'9px', width:'100%', maxWidth:'140px'}}>
-                                                            <option value="all">Assign to Everyone</option>
-                                                            {Object.entries(staff).map(([staffId, member]) => (
-                                                                <option key={staffId} value={staffId}>{member.name}</option>
-                                                            ))}
-                                                        </select>
-                                                    )}
-                                                </div>
-                                                <button type="button" onClick={()=>removeChecklistItem(item.id)} style={{background:'none', border:'none', color:'var(--text-muted)', cursor:'pointer', fontSize:'13px', padding:'0 2px', lineHeight:1, flexShrink:0}}>×</button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    {isAdmin && (
-                                        <div style={{display:'flex', gap:'5px', marginTop:'6px'}}>
-                                            <button type="button" onClick={saveChecklistTemplate} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>SAVE TEMPLATE</button>
-                                            <button type="button" onClick={loadChecklistTemplate} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>LOAD TEMPLATE</button>
-                                            <button type="button" onClick={() => ensureDailyChecklistSeeded(true)} style={{flex:1, padding:'6px 8px', fontSize:'10px', borderRadius:'6px', border:'1px solid var(--accent-soft)', color:'var(--text-muted)', background:'transparent', cursor:'pointer', letterSpacing:'0.05em', fontWeight:700}}>RESET TODAY</button>
-                                        </div>
-                                    )}
+                                    <button type="button" onClick={openChecklistBuilder} className="fancy-btn" style={{padding:'10px 12px', fontSize:'11px', background:'#0284c7'}}>
+                                        OPEN CHECKLIST PAGE
+                                    </button>
                                 </div>
 
                                 {/* ── DAILY CENSUS ── */}
@@ -6722,6 +6698,131 @@
                                             );
                                         })}
                                 </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* CHECKLIST PAGE MODAL */}
+                    {isChecklistManagerOpen && (
+                        <div className="modal-backdrop z-[1750]" onClick={() => setIsChecklistManagerOpen(false)}>
+                            <div className="modal-panel modal-panel--xl modal-card-enter text-left" onClick={event => event.stopPropagation()}>
+                                <div className="modal-panel__header">
+                                    <div>
+                                        <div className="modal-panel__kicker">Checklist Page</div>
+                                        <h2 className="modal-panel__title">Daily Task Builder</h2>
+                                    </div>
+                                    <button type="button" className="modal-panel__close" onClick={() => setIsChecklistManagerOpen(false)}>&times;</button>
+                                </div>
+                                <div className="modal-panel__body" style={{display: 'flex', flexDirection: 'column', gap: '12px'}}>
+                                    <div style={{display: 'grid', gridTemplateColumns: '2fr 1fr 2fr auto auto', gap: '8px', alignItems: 'center'}}>
+                                        <input
+                                            value={newChecklistTemplateRow.text}
+                                            onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, text: event.target.value }))}
+                                            className="panel-input"
+                                            placeholder="Task"
+                                        />
+                                        <select
+                                            value={newChecklistTemplateRow.assignee}
+                                            onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, assignee: event.target.value }))}
+                                            className="panel-input"
+                                        >
+                                            <option value="all">Everyone</option>
+                                            {Object.entries(staff).map(([staffId, member]) => (
+                                                <option key={staffId} value={staffId}>{member.name}</option>
+                                            ))}
+                                        </select>
+                                        <input
+                                            value={newChecklistTemplateRow.note}
+                                            onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, note: event.target.value }))}
+                                            className="panel-input"
+                                            placeholder="Note"
+                                        />
+                                        <label style={{display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-muted)'}}>
+                                            <input
+                                                type="checkbox"
+                                                checked={newChecklistTemplateRow.required}
+                                                onChange={event => setNewChecklistTemplateRow(prev => ({ ...prev, required: event.target.checked }))}
+                                                style={{accentColor: 'var(--accent)'}}
+                                            />
+                                            Required
+                                        </label>
+                                        <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px'}} onClick={addChecklistTemplateRow}>ADD</button>
+                                    </div>
+
+                                    <div style={{maxHeight: '52vh', overflowY: 'auto', border: '1px solid var(--accent-soft)', borderRadius: '10px'}}>
+                                        <table style={{width: '100%', borderCollapse: 'collapse'}}>
+                                            <thead>
+                                                <tr style={{background: 'rgba(255,255,255,0.04)'}}>
+                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Task</th>
+                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Assigned</th>
+                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Note</th>
+                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Req</th>
+                                                    <th style={{padding: '8px', fontSize: '10px', textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'left'}}>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {checklistTemplateRows.length === 0 && (
+                                                    <tr>
+                                                        <td colSpan="5" style={{padding: '12px', fontSize: '11px', color: 'var(--text-muted)'}}>No checklist tasks yet.</td>
+                                                    </tr>
+                                                )}
+                                                {checklistTemplateRows.map(row => (
+                                                    <tr key={row.id} style={{borderTop: '1px solid rgba(255,255,255,0.08)'}}>
+                                                        <td style={{padding: '8px'}}>
+                                                            <input value={row.text} onChange={event => updateChecklistTemplateRow(row.id, 'text', event.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '11px'}} />
+                                                        </td>
+                                                        <td style={{padding: '8px'}}>
+                                                            <select value={row.assignee} onChange={event => updateChecklistTemplateRow(row.id, 'assignee', event.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '11px'}}>
+                                                                <option value="all">Everyone</option>
+                                                                {Object.entries(staff).map(([staffId, member]) => (
+                                                                    <option key={staffId} value={staffId}>{member.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </td>
+                                                        <td style={{padding: '8px'}}>
+                                                            <input value={row.note || ''} onChange={event => updateChecklistTemplateRow(row.id, 'note', event.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '11px'}} placeholder="Optional note" />
+                                                        </td>
+                                                        <td style={{padding: '8px'}}>
+                                                            <input type="checkbox" checked={row.required !== false} onChange={event => updateChecklistTemplateRow(row.id, 'required', event.target.checked)} style={{accentColor: 'var(--accent)'}} />
+                                                        </td>
+                                                        <td style={{padding: '8px'}}>
+                                                            <button type="button" onClick={() => removeChecklistTemplateRow(row.id)} style={{border: 'none', background: 'transparent', color: '#ef4444', fontWeight: 800, cursor: 'pointer'}}>DELETE</button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                    <div style={{border: '1px solid var(--accent-soft)', borderRadius: '10px', padding: '10px'}}>
+                                        <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', marginBottom: '8px'}}>
+                                            <div style={{fontSize: '11px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.1em'}}>Today&apos;s Checklist ({selectedDate})</div>
+                                            <button type="button" className="fancy-btn" style={{padding: '7px 10px', fontSize: '10px'}} onClick={() => ensureDailyChecklistSeeded(true)}>RESET TODAY</button>
+                                        </div>
+                                        {checklist.length === 0 && (
+                                            <div style={{fontSize: '11px', color: 'var(--text-muted)'}}>No tasks on today&apos;s checklist yet. Save a template and apply it.</div>
+                                        )}
+                                        <div style={{display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '210px', overflowY: 'auto'}} className="no-scrollbar">
+                                            {checklist.map(item => (
+                                                <label key={item.id} style={{display: 'flex', alignItems: 'flex-start', gap: '8px', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: '6px'}}>
+                                                    <input type="checkbox" checked={!!item.checked} onChange={() => toggleChecklistItem(item.id)} style={{marginTop: '2px', accentColor: 'var(--accent)'}} />
+                                                    <span style={{flex: 1, minWidth: 0}}>
+                                                        <span style={{display: 'block', fontSize: '12px', color: item.checked ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: item.checked ? 'line-through' : 'none'}}>{item.text}</span>
+                                                        <span style={{display: 'block', fontSize: '10px', color: 'var(--text-muted)'}}>
+                                                            Assigned: {checklistAssigneeLabel(item)}{item.note ? ` | Note: ${item.note}` : ''}
+                                                        </span>
+                                                    </span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap'}}>
+                                        <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px'}} onClick={loadChecklistTemplate}>RELOAD</button>
+                                        <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px', background: '#0ea5e9'}} onClick={saveChecklistTemplate}>SAVE TEMPLATE</button>
+                                        <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px', background: '#10b981'}} onClick={applyChecklistTemplateToToday}>APPLY TO TODAY</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
