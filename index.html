@@ -2154,7 +2154,7 @@
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
             background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
-            padding: 10px 12px;
+            padding: 14px 14px;
             margin-top: 0.75rem;
             text-align: left;
             display: flex;
@@ -4876,8 +4876,8 @@
 
                                 {/* ── DAILY CHECKLIST ── */}
                                 <div className="report-checklist-card">
-                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'6px'}}>
-                                        <div style={{fontSize:'9px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em'}}>Daily Checklist</div>
+                                    <div style={{display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'8px'}}>
+                                        <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em'}}>Daily Checklist</div>
                                         {checklist.length > 0 && (
                                             <div style={{fontSize:'10px', fontWeight:800, color: checklist.filter(i=>i.checked).length===checklist.length ? '#10b981' : 'var(--text-muted)'}}>
                                                 {checklist.filter(i=>i.checked).length}/{checklist.length}
@@ -4908,7 +4908,7 @@
 
                                 {/* ── DAILY CENSUS ── */}
                                 <div className="report-checklist-card">
-                                    <div style={{fontSize:'9px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:'8px'}}>Daily Census</div>
+                                    <div style={{fontSize:'11px', fontWeight:900, color:'var(--accent)', textTransform:'uppercase', letterSpacing:'0.15em', marginBottom:'10px'}}>Daily Census</div>
                                     <div style={{display:'flex', alignItems:'center', gap:'8px', marginBottom:'7px'}}>
                                         <label style={{fontSize:'10px', fontWeight:700, color:'var(--text-muted)', flexShrink:0}}>Count</label>
                                         <input type="number" min="0" value={censusCount} onChange={e=>setCensusCount(e.target.value)} onBlur={e=>saveCensus(e.target.value, censusNames)} style={{width:'64px', background:'var(--surface-1)', border:'1px solid var(--accent-soft)', borderRadius:'6px', padding:'5px 7px', fontSize:'13px', color:'var(--text-primary)', fontWeight:800, textAlign:'center'}} className="outline-none" placeholder="0" />

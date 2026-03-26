@@ -5,7 +5,7 @@ import path from 'node:path';
 import { transformAsync } from '@babel/core';
 import { build as esbuild } from 'esbuild';
 
-// Use process.cwd() so the script works reliably when run from a mapped UNC drive
+// Use process.cwd() so the script works reliably when run from the working repo.
 const repoDir = process.cwd();
 const sourceHtmlPath = path.join(repoDir, 'index.html');
 const manifestPath = path.join(repoDir, 'manifest.json');
@@ -24,14 +24,15 @@ function extractOrThrow(source, regex, label) {
 
 function runCommand(command, args) {
   return new Promise((resolve, reject) => {
+    // Use 'ignore' for all stdio — Tailwind writes its CSS output to the file
+    // specified by -o, so stdout/stderr are only progress messages we don't need.
+    // Avoid pipe-based forwarding which can deadlock when the parent stdout is
+    // itself a pipe (e.g. `npm run build > file`).
     const child = spawn(command, args, {
       cwd: repoDir,
       shell: false,
-      stdio: ['ignore', 'pipe', 'pipe']
+      stdio: 'ignore'
     });
-
-    child.stdout?.on('data', (data) => process.stdout.write(data));
-    child.stderr?.on('data', (data) => process.stderr.write(data));
 
     child.on('exit', (code) => {
       if (code === 0) {
