@@ -3560,17 +3560,56 @@
                 };
             }
 
-            function getReportReadiness(report) {
+            function getChecklistReadiness(checklistItems = checklist) {
+                const items = Array.isArray(checklistItems) ? checklistItems : [];
+                const requiredItems = items.filter(item => item?.required !== false);
+                const incompleteRequiredItems = requiredItems.filter(item => !item?.checked);
+                return {
+                    totalItems: items.length,
+                    requiredItemsCount: requiredItems.length,
+                    incompleteRequiredItems
+                };
+            }
+
+            function getReportReadinessIssues(readiness) {
+                const issues = [];
+                if (!readiness?.hasChecklistItems) {
+                    issues.push('Add checklist tasks for this shift.');
+                }
+                if (readiness?.missingRequiredLabels?.length > 0) {
+                    issues.push(`Required report fields: ${readiness.missingRequiredLabels.join(', ')}`);
+                }
+                if (!readiness?.meetsCoverage) {
+                    issues.push(`Complete at least ${REPORT_MIN_FIELDS_FOR_SUBMIT} report sections.`);
+                }
+                if (!readiness?.checklistReady) {
+                    if (readiness?.incompleteChecklistCount > 0) {
+                        issues.push(`Finish ${readiness.incompleteChecklistCount} required checklist task${readiness.incompleteChecklistCount === 1 ? '' : 's'}.`);
+                    } else {
+                        issues.push('Complete all required checklist tasks.');
+                    }
+                }
+                return issues;
+            }
+
+            function getReportReadiness(report, checklistItems = checklist) {
                 const completion = getReportCompletion(report);
                 const missingRequiredLabels = REPORT_SUBMIT_REQUIRED_FIELD_IDS
                     .filter(fieldId => !String(report?.[fieldId] || '').trim())
                     .map(fieldId => REPORT_FIELDS.find(field => field.id === fieldId)?.label || fieldId);
                 const meetsCoverage = completion.completed >= REPORT_MIN_FIELDS_FOR_SUBMIT;
+                const checklistReadiness = getChecklistReadiness(checklistItems);
+                const hasChecklistItems = checklistReadiness.totalItems > 0;
+                const checklistReady = hasChecklistItems && checklistReadiness.incompleteRequiredItems.length === 0;
                 return {
-                    ready: missingRequiredLabels.length === 0 && meetsCoverage,
+                    ready: missingRequiredLabels.length === 0 && meetsCoverage && checklistReady,
                     missingRequiredLabels,
                     meetsCoverage,
-                    completion
+                    completion,
+                    hasChecklistItems,
+                    checklistReady,
+                    incompleteChecklistCount: checklistReadiness.incompleteRequiredItems.length,
+                    incompleteChecklistItems: checklistReadiness.incompleteRequiredItems
                 };
             }
 
@@ -3671,14 +3710,8 @@
                 const report = reportData || allReports[dateKey] || {};
                 const readiness = getReportReadiness(report);
                 if (!readiness.ready) {
-                    const missingBits = [];
-                    if (readiness.missingRequiredLabels.length > 0) {
-                        missingBits.push(`Required: ${readiness.missingRequiredLabels.join(', ')}`);
-                    }
-                    if (!readiness.meetsCoverage) {
-                        missingBits.push(`Complete at least ${REPORT_MIN_FIELDS_FOR_SUBMIT} sections`);
-                    }
-                    showNotification(`Cannot submit yet. ${missingBits.join(' | ')}`, 'error', true);
+                    const issues = getReportReadinessIssues(readiness);
+                    showNotification(`Cannot submit yet. ${issues.join(' | ')}`, 'error', true);
                     return false;
                 }
                 const meta = {
@@ -4763,6 +4796,8 @@
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
+            const reportReadinessIssues = getReportReadinessIssues(reportReadiness);
+            const reportReadinessHint = reportReadinessIssues.join(' ');
             const reportHandoffSummary = getReportHandoffSummary(reportData);
             const selectedDayShifts = events[selectedDate] || [];
             const reportActivityTimeline = getReportActivityTimeline(selectedDate, reportData, selectedDayShifts, checklist);
@@ -5105,6 +5140,11 @@
                                     )}
                                     {reportData.__meta?.approvedBy && (
                                         <div style={{background: '#86efac', padding: '8px', borderRadius: '6px', fontSize: '10px', color: '#15803d'}}><strong>Approved by:</strong> {reportData.__meta?.approvedBy}</div>
+                                    )}
+                                    {!reportReadiness.ready && (
+                                        <div style={{background: 'rgba(15,23,42,0.45)', border: '1px solid var(--accent-soft)', padding: '8px', borderRadius: '6px', fontSize: '10px', color: 'var(--text-muted)'}}>
+                                            {reportReadinessHint}
+                                        </div>
                                     )}
                                     <div className="grid grid-cols-2 gap-2">
                                         <input type="date" value={reportJumpDate} onChange={e => setReportJumpDate(e.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '10px'}} />
@@ -6688,7 +6728,7 @@
                                         type="button"
                                         className="fancy-btn"
                                         disabled={!reportReadiness.ready}
-                                        title={reportReadiness.ready ? 'Submit and sign out' : 'Finish required report fields before submitting'}
+                                        title={reportReadiness.ready ? 'Submit and sign out' : reportReadinessHint}
                                         style={{padding: '10px 12px', fontSize: '10px', background: reportReadiness.ready ? '#3b82f6' : 'rgba(59,130,246,0.35)', opacity: reportReadiness.ready ? 1 : 0.72, cursor: reportReadiness.ready ? 'pointer' : 'not-allowed'}}
                                         onClick={() => handleGuardedSignOut('submit')}
                                     >
@@ -6707,7 +6747,7 @@
                                 </div>
                                 {!reportReadiness.ready && (
                                     <div className="text-[11px] mt-3" style={{color: 'var(--text-muted)'}}>
-                                        Submit is locked until required handoff notes are complete.
+                                        {reportReadinessHint}
                                     </div>
                                 )}
                                 </div>
