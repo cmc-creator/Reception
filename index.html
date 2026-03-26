@@ -4701,6 +4701,16 @@
                 return () => window.removeEventListener('keydown', handleKeyDown);
             }, [appSettings.enableKeyboardShortcuts, selectedDate, isCommandPaletteOpen, isSignOutGuardOpen, isNotificationCenterOpen, isSettingsOpen, isPersonnelModalOpen, isAddModalOpen, isBulkAssignOpen, isPrnDashboardOpen, isShiftSwapOpen, isDocRepoOpen, isVisitationOpen, isDischargeOpen, showReportHistory, showTemplateModal, showAchievements, showKudos, showPanicAlert, showDeescalation, reportData.__meta?.status]);
 
+            // --- AUTO-SCROLL CHAT TO LATEST MESSAGE ---
+            useEffect(() => {
+                if (!chatMsgsRef.current) return;
+                requestAnimationFrame(() => {
+                    if (chatMsgsRef.current) {
+                        chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight;
+                    }
+                });
+            }, [messages.length]);
+
             function getStaffColor(staffId) {
                 const member = staff[staffId] || {};
                 if (member.color) return member.color;
@@ -4761,8 +4771,22 @@
                 }));
 
                 // Team chat messages (real-time collection)
+                let prevMessageCount = messages.length;
                 unsubs.push(db.collection('messages').orderBy('createdAt', 'asc').onSnapshot(snap => {
                     const msgs = snap.docs.map(d => d.data());
+                    const newCount = msgs.length;
+                    
+                    // Detect new messages and show notification
+                    if (newCount > prevMessageCount && newCount > 0) {
+                        const newMsg = msgs[newCount - 1];
+                        const msgAuthor = String(newMsg?.user || '').toLowerCase();
+                        const currentIdentity = String(currentUser?.displayName || currentUser?.username || 'USER').toLowerCase();
+                        if (msgAuthor && msgAuthor !== currentIdentity) {
+                            showNotification(`New message from ${newMsg.user}`, 'info', true);
+                        }
+                    }
+                    
+                    prevMessageCount = newCount;
                     setMessages(msgs);
                 }));
 
@@ -5436,8 +5460,8 @@
                                         <div ref={chatEndRef} />
                                     </div>
                                     <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
-                                        <input value={chatInput} onFocus={() => markChatSeen(Date.now())} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
-                                        <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); setTimeout(()=>{ if (chatMsgsRef.current) chatMsgsRef.current.scrollTop = chatMsgsRef.current.scrollHeight; },50); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
+                                        <input value={chatInput} onFocus={() => markChatSeen(Date.now())} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                        <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
                                     </div>
                                 </div>
 
