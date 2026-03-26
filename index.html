@@ -1691,6 +1691,17 @@
             gap: 1rem;
         }
 
+        .checklist-manager-modal {
+            background: linear-gradient(165deg, var(--panel-start), var(--panel-end));
+            border-color: var(--accent-soft);
+            color: var(--text-primary);
+        }
+
+        .checklist-manager-modal .modal-panel__header {
+            background: linear-gradient(180deg, var(--panel-start), rgba(0,0,0,0.12));
+            border-bottom-color: var(--accent-soft);
+        }
+
         .checklist-section-card {
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 22px;
@@ -1733,7 +1744,8 @@
         .checklist-section-copy {
             font-size: 11px;
             line-height: 1.45;
-            color: var(--text-soft);
+            color: var(--text-primary);
+            opacity: 0.82;
             margin-top: 0.35rem;
         }
 
@@ -1755,7 +1767,8 @@
             font-weight: 900;
             text-transform: uppercase;
             letter-spacing: 0.18em;
-            color: var(--text-muted);
+            color: var(--text-primary);
+            opacity: 0.72;
         }
 
         .checklist-toggle {
@@ -1766,7 +1779,8 @@
             padding: 0 0.4rem;
             font-size: 11px;
             font-weight: 800;
-            color: var(--text-soft);
+            color: var(--text-primary);
+            opacity: 0.84;
             text-transform: uppercase;
             letter-spacing: 0.1em;
         }
@@ -1940,7 +1954,8 @@
             border-radius: 999px;
             border: 1px solid rgba(255,255,255,0.1);
             background: rgba(255,255,255,0.05);
-            color: var(--text-soft);
+            color: var(--text-primary);
+            opacity: 0.86;
             font-size: 10px;
             font-weight: 800;
             letter-spacing: 0.06em;
@@ -1973,7 +1988,8 @@
         .checklist-note-card__text {
             font-size: 11px;
             line-height: 1.45;
-            color: var(--text-soft);
+            color: var(--text-primary);
+            opacity: 0.82;
         }
 
         .checklist-empty-state {
@@ -1982,7 +1998,8 @@
             background: rgba(255,255,255,0.03);
             padding: 1rem;
             font-size: 11px;
-            color: var(--text-soft);
+            color: var(--text-primary);
+            opacity: 0.82;
         }
 
         @media (max-width: 980px) {
@@ -7040,7 +7057,7 @@
                     {/* CHECKLIST PAGE MODAL */}
                     {isChecklistManagerOpen && (
                         <div className="modal-backdrop z-[1750]" onClick={() => setIsChecklistManagerOpen(false)}>
-                            <div className="modal-panel modal-panel--xl modal-card-enter text-left" onClick={event => event.stopPropagation()}>
+                            <div className="modal-panel checklist-manager-modal modal-panel--xl modal-card-enter text-left" onClick={event => event.stopPropagation()}>
                                 <div className="modal-panel__header">
                                     <div>
                                         <div className="modal-panel__kicker">Checklist Page</div>
