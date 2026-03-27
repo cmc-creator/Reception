@@ -752,6 +752,65 @@
             100% { transform: translate3d(-1%, 0, 0) scale(1); }
         }
 
+        /* ═══ CHAT ALERT TRACER ═══ */
+        @keyframes chatAlertPulse {
+            0%, 100% { 
+                box-shadow: 
+                    0 0 8px rgba(248, 113, 113, 0.4),
+                    0 0 16px rgba(248, 113, 113, 0.25),
+                    inset 0 0 8px rgba(248, 113, 113, 0.1);
+                border-color: rgba(248, 113, 113, 0.65);
+            }
+            50% { 
+                box-shadow: 
+                    0 0 16px rgba(248, 113, 113, 0.8),
+                    0 0 32px rgba(248, 113, 113, 0.5),
+                    inset 0 0 12px rgba(248, 113, 113, 0.2);
+                border-color: rgba(248, 113, 113, 0.95);
+            }
+        }
+
+        @keyframes chatAlertSweep {
+            0% {
+                background-position: -200% center;
+            }
+            100% {
+                background-position: 200% center;
+            }
+        }
+
+        .chat-window-shell {
+            position: relative;
+            border: 2px solid var(--accent-soft);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .chat-window-shell--alert {
+            animation: chatAlertPulse 1.6s ease-in-out infinite;
+            background: linear-gradient(
+                90deg,
+                rgba(248, 113, 113, 0.08),
+                rgba(248, 113, 113, 0.12),
+                rgba(248, 113, 113, 0.08)
+            );
+            background-size: 200% 100%;
+            animation: 
+                chatAlertPulse 1.6s ease-in-out infinite,
+                chatAlertSweep 2.4s linear infinite;
+        }
+
+        .chat-window-shell--alert::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border: 2px solid rgba(248, 113, 113, 0.4);
+            border-radius: 10px;
+            pointer-events: none;
+            animation: chatAlertPulse 1.6s ease-in-out infinite;
+            opacity: 0.8;
+        }
+
         body[data-effects="soft"] .app-shell::before {
             opacity: 0.12;
             animation-duration: 30s;
@@ -5424,6 +5483,33 @@
                                         </div>
                                         <button type="button" onClick={() => setIsSettingsOpen(true)} className="header-orb-btn shrink-0" style={{background: 'transparent', border: '1px solid var(--accent-soft)', color: 'var(--accent)', borderRadius: '999px', padding: '5px 10px', fontSize: '10px', letterSpacing: '0.08em'}}>Portal</button>
                                     </div>
+                                    {/* ── TEAM CHAT ── */}
+                                    <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
+                                        <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'}}>
+                                            <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
+                                            {unreadChatCount > 0 && (
+                                                <div style={{fontSize: '9px', fontWeight: 900, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.06em'}}>
+                                                    {unreadChatCount} new
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className={`chat-window-shell ${unreadChatCount > 0 ? 'chat-window-shell--alert' : ''}`}>
+                                            <div
+                                                ref={chatMsgsRef}
+                                                className="overflow-y-auto no-scrollbar"
+                                                onClick={() => markChatSeen(Date.now())}
+                                                style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: unreadChatCount > 0 ? '1px solid rgba(248,113,113,0.65)' : '1px solid var(--accent-soft)'}}
+                                            >
+                                                {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
+                                                {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
+                                                <div ref={chatEndRef} />
+                                            </div>
+                                        </div>
+                                        <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
+                                            <input value={chatInput} onFocus={() => markChatSeen(Date.now())} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
+                                            <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
+                                        </div>
+                                    </div>
                                     <button type="button" onClick={openChecklistBuilder} className="fancy-btn" style={{padding: '10px 12px', fontSize: '12px', width: '100%', background: '#0284c7', border: '1px solid rgba(255,255,255,0.3)'}}>
                                         CHECKLIST PAGE
                                     </button>
@@ -5437,32 +5523,6 @@
                                     <button type="button" onClick={() => shiftReportDay(-1)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px'}}>◀ PREV</button>
                                     <button type="button" onClick={() => saveDraftReport(selectedDate)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px', background: '#0ea5e9'}}>SAVE</button>
                                     <button type="button" onClick={() => shiftReportDay(1)} className="fancy-btn" style={{padding: '9px 8px', fontSize: '11px'}}>NEXT ▶</button>
-                                </div>
-
-                                {/* ── TEAM CHAT ── */}
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '6px'}}>
-                                    <div style={{display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px'}}>
-                                        <div style={{fontSize: '9px', fontWeight: 900, color: 'var(--accent)', textTransform: 'uppercase', letterSpacing: '0.15em'}}>Team Chat</div>
-                                        {unreadChatCount > 0 && (
-                                            <div style={{fontSize: '9px', fontWeight: 900, color: '#fca5a5', textTransform: 'uppercase', letterSpacing: '0.06em'}}>
-                                                {unreadChatCount} new
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div
-                                        ref={chatMsgsRef}
-                                        className="overflow-y-auto no-scrollbar"
-                                        onClick={() => markChatSeen(Date.now())}
-                                        style={{height: '100px', display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 8px', background: 'var(--surface-1)', borderRadius: '8px', border: unreadChatCount > 0 ? '1px solid rgba(248,113,113,0.65)' : '1px solid var(--accent-soft)'}}
-                                    >
-                                        {messages.length === 0 && <div style={{fontSize: '10px', color: 'var(--text-muted)', fontStyle: 'italic'}}>No messages yet.</div>}
-                                        {messages.map(m => <div key={m.id} style={{fontSize: '11px', color: 'var(--text-primary)'}}><span style={{color: 'var(--accent)', fontWeight: 900, marginRight: '4px'}}>{String(m.user)}:</span>{String(m.text)}</div>)}
-                                        <div ref={chatEndRef} />
-                                    </div>
-                                    <div style={{display: 'flex', gap: '6px', width: '100%', boxSizing: 'border-box'}}>
-                                        <input value={chatInput} onFocus={() => markChatSeen(Date.now())} onChange={e => setChatInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); const text = e.target.value.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); }}} style={{minWidth: 0, flex: 1, background: 'var(--surface-1)', border: '1px solid var(--accent-soft)', borderRadius: '6px', padding: '7px 10px', fontSize: '11px', color: 'var(--text-primary)', fontWeight: 600}} className="outline-none" placeholder="Message team..." />
-                                        <button type="button" onClick={() => { const text = chatInput.trim(); if (!text) return; const nm = { id: `msg-${Date.now()}`, text, createdAt: Date.now(), user: currentUser?.displayName || currentUser?.username || 'USER' }; if (isFirebaseAvailable && db) { db.collection('messages').doc(nm.id).set(nm).catch(()=>{}); } else { const u = [...messages, nm].sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)); setMessages(u); saveToStorage(STORAGE_KEYS.MESSAGES, u); } setChatInput(''); markChatSeen(Date.now()); }} className="fancy-btn" style={{flexShrink: 0, padding: '7px 12px', fontSize: '11px'}}>SEND</button>
-                                    </div>
                                 </div>
 
                                 {isReportDirty && (
