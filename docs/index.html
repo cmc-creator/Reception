@@ -3206,6 +3206,14 @@
             INITIALIZED: 'reception_initialized'
         };
 
+        const NOTE_TAGS = [
+            { id: 'general', label: 'General' },
+            { id: 'coverage', label: 'Coverage' },
+            { id: 'swap', label: 'Swap Pending' },
+            { id: 'calloff', label: 'Call-Off' },
+            { id: 'training', label: 'Training' }
+        ];
+
         function saveToStorage(key, data) {
             try {
                 localStorage.setItem(key, JSON.stringify(data));
@@ -3441,6 +3449,7 @@
             const [isShiftSwapOpen, setIsShiftSwapOpen] = useState(false);
             const [shiftSwapRequests, setShiftSwapRequests] = useState(() => loadFromStorage('reception_shift_swaps', []));
             const [scheduleChangeAlerts, setScheduleChangeAlerts] = useState(() => loadFromStorage('reception_schedule_change_alerts', []));
+            const [isRequestDrawerOpen, setIsRequestDrawerOpen] = useState(false);
             const [isDocRepoOpen, setIsDocRepoOpen] = useState(false);
             const [documentLinks, setDocumentLinks] = useState(() => loadFromStorage('reception_document_links', []));
             const [isVisitationOpen, setIsVisitationOpen] = useState(false);
@@ -3481,6 +3490,46 @@
             const [commandQuery, setCommandQuery] = useState('');
             const [achievementWindow, setAchievementWindow] = useState('month');
             const [chatLastSeenAt, setChatLastSeenAt] = useState(0);
+            const [calendarViewMode, setCalendarViewMode] = useState('grid');
+            const [noteTagFilter, setNoteTagFilter] = useState('all');
+            const [dayNoteDraft, setDayNoteDraft] = useState('');
+            const [dayNoteTagDraft, setDayNoteTagDraft] = useState('general');
+            const [editShiftStart, setEditShiftStart] = useState('');
+            const [editShiftEnd, setEditShiftEnd] = useState('');
+            const [editShiftNote, setEditShiftNote] = useState('');
+
+            function normalizeDayNoteEntry(value) {
+                if (!value) return null;
+                if (typeof value === 'string') {
+                    return { text: value, tag: 'general' };
+                }
+                return {
+                    text: String(value.text || ''),
+                    tag: NOTE_TAGS.some(tag => tag.id === value.tag) ? value.tag : 'general'
+                };
+            }
+
+            function noteTagBadgeClasses(tag) {
+                if (tag === 'coverage') return 'bg-emerald-500/25 text-emerald-200 border-emerald-300/35';
+                if (tag === 'swap') return 'bg-amber-500/25 text-amber-200 border-amber-300/35';
+                if (tag === 'calloff') return 'bg-rose-500/25 text-rose-200 border-rose-300/35';
+                if (tag === 'training') return 'bg-sky-500/25 text-sky-200 border-sky-300/35';
+                return 'bg-indigo-500/25 text-indigo-100 border-indigo-300/35';
+            }
+
+            useEffect(() => {
+                if (!selectedDayForNote) return;
+                const current = normalizeDayNoteEntry(dayNotes[selectedDayForNote]);
+                setDayNoteDraft(current?.text || '');
+                setDayNoteTagDraft(current?.tag || 'general');
+            }, [selectedDayForNote, dayNotes]);
+
+            useEffect(() => {
+                if (!editingShift) return;
+                setEditShiftStart(editingShift.start || editingShift.time || '08:00');
+                setEditShiftEnd(editingShift.end || '20:00');
+                setEditShiftNote(editingShift.note || '');
+            }, [editingShift]);
             
             function showNotification(msg, type = 'info', persistent = false) {
                 const id = Date.now();
@@ -5729,6 +5778,8 @@
                     const hasLargeCoverageGap = coverageGapStats.largestGapMinutes >= largeGapAlertMinutes;
                     const hasUnacknowledgedChange = unacknowledgedAppliedDates.has(dk);
                     const isToday = new Date().toISOString().split('T')[0] === dk;
+                    const dayNoteEntry = normalizeDayNoteEntry(dayNotes[dk]);
+                    const shouldShowNote = !!dayNoteEntry && (noteTagFilter === 'all' || dayNoteEntry.tag === noteTagFilter);
                     cells.push(
                         <div key={dk}
                             onClick={() => setSelectedDate(dk)}
@@ -5752,9 +5803,13 @@
                                     <IconAlert /> OPEN GAP {formatGapDuration(coverageGapStats.largestGapMinutes)}
                                 </div>
                             )}
-                            {dayNotes[dk] && (
-                                <div className="text-[11px] font-bold text-amber-300 bg-black/50 p-2 rounded mt-2 mb-2 border-l-2 border-amber-400 line-clamp-2">
-                                    📝 {dayNotes[dk]}
+                            {shouldShowNote && (
+                                <div className={`text-[11px] font-bold p-2 rounded mt-2 mb-2 border ${noteTagBadgeClasses(dayNoteEntry.tag)}`}>
+                                    <div className="flex items-center justify-between gap-2">
+                                        <span className="uppercase text-[9px] tracking-[0.12em]">{NOTE_TAGS.find(tag => tag.id === dayNoteEntry.tag)?.label || 'General'}</span>
+                                        <span>📝</span>
+                                    </div>
+                                    <div className="line-clamp-2 mt-1">{dayNoteEntry.text}</div>
                                 </div>
                             )}
                             <div className="space-y-2 mt-3">
@@ -5786,14 +5841,14 @@
                                     className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
                                     title="Add or edit note for this day"
                                 >
-                                    {dayNotes[dk] ? '✏️ Edit Note' : '+ Add Note'}
+                                    {dayNoteEntry ? '✏️ Edit Note' : '+ Add Note'}
                                 </button>
                             </div>
                         </div>
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter]);
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
@@ -5844,6 +5899,7 @@
                 return count + (events[dateKey] || []).length;
             }, 0);
             const pendingSwapCount = shiftSwapRequests.filter(request => request.status === 'pending').length;
+            const pendingSwapRequests = shiftSwapRequests.filter(request => request.status === 'pending').sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
             const unacknowledgedScheduleChanges = scheduleChangeAlerts.filter(alert => !alert.acknowledgedAt);
             const unacknowledgedAppliedChanges = scheduleChangeAlerts.filter(alert => alert.alertType === 'applied' && !alert.acknowledgedAt);
             const unacknowledgedAppliedDates = new Set(unacknowledgedAppliedChanges.map(alert => alert.shiftDate));
@@ -5892,6 +5948,17 @@
                 const weight = reportActivityTimeline[i] ? Math.min(1, (String(reportActivityTimeline[i].title || '').length / 24)) : 0.1;
                 return Math.max(0.15, weight);
             });
+            const selectedDayTimelineShifts = [...selectedDayShifts].sort((a, b) => toMinutes(a.start || a.time || '08:00') - toMinutes(b.start || b.time || '08:00'));
+            const timelineWindowStart = 6 * 60;
+            const timelineWindowEnd = 24 * 60;
+            const timelineWindowSpan = timelineWindowEnd - timelineWindowStart;
+            const editShiftInvalidRange = editingShift ? toMinutes(editShiftEnd || '00:00') <= toMinutes(editShiftStart || '00:00') : false;
+            const editShiftHasConflict = editingShift && !editShiftInvalidRange
+                ? hasShiftConflict(events, editingShift.empId, editingShift.date, editShiftStart || '08:00', editShiftEnd || '20:00', editingShift.id)
+                : false;
+            const editShiftDuration = editingShift
+                ? Math.max(0, toMinutes(editShiftEnd || '00:00') - toMinutes(editShiftStart || '00:00'))
+                : 0;
             const isProcessing = isReportDirty || pendingSwapCount > 0;
             const particleSeeds = useMemo(() => Array.from({ length: 18 }, (_, i) => ({
                 id: i,
@@ -6062,6 +6129,7 @@
                             </div>
                             <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
+                                <button onClick={() => setIsRequestDrawerOpen(previous => !previous)} className="data-chip header-chip" title="Open pending requests">REQUESTS {pendingSwapCount > 0 ? `(${pendingSwapCount})` : ''}</button>
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>
@@ -6256,6 +6324,14 @@
                                             <option value="confirmed">Confirmed</option>
                                             <option value="pending">Pending</option>
                                         </select>
+                                        <select value={noteTagFilter} onChange={e => setNoteTagFilter(e.target.value)} className="cal-input">
+                                            <option value="all">All Notes</option>
+                                            {NOTE_TAGS.map(tag => <option key={tag.id} value={tag.id}>{tag.label}</option>)}
+                                        </select>
+                                        <div className="cal-nav-group">
+                                            <button onClick={() => setCalendarViewMode('grid')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'grid' ? 1 : 0.6}}>GRID</button>
+                                            <button onClick={() => setCalendarViewMode('timeline')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'timeline' ? 1 : 0.6}}>TIMELINE</button>
+                                        </div>
                                         <button onClick={() => window.print()} className="fancy-btn" style={{padding: '8px 16px', fontSize: '10px'}}>EXPORT MATRIX</button>
                                         <button
                                             onClick={() => {
@@ -6348,13 +6424,89 @@
                                         Tip: drag a badge onto a day to create a shift, or drag an existing shift card to move it.
                                     </div>
                                 </div>
-                                <div className="cal-grid font-bold">
-                                    {(appSettings.weekStartsOnMonday ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']).map(d => <div key={d} className="cal-weekday-hdr">{d}</div>)}
-                                    {calendarMatrix}
-                                </div>
+                                {calendarViewMode === 'grid' && (
+                                    <div className="cal-grid font-bold">
+                                        {(appSettings.weekStartsOnMonday ? ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']).map(d => <div key={d} className="cal-weekday-hdr">{d}</div>)}
+                                        {calendarMatrix}
+                                    </div>
+                                )}
+                                {calendarViewMode === 'timeline' && (
+                                    <div className="rounded-2xl border border-cyan-500/25 bg-black/35 p-5 text-left">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div>
+                                                <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-300">Timeline View</div>
+                                                <div className="text-lg font-black text-white">{new Date(`${selectedDate}T12:00:00`).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+                                            </div>
+                                            <div className="text-xs text-white/70">{selectedDayTimelineShifts.length} shifts</div>
+                                        </div>
+                                        <div className="relative rounded-xl border border-white/10 bg-slate-950/65 p-3" style={{height: '500px'}}>
+                                            {[6, 8, 10, 12, 14, 16, 18, 20, 22].map(hour => (
+                                                <div key={`axis-${hour}`} className="absolute left-0 right-0 border-t border-white/10" style={{top: `${((hour * 60 - timelineWindowStart) / timelineWindowSpan) * 100}%`}}>
+                                                    <span className="absolute -top-2 left-1 text-[9px] text-cyan-200/70">{hour}:00</span>
+                                                </div>
+                                            ))}
+                                            {selectedDayTimelineShifts.map(shift => {
+                                                const startMinutes = toMinutes(shift.start || shift.time || '08:00');
+                                                const endMinutes = Math.max(startMinutes + 30, toMinutes(shift.end || '20:00'));
+                                                const topPercent = Math.max(0, ((startMinutes - timelineWindowStart) / timelineWindowSpan) * 100);
+                                                const blockHeightPercent = Math.max(4, ((endMinutes - startMinutes) / timelineWindowSpan) * 100);
+                                                return (
+                                                    <button
+                                                        key={`timeline-${shift.id}`}
+                                                        type="button"
+                                                        onClick={() => setEditingShift(shift)}
+                                                        className="absolute left-24 right-3 rounded-lg border border-cyan-300/35 bg-cyan-500/25 px-3 py-2 text-left shadow-lg hover:bg-cyan-400/30 transition-colors"
+                                                        style={{top: `${Math.min(95, topPercent)}%`, height: `${Math.min(35, blockHeightPercent)}%`}}
+                                                        title="Click to edit shift"
+                                                    >
+                                                        <div className="text-[10px] uppercase tracking-[0.12em] text-cyan-100/85">{shift.start || shift.time} - {shift.end || '20:00'}</div>
+                                                        <div className="text-sm font-black text-white">{staff[shift.empId]?.name || shift.empId}</div>
+                                                        {shift.note && <div className="text-[10px] text-cyan-100/80 mt-1 line-clamp-2">{shift.note}</div>}
+                                                    </button>
+                                                );
+                                            })}
+                                            {selectedDayTimelineShifts.length === 0 && (
+                                                <div className="absolute inset-0 flex items-center justify-center text-white/55 text-sm">No shifts scheduled for this day.</div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </main>
                         </div>
                     </div>
+
+                    {isRequestDrawerOpen && (
+                        <aside className="no-print" style={{position: 'fixed', top: '78px', right: '16px', width: '360px', maxHeight: '78vh', zIndex: 550, border: '1px solid rgba(245,158,11,0.4)', background: 'linear-gradient(180deg, rgba(17,24,39,0.95), rgba(2,6,23,0.96))', borderRadius: '14px', boxShadow: '0 18px 40px rgba(0,0,0,0.45)', display: 'flex', flexDirection: 'column'}}>
+                            <div style={{padding: '12px 14px', borderBottom: '1px solid rgba(245,158,11,0.28)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                                <div>
+                                    <div style={{fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fcd34d', fontWeight: 900}}>Pending Requests</div>
+                                    <div style={{fontSize: '13px', color: '#fde68a', fontWeight: 800}}>{pendingSwapRequests.length} awaiting action</div>
+                                </div>
+                                <button onClick={() => setIsRequestDrawerOpen(false)} className="header-orb-btn" style={{padding: '5px 10px'}}>Close</button>
+                            </div>
+                            <div className="no-scrollbar" style={{overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
+                                {pendingSwapRequests.length === 0 && (
+                                    <div style={{padding: '14px', borderRadius: '10px', border: '1px solid rgba(148,163,184,0.35)', color: '#cbd5e1', fontSize: '12px'}}>No pending requests right now.</div>
+                                )}
+                                {pendingSwapRequests.map(request => (
+                                    <div key={request.id} style={{padding: '10px', borderRadius: '10px', border: '1px solid rgba(250,204,21,0.25)', background: 'rgba(15,23,42,0.72)'}}>
+                                        <div style={{fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#fde68a', marginBottom: '4px'}}>{request.type === 'coverage' ? 'Coverage Request' : 'Swap Request'} • {request.date}</div>
+                                        <div style={{fontSize: '12px', color: '#f8fafc', fontWeight: 700}}>{staff[request.fromStaffId]?.name || request.fromStaffId} → {staff[request.toStaffId]?.name || request.toStaffId}</div>
+                                        {request.reason && <div style={{fontSize: '11px', color: '#e2e8f0', marginTop: '5px'}}>Reason: {request.reason}</div>}
+                                        <div style={{fontSize: '10px', color: '#94a3b8', marginTop: '5px'}}>{new Date(request.createdAt).toLocaleString()}</div>
+                                        {isAdmin ? (
+                                            <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
+                                                <button onClick={() => approveShiftSwap(request.id)} className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#059669'}}>Approve</button>
+                                                <button onClick={() => declineShiftSwap(request.id)} className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#dc2626'}}>Decline</button>
+                                            </div>
+                                        ) : (
+                                            <div style={{fontSize: '10px', color: '#fbbf24', marginTop: '8px'}}>Admin review required.</div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </aside>
+                    )}
 
                     {/* MODAL: PERSONNEL */}
                     {isPersonnelModalOpen && (
@@ -6941,10 +7093,10 @@
                                 <div className="modal-panel__body">
                                 <form onSubmit={e => {
                                     e.preventDefault();
-                                    const noteText = (document.querySelector('.day-note-textarea')?.value || '').trim();
+                                    const noteText = dayNoteDraft.trim();
                                     const updated = { ...dayNotes };
                                     if (noteText) {
-                                        updated[selectedDayForNote] = noteText;
+                                        updated[selectedDayForNote] = { text: noteText, tag: dayNoteTagDraft || 'general' };
                                     } else {
                                         delete updated[selectedDayForNote];
                                     }
@@ -6952,10 +7104,18 @@
                                     saveToStorage(STORAGE_KEYS.DAY_NOTES, updated);
                                     setSelectedDayForNote(null);
                                 }} className="space-y-4">
+                                    <select
+                                        value={dayNoteTagDraft}
+                                        onChange={e => setDayNoteTagDraft(e.target.value)}
+                                        className="w-full bg-black border border-cyan-500/40 rounded-xl p-3 text-sm text-cyan-100 outline-none shadow-inner font-black"
+                                    >
+                                        {NOTE_TAGS.map(tag => <option key={tag.id} value={tag.id}>{tag.label}</option>)}
+                                    </select>
                                     <textarea
-                                        className="day-note-textarea w-full bg-black border border-cyan-500/40 rounded-xl p-4 text-base text-white outline-none shadow-inner font-normal min-h-[120px]"
+                                        className="w-full bg-black border border-cyan-500/40 rounded-xl p-4 text-base text-white outline-none shadow-inner font-normal min-h-[120px]"
                                         placeholder="Add a note for this day..."
-                                        defaultValue={dayNotes[selectedDayForNote] || ''}
+                                        value={dayNoteDraft}
+                                        onChange={e => setDayNoteDraft(e.target.value)}
                                     />
                                     <div className="flex gap-3">
                                         <button type="submit" className="flex-1 bg-white text-black py-3 rounded-xl font-black uppercase text-xs hover:bg-cyan-400 transition-colors shadow-lg">Save Note</button>
@@ -6991,12 +7151,16 @@
                                 <div className="modal-panel__body">
                                 <form onSubmit={e => {
                                     e.preventDefault();
+                                    if (editShiftInvalidRange) {
+                                        showNotification('End time must be later than start time.', 'error');
+                                        return;
+                                    }
                                     const updatedEvents = { ...events };
                                     const dateShifts = updatedEvents[editingShift.date] || [];
                                     const shiftIndex = dateShifts.findIndex(s => s.id === editingShift.id);
                                     if (shiftIndex !== -1) {
-                                        const proposedStart = window.editingShiftTime || editingShift.start || editingShift.time;
-                                        const proposedEnd = window.editingShiftEnd || editingShift.end || '20:00';
+                                        const proposedStart = editShiftStart || editingShift.start || editingShift.time;
+                                        const proposedEnd = editShiftEnd || editingShift.end || '20:00';
                                         if (hasShiftConflict(updatedEvents, editingShift.empId, editingShift.date, proposedStart, proposedEnd, editingShift.id)) {
                                             showNotification(`${staff[editingShift.empId]?.name || 'Staff'} already has an overlapping shift at that time.`, 'error');
                                             return;
@@ -7006,17 +7170,14 @@
                                             start: proposedStart,
                                             time: proposedStart,
                                             end: proposedEnd,
-                                            note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || ''),
+                                            note: editShiftNote,
                                             confirmed: editingShift.confirmed
                                         };
                                         updatedEvents[editingShift.date] = dateShifts;
                                         setEvents(updatedEvents);
-                                        setEditingShift({ ...editingShift, start: proposedStart, time: proposedStart, end: proposedEnd, note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || '') });
+                                        setEditingShift({ ...editingShift, start: proposedStart, time: proposedStart, end: proposedEnd, note: editShiftNote });
                                         saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
                                     }
-                                    window.editingShiftTime = null;
-                                    window.editingShiftEnd = null;
-                                    window.editingShiftNote = null;
                                     setEditingShift(null);
                                 }} className="space-y-6 text-center font-bold">
                                     <button type="button" onClick={() => { 
@@ -7031,13 +7192,18 @@
                                             saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
                                         }
                                     }} className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}>{editingShift.confirmed ? 'Link: Verified' : 'Link: Lost'}</button>
+                                    <div className={`text-left rounded-lg border px-3 py-2 text-[11px] ${editShiftInvalidRange || editShiftHasConflict ? 'border-rose-400/50 bg-rose-600/15 text-rose-100' : 'border-emerald-400/35 bg-emerald-600/15 text-emerald-100'}`}>
+                                        {editShiftInvalidRange && 'Time range is invalid. End time must be later than start time.'}
+                                        {!editShiftInvalidRange && editShiftHasConflict && 'Conflict detected. This staff member already has overlapping coverage.'}
+                                        {!editShiftInvalidRange && !editShiftHasConflict && `No conflicts detected. Duration: ${Math.max(0, Math.round(editShiftDuration / 60 * 10) / 10)}h.`}
+                                    </div>
                                     <div className="text-left">
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">Start Time</label>
-                                        <input type="time" defaultValue={editingShift.start || editingShift.time || ''} onChange={e => { window.editingShiftTime = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
+                                        <input type="time" value={editShiftStart} onChange={e => setEditShiftStart(e.target.value)} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">End Time</label>
-                                        <input type="time" defaultValue={editingShift.end || '20:00'} onChange={e => { window.editingShiftEnd = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
+                                        <input type="time" value={editShiftEnd} onChange={e => setEditShiftEnd(e.target.value)} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Note</label>
-                                        <textarea defaultValue={editingShift.note || ''} onChange={e => { window.editingShiftNote = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-left text-base text-white outline-none shadow-inner font-bold min-h-[60px]" placeholder="Optional note..." />
+                                        <textarea value={editShiftNote} onChange={e => setEditShiftNote(e.target.value)} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-left text-base text-white outline-none shadow-inner font-bold min-h-[60px]" placeholder="Optional note..." />
                                     </div>
                                     <div className="flex gap-3 font-bold">
                                         <button type="submit" className="flex-1 bg-white text-black py-4 rounded-xl font-black uppercase text-xs hover:bg-cyan-400 transition-colors shadow-lg font-bold tracking-widest">Commit</button>
