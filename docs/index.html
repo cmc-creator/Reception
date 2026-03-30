@@ -3843,7 +3843,16 @@
             // --- Team Morale Features ---
             const [showAchievements, setShowAchievements] = useState(false);
             const [showKudos, setShowKudos] = useState(false);
+            const [showGameHub, setShowGameHub] = useState(false);
             const [kudosWall, setKudosWall] = useState(() => loadFromStorage('kudos_wall', []));
+            const [gameStats, setGameStats] = useState(() => loadFromStorage('reception_game_stats', {}));
+            const [gameHistory, setGameHistory] = useState(() => loadFromStorage('reception_game_history', []));
+            const [reactionDuelPlayers, setReactionDuelPlayers] = useState({ playerOneId: '', playerTwoId: '' });
+            const [reactionDuelState, setReactionDuelState] = useState('idle');
+            const [reactionDuelMessage, setReactionDuelMessage] = useState('Pick two players, then start duel.');
+            const [reactionDuelReadyAt, setReactionDuelReadyAt] = useState(0);
+            const reactionDuelTimerRef = useRef(null);
+            const [partyGameDraft, setPartyGameDraft] = useState({ game: 'UNO', winnerId: '', runnerUpId: '' });
             const [motivationalQuote] = useState(() => {
                 const quotes = [
                     { text: "You make a difference every single day.", author: "Your Team" },
@@ -3855,6 +3864,96 @@
                 ];
                 return quotes[Math.floor(Math.random() * quotes.length)];
             });
+
+            const gameLeaderboard = useMemo(() => {
+                return Object.entries(gameStats || {})
+                    .map(([staffId, stats]) => ({
+                        staffId,
+                        name: staff[staffId]?.name || staffId,
+                        points: Number(stats?.points || 0),
+                        wins: Number(stats?.wins || 0),
+                        plays: Number(stats?.plays || 0)
+                    }))
+                    .sort((a, b) => b.points - a.points || b.wins - a.wins || a.name.localeCompare(b.name));
+            }, [gameStats, staff]);
+
+            const topGamer = gameLeaderboard[0] || null;
+
+            useEffect(() => {
+                return () => {
+                    if (reactionDuelTimerRef.current) {
+                        clearTimeout(reactionDuelTimerRef.current);
+                    }
+                };
+            }, []);
+
+            function recordGameResult(gameName, winnerId, runnerUpId = null, winnerPoints = 3, runnerUpPoints = 1) {
+                if (!winnerId) return;
+                const safeGame = String(gameName || 'Game Night');
+                const updatedStats = { ...gameStats };
+                const winnerEntry = updatedStats[winnerId] || { points: 0, wins: 0, plays: 0 };
+                updatedStats[winnerId] = {
+                    points: winnerEntry.points + winnerPoints,
+                    wins: winnerEntry.wins + 1,
+                    plays: winnerEntry.plays + 1
+                };
+                if (runnerUpId) {
+                    const runnerEntry = updatedStats[runnerUpId] || { points: 0, wins: 0, plays: 0 };
+                    updatedStats[runnerUpId] = {
+                        points: runnerEntry.points + runnerUpPoints,
+                        wins: runnerEntry.wins,
+                        plays: runnerEntry.plays + 1
+                    };
+                }
+                const historyEntry = {
+                    id: `game-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    game: safeGame,
+                    winnerId,
+                    runnerUpId: runnerUpId || null,
+                    createdAt: new Date().toISOString()
+                };
+                const updatedHistory = [historyEntry, ...(gameHistory || [])].slice(0, 120);
+                setGameStats(updatedStats);
+                setGameHistory(updatedHistory);
+                saveToStorage('reception_game_stats', updatedStats);
+                saveToStorage('reception_game_history', updatedHistory);
+                showNotification(`${staff[winnerId]?.name || winnerId} won ${safeGame}!`, 'success', true);
+            }
+
+            function startReactionDuel() {
+                const playerOneId = reactionDuelPlayers.playerOneId;
+                const playerTwoId = reactionDuelPlayers.playerTwoId;
+                if (!playerOneId || !playerTwoId || playerOneId === playerTwoId) {
+                    showNotification('Choose two different players for the duel.', 'error');
+                    return;
+                }
+                if (reactionDuelTimerRef.current) clearTimeout(reactionDuelTimerRef.current);
+                setReactionDuelState('arming');
+                setReactionDuelMessage('Get ready... wait for GO!');
+                const delay = 1200 + Math.floor(Math.random() * 2600);
+                reactionDuelTimerRef.current = setTimeout(() => {
+                    setReactionDuelReadyAt(Date.now());
+                    setReactionDuelState('live');
+                    setReactionDuelMessage('GO! First tap wins.');
+                }, delay);
+            }
+
+            function handleReactionTap(playerId) {
+                if (reactionDuelState === 'arming') {
+                    if (reactionDuelTimerRef.current) clearTimeout(reactionDuelTimerRef.current);
+                    const otherPlayer = reactionDuelPlayers.playerOneId === playerId ? reactionDuelPlayers.playerTwoId : reactionDuelPlayers.playerOneId;
+                    setReactionDuelState('finished');
+                    setReactionDuelMessage(`${staff[playerId]?.name || 'Player'} jumped early. ${staff[otherPlayer]?.name || 'Other player'} wins.`);
+                    recordGameResult('Reaction Duel', otherPlayer, playerId, 4, 1);
+                    return;
+                }
+                if (reactionDuelState !== 'live') return;
+                const otherPlayer = reactionDuelPlayers.playerOneId === playerId ? reactionDuelPlayers.playerTwoId : reactionDuelPlayers.playerOneId;
+                const reactionTime = Math.max(0, Date.now() - reactionDuelReadyAt);
+                setReactionDuelState('finished');
+                setReactionDuelMessage(`${staff[playerId]?.name || 'Player'} wins in ${reactionTime}ms.`);
+                recordGameResult('Reaction Duel', playerId, otherPlayer, 4, 1);
+            }
 
             const achievementStats = useMemo(() => {
                 const thisMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
@@ -6030,6 +6129,10 @@
                                 <span className="nav-action-icon">🏆</span>
                                 <span className="nav-action-text">Ranks</span>
                             </button>
+                            <button onClick={() => setShowGameHub(true)} className="nav-action-btn nav-action-btn--blue" title="Open downtime games">
+                                <span className="nav-action-icon">🎮</span>
+                                <span className="nav-action-text">Games</span>
+                            </button>
                             <button onClick={() => setIsShiftSwapOpen(true)} className="nav-action-btn nav-action-btn--blue" title="Shift swap portal">
                                 <span className="nav-action-icon">🔄</span>
                                 <span className="nav-action-text">Swaps</span>
@@ -6069,24 +6172,22 @@
                                 </div>
                                 <div className="header-metric-row">
                                     <div className="header-metric-card rivet-frame">
-                                        <div className="header-metric-label">Monthly Shifts</div>
-                                        <div className="header-metric-value">{activeMonthShiftCount}</div>
-                                        <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentShiftSpark)} /></svg>
-                                    </div>
-                                    <div className="header-metric-card rivet-frame">
                                         <div className="header-metric-label">Pending Swaps</div>
                                         <div className="header-metric-value">{pendingSwapCount}</div>
                                         <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentSwapSpark)} /></svg>
                                     </div>
                                     <div className="header-metric-card rivet-frame">
-                                        <div className="header-metric-label">Crew Rank</div>
-                                        <div className="crew-rank-ring">
-                                            <svg width="44" height="44" viewBox="0 0 44 44">
-                                                <circle cx="22" cy="22" r="18" stroke="rgba(255,255,255,0.15)" strokeWidth="4" fill="none" />
-                                                <circle cx="22" cy="22" r="18" stroke="var(--highlight)" strokeWidth="4" fill="none" strokeDasharray={`${2 * Math.PI * 18}`} strokeDashoffset={`${(1 - crewRankProgress) * 2 * Math.PI * 18}`} strokeLinecap="round" />
-                                            </svg>
-                                            <div className="crew-rank-ring__label">{crewRank > 0 ? `#${crewRank}` : 'OK'}</div>
-                                        </div>
+                                        <div className="header-metric-label">Game Lounge</div>
+                                        <div className="header-metric-value">{gameHistory.length}</div>
+                                        <div className="text-[9px] text-cyan-200/80 uppercase tracking-[0.11em] mb-2">Matches Logged</div>
+                                        <button className="fancy-btn w-full" style={{padding: '6px 10px', fontSize: '9px', background: '#0ea5e9'}} onClick={() => setShowGameHub(true)}>OPEN GAMES</button>
+                                    </div>
+                                    <div className="header-metric-card rivet-frame">
+                                        <div className="header-metric-label">Top Gamer</div>
+                                        <div className="header-metric-value">{topGamer ? topGamer.points : 0}</div>
+                                        <div className="text-[10px] text-amber-200 truncate">{topGamer ? topGamer.name : 'No winner yet'}</div>
+                                        <div className="text-[9px] text-white/60 mt-1">{topGamer ? `${topGamer.wins} wins` : 'Start first match'}</div>
+                                        <button className="fancy-btn w-full mt-2" style={{padding: '6px 10px', fontSize: '9px', background: '#7c3aed'}} onClick={() => setShowGameHub(true)}>LEADERBOARD</button>
                                     </div>
                                 </div>
                             </div>
@@ -6129,6 +6230,7 @@
                             </div>
                             <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
+                                <button onClick={() => setShowGameHub(true)} className="data-chip header-chip" title="Open game lounge">GAMES</button>
                                 <button onClick={() => setIsRequestDrawerOpen(previous => !previous)} className="data-chip header-chip" title="Open pending requests">REQUESTS {pendingSwapCount > 0 ? `(${pendingSwapCount})` : ''}</button>
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
@@ -7530,6 +7632,147 @@
                                         </div>
                                     </div>
                                     <button onClick={() => setShowAchievements(false)} className="w-full fancy-btn mt-5" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Game Lounge Modal */}
+                    {showGameHub && (
+                        <div className="fixed inset-0 bg-black/84 backdrop-blur-md flex items-center justify-center p-4 z-[1320] modal-surface" onClick={() => setShowGameHub(false)}>
+                            <div className="crew-modal-card max-w-6xl w-full max-h-[92vh] overflow-y-auto modal-card-enter" onClick={(e) => e.stopPropagation()}>
+                                <div className="crew-modal-header">
+                                    <div className="text-[10px] uppercase tracking-[0.28em]" style={{color: '#22d3ee'}}>Downtime</div>
+                                    <h2 className="text-2xl font-black mt-2 text-cyan-200">🎮 Game Lounge</h2>
+                                    <div className="text-sm text-cyan-100/80 mt-1">Friendly competition, shared laughs, and instant leaderboard updates.</div>
+                                    <button onClick={() => setShowGameHub(false)} className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl">×</button>
+                                </div>
+                                <div className="crew-modal-body">
+                                    <div className="grid xl:grid-cols-[1.25fr_0.9fr] gap-5">
+                                        <div className="space-y-5">
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(8,145,178,0.24), rgba(2,132,199,0.18))', border: '1px solid rgba(125,211,252,0.34)'}}>
+                                                <div className="flex items-center justify-between mb-3">
+                                                    <div>
+                                                        <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-200">Featured Game</div>
+                                                        <div className="text-lg font-black text-white">Reaction Duel</div>
+                                                    </div>
+                                                    <button className="fancy-btn" style={{padding: '7px 12px', fontSize: '10px', background: '#0891b2'}} onClick={startReactionDuel}>Start Round</button>
+                                                </div>
+                                                <div className="grid md:grid-cols-2 gap-3 mb-3">
+                                                    <select value={reactionDuelPlayers.playerOneId} onChange={e => setReactionDuelPlayers(previous => ({ ...previous, playerOneId: e.target.value }))} className="panel-input">
+                                                        <option value="">Player One</option>
+                                                        {Object.entries(staff).map(([id, member]) => <option key={`duel-1-${id}`} value={id}>{member.name}</option>)}
+                                                    </select>
+                                                    <select value={reactionDuelPlayers.playerTwoId} onChange={e => setReactionDuelPlayers(previous => ({ ...previous, playerTwoId: e.target.value }))} className="panel-input">
+                                                        <option value="">Player Two</option>
+                                                        {Object.entries(staff).map(([id, member]) => <option key={`duel-2-${id}`} value={id}>{member.name}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="rounded-xl px-3 py-2 mb-3" style={{background: 'rgba(2,6,23,0.5)', border: '1px solid rgba(125,211,252,0.22)', color: '#e0f2fe'}}>{reactionDuelMessage}</div>
+                                                <div className="grid grid-cols-2 gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleReactionTap(reactionDuelPlayers.playerOneId)}
+                                                        disabled={!reactionDuelPlayers.playerOneId}
+                                                        className="fancy-btn"
+                                                        style={{padding: '14px 10px', fontSize: '12px', background: '#0ea5e9', opacity: reactionDuelPlayers.playerOneId ? 1 : 0.45, cursor: reactionDuelPlayers.playerOneId ? 'pointer' : 'not-allowed'}}
+                                                    >
+                                                        TAP {staff[reactionDuelPlayers.playerOneId]?.name || 'P1'}
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleReactionTap(reactionDuelPlayers.playerTwoId)}
+                                                        disabled={!reactionDuelPlayers.playerTwoId}
+                                                        className="fancy-btn"
+                                                        style={{padding: '14px 10px', fontSize: '12px', background: '#7c3aed', opacity: reactionDuelPlayers.playerTwoId ? 1 : 0.45, cursor: reactionDuelPlayers.playerTwoId ? 'pointer' : 'not-allowed'}}
+                                                    >
+                                                        TAP {staff[reactionDuelPlayers.playerTwoId]?.name || 'P2'}
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(30,41,59,0.7), rgba(15,23,42,0.65))', border: '1px solid rgba(148,163,184,0.28)'}}>
+                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/70 mb-2">Party Game Log</div>
+                                                <div className="text-sm text-white/70 mb-3">Log winners from any team game, cards, trivia, board games, or quick challenges.</div>
+                                                <div className="grid md:grid-cols-3 gap-3 mb-3">
+                                                    <select value={partyGameDraft.game} onChange={e => setPartyGameDraft(previous => ({ ...previous, game: e.target.value }))} className="panel-input">
+                                                        <option value="UNO">UNO</option>
+                                                        <option value="Trivia Blitz">Trivia Blitz</option>
+                                                        <option value="Charades">Charades</option>
+                                                        <option value="Dice Duel">Dice Duel</option>
+                                                        <option value="Puzzle Race">Puzzle Race</option>
+                                                        <option value="Other Game">Other Game</option>
+                                                    </select>
+                                                    <select value={partyGameDraft.winnerId} onChange={e => setPartyGameDraft(previous => ({ ...previous, winnerId: e.target.value }))} className="panel-input">
+                                                        <option value="">Winner</option>
+                                                        {Object.entries(staff).map(([id, member]) => <option key={`winner-${id}`} value={id}>{member.name}</option>)}
+                                                    </select>
+                                                    <select value={partyGameDraft.runnerUpId} onChange={e => setPartyGameDraft(previous => ({ ...previous, runnerUpId: e.target.value }))} className="panel-input">
+                                                        <option value="">Runner-Up (optional)</option>
+                                                        {Object.entries(staff).map(([id, member]) => <option key={`runner-${id}`} value={id}>{member.name}</option>)}
+                                                    </select>
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <button
+                                                        type="button"
+                                                        className="fancy-btn"
+                                                        style={{padding: '9px 14px', fontSize: '11px', background: '#2563eb'}}
+                                                        onClick={() => {
+                                                            if (!partyGameDraft.winnerId) {
+                                                                showNotification('Choose a winner before logging the match.', 'error');
+                                                                return;
+                                                            }
+                                                            recordGameResult(partyGameDraft.game, partyGameDraft.winnerId, partyGameDraft.runnerUpId || null, 3, 1);
+                                                        }}
+                                                    >
+                                                        Log Match Result
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="fancy-btn"
+                                                        style={{padding: '9px 14px', fontSize: '11px', background: '#475569'}}
+                                                        onClick={() => setPartyGameDraft({ game: 'UNO', winnerId: '', runnerUpId: '' })}
+                                                    >
+                                                        Reset
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="space-y-4">
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(67,56,202,0.26), rgba(124,58,237,0.18))', border: '1px solid rgba(196,181,253,0.34)'}}>
+                                                <div className="text-[10px] uppercase tracking-[0.2em] text-violet-100 mb-2">Leaderboard</div>
+                                                <div className="space-y-2">
+                                                    {gameLeaderboard.length === 0 && <div className="text-sm text-violet-100/75">No matches logged yet. Start the first game round.</div>}
+                                                    {gameLeaderboard.slice(0, 8).map((entry, index) => (
+                                                        <div key={`game-leader-${entry.staffId}`} className="leaderboard-row" style={{background: 'rgba(15,23,42,0.42)'}}>
+                                                            <div className="leaderboard-row__place">{index + 1}</div>
+                                                            <div>
+                                                                <div className="leaderboard-row__name">{entry.name}</div>
+                                                                <div className="leaderboard-row__meta">{entry.wins} wins • {entry.plays} games</div>
+                                                            </div>
+                                                            <div className="mini-stat-pill" style={{padding: '0.3rem 0.5rem'}}>{entry.points} pts</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(15,23,42,0.82), rgba(30,41,59,0.72))', border: '1px solid rgba(148,163,184,0.25)'}}>
+                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/70 mb-2">Recent Matches</div>
+                                                <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+                                                    {gameHistory.length === 0 && <div className="text-sm text-white/60">No game history yet.</div>}
+                                                    {gameHistory.slice(0, 12).map(match => (
+                                                        <div key={match.id} className="rounded-lg border border-white/15 px-3 py-2 bg-white/5">
+                                                            <div className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/80">{match.game}</div>
+                                                            <div className="text-sm text-white font-black">{staff[match.winnerId]?.name || match.winnerId} won</div>
+                                                            <div className="text-[11px] text-white/70">{match.runnerUpId ? `vs ${staff[match.runnerUpId]?.name || match.runnerUpId}` : 'Solo score entry'}</div>
+                                                            <div className="text-[10px] text-white/50 mt-1">{new Date(match.createdAt).toLocaleString()}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setShowGameHub(false)} className="w-full fancy-btn mt-5" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
                                 </div>
                             </div>
                         </div>
