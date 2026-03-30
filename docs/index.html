@@ -9785,7 +9785,7 @@
         // Register Service Worker for offline support
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                const migrationKey = 'reception_sw_migration_v10';
+                const migrationKey = 'reception_sw_migration_v11';
                 const runMigration = localStorage.getItem(migrationKey) !== 'done';
 
                 const registerServiceWorker = () => {
