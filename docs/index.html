@@ -6928,24 +6928,27 @@
                                     const dateShifts = updatedEvents[editingShift.date] || [];
                                     const shiftIndex = dateShifts.findIndex(s => s.id === editingShift.id);
                                     if (shiftIndex !== -1) {
-                                        const proposedStart = window.editingShiftTime || editingShift.time;
-                                        const proposedEnd = editingShift.end || '20:00';
+                                        const proposedStart = window.editingShiftTime || editingShift.start || editingShift.time;
+                                        const proposedEnd = window.editingShiftEnd || editingShift.end || '20:00';
                                         if (hasShiftConflict(updatedEvents, editingShift.empId, editingShift.date, proposedStart, proposedEnd, editingShift.id)) {
                                             showNotification(`${staff[editingShift.empId]?.name || 'Staff'} already has an overlapping shift at that time.`, 'error');
                                             return;
                                         }
                                         dateShifts[shiftIndex] = {
                                             ...dateShifts[shiftIndex],
+                                            start: proposedStart,
                                             time: proposedStart,
+                                            end: proposedEnd,
                                             note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || ''),
                                             confirmed: editingShift.confirmed
                                         };
                                         updatedEvents[editingShift.date] = dateShifts;
                                         setEvents(updatedEvents);
-                                        setEditingShift({ ...editingShift, time: window.editingShiftTime || editingShift.time, note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || '') });
+                                        setEditingShift({ ...editingShift, start: proposedStart, time: proposedStart, end: proposedEnd, note: window.editingShiftNote !== undefined ? window.editingShiftNote : (editingShift.note || '') });
                                         saveToStorage(STORAGE_KEYS.SHIFTS, updatedEvents);
                                     }
                                     window.editingShiftTime = null;
+                                    window.editingShiftEnd = null;
                                     window.editingShiftNote = null;
                                     setEditingShift(null);
                                 }} className="space-y-6 text-center font-bold">
@@ -6962,8 +6965,10 @@
                                         }
                                     }} className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}>{editingShift.confirmed ? 'Link: Verified' : 'Link: Lost'}</button>
                                     <div className="text-left">
-                                        <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Time</label>
+                                        <label className="block text-xs text-fuchsia-400 font-bold mb-1">Start Time</label>
                                         <input type="time" defaultValue={editingShift.start || editingShift.time || ''} onChange={e => { window.editingShiftTime = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
+                                        <label className="block text-xs text-fuchsia-400 font-bold mb-1">End Time</label>
+                                        <input type="time" defaultValue={editingShift.end || '20:00'} onChange={e => { window.editingShiftEnd = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Note</label>
                                         <textarea defaultValue={editingShift.note || ''} onChange={e => { window.editingShiftNote = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-left text-base text-white outline-none shadow-inner font-bold min-h-[60px]" placeholder="Optional note..." />
                                     </div>
