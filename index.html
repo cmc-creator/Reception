@@ -2904,11 +2904,15 @@
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; color: black !important; }
+            * { color: black !important; }
             .glass-panel, .neon-blue, .neon-fuchsia {
                 background: white !important;
                 color: black !important;
                 border: 1px solid #333 !important;
                 box-shadow: none !important;
+            }
+            .shift-card span, .day-cell__num, .day-cell__empty, .shift-card__time {
+                color: black !important;
             }
             .calendar-grid .bg-cyan-600\/80, .calendar-grid .bg-rose-600\/80, .calendar-grid .bg-fuchsia-600\/80, .calendar-grid .bg-blue-600\/80, .calendar-grid .bg-slate-700 {
                 color: white !important;
