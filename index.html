@@ -3249,6 +3249,8 @@
             { prompt: '⏰😴➡️🏃', answer: 'Running late for shift' }
         ];
 
+        const MEMORY_SYMBOLS = ['🩺', '📞', '📋', '🧃', '💊', '🛎️'];
+
         function getISOWeekKey(dateValue = new Date()) {
             const d = new Date(dateValue);
             d.setHours(0, 0, 0, 0);
@@ -3926,6 +3928,17 @@
             const [gameSoundEnabled, setGameSoundEnabled] = useState(() => loadFromStorage('reception_game_sound_enabled', true));
             const [confettiBursts, setConfettiBursts] = useState([]);
             const [gameOfDay, setGameOfDay] = useState(() => loadFromStorage('reception_game_of_day', null));
+            const [ticTacToePlayers, setTicTacToePlayers] = useState({ xId: '', oId: '' });
+            const [ticTacToeBoard, setTicTacToeBoard] = useState(Array(9).fill(null));
+            const [ticTacToeTurn, setTicTacToeTurn] = useState('X');
+            const [ticTacToeResult, setTicTacToeResult] = useState('');
+            const [memoryPlayerId, setMemoryPlayerId] = useState('');
+            const [memoryDeck, setMemoryDeck] = useState([]);
+            const [memoryOpenIndices, setMemoryOpenIndices] = useState([]);
+            const [memoryMoves, setMemoryMoves] = useState(0);
+            const [memoryLocked, setMemoryLocked] = useState(false);
+            const [memoryCompleted, setMemoryCompleted] = useState(false);
+            const memoryTimerRef = useRef(null);
             const [motivationalQuote] = useState(() => {
                 const quotes = [
                     { text: "You make a difference every single day.", author: "Your Team" },
@@ -3982,8 +3995,120 @@
             }
 
             function getGameOfDayCandidate() {
-                const options = ['Reaction Duel', 'Pictionary Prompt', 'Trivia Blitz', 'Emoji Charades', 'UNO', 'Charades'];
+                const options = ['Reaction Duel', 'Tic-Tac-Toe', 'Memory Match', 'Pictionary Prompt', 'Trivia Blitz', 'Emoji Charades', 'UNO', 'Charades'];
                 return options[Math.floor(Math.random() * options.length)];
+            }
+
+            function buildMemoryDeck() {
+                const cards = [...MEMORY_SYMBOLS, ...MEMORY_SYMBOLS].map((symbol, index) => ({
+                    id: `memory-${index}-${Math.random().toString(36).slice(2, 6)}`,
+                    symbol,
+                    matched: false
+                }));
+                for (let i = cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [cards[i], cards[j]] = [cards[j], cards[i]];
+                }
+                return cards;
+            }
+
+            function getTicTacToeWinner(board) {
+                const winLines = [
+                    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                    [0, 4, 8], [2, 4, 6]
+                ];
+                for (const [a, b, c] of winLines) {
+                    if (board[a] && board[a] === board[b] && board[a] === board[c]) {
+                        return board[a];
+                    }
+                }
+                return null;
+            }
+
+            function resetTicTacToe() {
+                setTicTacToeBoard(Array(9).fill(null));
+                setTicTacToeTurn('X');
+                setTicTacToeResult('');
+            }
+
+            function handleTicTacToeMove(index) {
+                if (ticTacToeBoard[index] || ticTacToeResult) return;
+                if (!ticTacToePlayers.xId || !ticTacToePlayers.oId || ticTacToePlayers.xId === ticTacToePlayers.oId) {
+                    showNotification('Pick two different players first.', 'error');
+                    return;
+                }
+                const nextBoard = [...ticTacToeBoard];
+                nextBoard[index] = ticTacToeTurn;
+                const winnerSymbol = getTicTacToeWinner(nextBoard);
+                if (winnerSymbol) {
+                    const winnerId = winnerSymbol === 'X' ? ticTacToePlayers.xId : ticTacToePlayers.oId;
+                    const runnerUpId = winnerSymbol === 'X' ? ticTacToePlayers.oId : ticTacToePlayers.xId;
+                    setTicTacToeBoard(nextBoard);
+                    setTicTacToeResult(`${staff[winnerId]?.name || winnerId} wins as ${winnerSymbol}.`);
+                    recordGameResult('Tic-Tac-Toe', winnerId, runnerUpId, 4, 1);
+                    return;
+                }
+                if (nextBoard.every(cell => cell)) {
+                    setTicTacToeBoard(nextBoard);
+                    setTicTacToeResult('Draw game. Reset for a rematch.');
+                    showNotification('Tic-Tac-Toe ended in a draw.', 'info');
+                    return;
+                }
+                setTicTacToeBoard(nextBoard);
+                setTicTacToeTurn(previous => (previous === 'X' ? 'O' : 'X'));
+            }
+
+            function resetMemoryMatch() {
+                if (memoryTimerRef.current) {
+                    clearTimeout(memoryTimerRef.current);
+                    memoryTimerRef.current = null;
+                }
+                setMemoryDeck(buildMemoryDeck());
+                setMemoryOpenIndices([]);
+                setMemoryMoves(0);
+                setMemoryLocked(false);
+                setMemoryCompleted(false);
+            }
+
+            function handleMemoryCardClick(index) {
+                if (memoryLocked || memoryCompleted) return;
+                if (!memoryDeck[index] || memoryDeck[index].matched) return;
+                if (memoryOpenIndices.includes(index)) return;
+                const nextOpen = [...memoryOpenIndices, index];
+                setMemoryOpenIndices(nextOpen);
+                if (nextOpen.length < 2) return;
+
+                setMemoryMoves(previous => previous + 1);
+                const [firstIdx, secondIdx] = nextOpen;
+                const firstCard = memoryDeck[firstIdx];
+                const secondCard = memoryDeck[secondIdx];
+
+                if (firstCard.symbol === secondCard.symbol) {
+                    const nextDeck = memoryDeck.map((card, cardIndex) =>
+                        cardIndex === firstIdx || cardIndex === secondIdx ? { ...card, matched: true } : card
+                    );
+                    setMemoryDeck(nextDeck);
+                    setMemoryOpenIndices([]);
+                    const allMatched = nextDeck.every(card => card.matched);
+                    if (allMatched) {
+                        setMemoryCompleted(true);
+                        if (memoryPlayerId) {
+                            recordGameResult('Memory Match', memoryPlayerId, null, 4, 0);
+                        } else {
+                            showNotification('Memory Match complete. Pick a player to award points next time.', 'info');
+                        }
+                    }
+                    return;
+                }
+
+                setMemoryLocked(true);
+                if (memoryTimerRef.current) clearTimeout(memoryTimerRef.current);
+                memoryTimerRef.current = setTimeout(() => {
+                    setMemoryOpenIndices([]);
+                    setMemoryLocked(false);
+                    memoryTimerRef.current = null;
+                }, 650);
             }
 
             const gameLeaderboard = useMemo(() => {
@@ -4053,7 +4178,14 @@
                     if (reactionDuelTimerRef.current) {
                         clearTimeout(reactionDuelTimerRef.current);
                     }
+                    if (memoryTimerRef.current) {
+                        clearTimeout(memoryTimerRef.current);
+                    }
                 };
+            }, []);
+
+            useEffect(() => {
+                setMemoryDeck(buildMemoryDeck());
             }, []);
 
             useEffect(() => {
@@ -7990,6 +8122,78 @@
                                                     >
                                                         TAP {staff[reactionDuelPlayers.playerTwoId]?.name || 'P2'}
                                                     </button>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid lg:grid-cols-2 gap-4">
+                                                <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(30,41,59,0.88), rgba(17,24,39,0.8))', border: '1px solid rgba(148,163,184,0.3)'}}>
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div>
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-sky-200">Playable</div>
+                                                            <div className="text-lg font-black text-white">Tic-Tac-Toe</div>
+                                                        </div>
+                                                        <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#334155'}} onClick={resetTicTacToe}>Reset Board</button>
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-2 mb-3">
+                                                        <select value={ticTacToePlayers.xId} onChange={e => setTicTacToePlayers(previous => ({ ...previous, xId: e.target.value }))} className="panel-input">
+                                                            <option value="">Player X</option>
+                                                            {Object.entries(staff).map(([id, member]) => <option key={`ttt-x-${id}`} value={id}>{member.name}</option>)}
+                                                        </select>
+                                                        <select value={ticTacToePlayers.oId} onChange={e => setTicTacToePlayers(previous => ({ ...previous, oId: e.target.value }))} className="panel-input">
+                                                            <option value="">Player O</option>
+                                                            {Object.entries(staff).map(([id, member]) => <option key={`ttt-o-${id}`} value={id}>{member.name}</option>)}
+                                                        </select>
+                                                    </div>
+                                                    <div className="text-[11px] text-white/70 mb-2">
+                                                        {ticTacToeResult || `Turn: ${ticTacToeTurn} (${ticTacToeTurn === 'X' ? (staff[ticTacToePlayers.xId]?.name || 'Player X') : (staff[ticTacToePlayers.oId]?.name || 'Player O')})`}
+                                                    </div>
+                                                    <div className="grid grid-cols-3 gap-2">
+                                                        {ticTacToeBoard.map((cell, index) => (
+                                                            <button
+                                                                key={`ttt-cell-${index}`}
+                                                                type="button"
+                                                                onClick={() => handleTicTacToeMove(index)}
+                                                                className="fancy-btn"
+                                                                style={{padding: '12px 0', fontSize: '18px', background: cell ? (cell === 'X' ? '#0284c7' : '#7c3aed') : '#1f2937', borderColor: 'rgba(148,163,184,0.35)', opacity: ticTacToeResult ? 0.88 : 1}}
+                                                            >
+                                                                {cell || '·'}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+
+                                                <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(22,78,99,0.72), rgba(15,23,42,0.82))', border: '1px solid rgba(56,189,248,0.35)'}}>
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <div>
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-200">Playable</div>
+                                                            <div className="text-lg font-black text-white">Memory Match</div>
+                                                        </div>
+                                                        <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#0e7490'}} onClick={resetMemoryMatch}>New Deck</button>
+                                                    </div>
+                                                    <div className="grid grid-cols-[1fr_auto] gap-2 mb-3 items-center">
+                                                        <select value={memoryPlayerId} onChange={e => setMemoryPlayerId(e.target.value)} className="panel-input">
+                                                            <option value="">Select player for points</option>
+                                                            {Object.entries(staff).map(([id, member]) => <option key={`memory-${id}`} value={id}>{member.name}</option>)}
+                                                        </select>
+                                                        <div className="mini-stat-pill" style={{padding: '0.32rem 0.52rem'}}>Moves: {memoryMoves}</div>
+                                                    </div>
+                                                    <div className="grid grid-cols-4 gap-2">
+                                                        {memoryDeck.map((card, index) => {
+                                                            const revealed = card.matched || memoryOpenIndices.includes(index);
+                                                            return (
+                                                                <button
+                                                                    key={card.id}
+                                                                    type="button"
+                                                                    onClick={() => handleMemoryCardClick(index)}
+                                                                    disabled={card.matched || memoryLocked || memoryCompleted}
+                                                                    className="fancy-btn"
+                                                                    style={{padding: '10px 0', fontSize: '16px', background: revealed ? '#155e75' : '#0f172a', borderColor: card.matched ? 'rgba(52,211,153,0.6)' : 'rgba(125,211,252,0.35)', opacity: card.matched ? 0.92 : 1, cursor: card.matched ? 'default' : 'pointer'}}
+                                                                >
+                                                                    {revealed ? card.symbol : '?'}
+                                                                </button>
+                                                            );
+                                                        })}
+                                                    </div>
                                                 </div>
                                             </div>
 
