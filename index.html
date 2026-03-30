@@ -6963,7 +6963,7 @@
                                     }} className={`w-full py-4 rounded-xl font-black text-xs uppercase transition-all ${editingShift.confirmed ? 'bg-cyan-600 text-white shadow-[0_0_15px_rgba(6,182,212,0.4)]' : 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.4)]'}`}>{editingShift.confirmed ? 'Link: Verified' : 'Link: Lost'}</button>
                                     <div className="text-left">
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Time</label>
-                                        <input type="time" defaultValue={editingShift.time} onChange={e => { window.editingShiftTime = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
+                                        <input type="time" defaultValue={editingShift.start || editingShift.time || ''} onChange={e => { window.editingShiftTime = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-center text-lg text-white outline-none shadow-inner font-black mb-4" required />
                                         <label className="block text-xs text-fuchsia-400 font-bold mb-1">Shift Note</label>
                                         <textarea defaultValue={editingShift.note || ''} onChange={e => { window.editingShiftNote = e.target.value; }} className="w-full bg-black border border-fuchsia-500/40 rounded-xl p-3 text-left text-base text-white outline-none shadow-inner font-bold min-h-[60px]" placeholder="Optional note..." />
                                     </div>
