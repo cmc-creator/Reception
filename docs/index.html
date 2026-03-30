@@ -3202,6 +3202,7 @@
             MESSAGES: 'reception_messages',
             REPORTS: 'reception_reports',
             ALERT: 'reception_alert',
+            DAY_NOTES: 'reception_day_notes',
             INITIALIZED: 'reception_initialized'
         };
 
@@ -5634,6 +5635,8 @@
             // --- UI Elements ---
             const [shiftStatusFilter, setShiftStatusFilter] = useState('all');
             const [shiftSearch, setShiftSearch] = useState('');
+            const [dayNotes, setDayNotes] = useState(() => loadFromStorage(STORAGE_KEYS.DAY_NOTES, {}));
+            const [selectedDayForNote, setSelectedDayForNote] = useState(null);
             const calendarMatrix = useMemo(() => {
                 const mIdx = currentDate.getMonth(), yIdx = currentDate.getFullYear();
                 const total = new Date(yIdx, mIdx + 1, 0).getDate();
@@ -5749,6 +5752,11 @@
                                     <IconAlert /> OPEN GAP {formatGapDuration(coverageGapStats.largestGapMinutes)}
                                 </div>
                             )}
+                            {dayNotes[dk] && (
+                                <div className="text-[11px] font-bold text-amber-300 bg-black/50 p-2 rounded mt-2 mb-2 border-l-2 border-amber-400 line-clamp-2">
+                                    📝 {dayNotes[dk]}
+                                </div>
+                            )}
                             <div className="space-y-2 mt-3">
                                 {dayShifts.length === 0
                                     ? <div className="day-cell__empty"><IconAlert /> NEEDS COVERAGE</div>
@@ -5772,11 +5780,20 @@
                                     ))
                                 }
                             </div>
+                            <div className="mt-3 flex justify-center">
+                                <button
+                                    onClick={() => setSelectedDayForNote(dk)}
+                                    className="text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition-colors flex items-center gap-1"
+                                    title="Add or edit note for this day"
+                                >
+                                    {dayNotes[dk] ? '✏️ Edit Note' : '+ Add Note'}
+                                </button>
+                            </div>
                         </div>
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes]);
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
@@ -6907,6 +6924,56 @@
                                     </form>
                                 )}
                                 <button onClick={() => { setIsAddModalOpen(false); window.selectedAddEmpId = null; window.selectedAddEmpName = null; window.selectedAddEmpBg = null; window.selectedAddTime = null; }} className="w-full text-slate-600 text-[10px] font-black uppercase tracking-[0.2em] pt-6 text-center hover:text-white transition-colors underline font-bold tracking-widest">Cancel deployment</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* DAY NOTE MODAL */}
+                    {selectedDayForNote && (
+                        <div className="modal-backdrop z-[500]">
+                            <div className="modal-panel modal-panel--sm modal-card-enter text-left font-bold text-white">
+                                <div className="modal-panel__header">
+                                    <div className="modal-panel__kicker">Daily Note</div>
+                                    <h3 className="modal-panel__title">{selectedDayForNote}</h3>
+                                    <button onClick={() => setSelectedDayForNote(null)} className="modal-panel__close">&times;</button>
+                                </div>
+                                <div className="modal-panel__body">
+                                <form onSubmit={e => {
+                                    e.preventDefault();
+                                    const noteText = (document.querySelector('.day-note-textarea')?.value || '').trim();
+                                    const updated = { ...dayNotes };
+                                    if (noteText) {
+                                        updated[selectedDayForNote] = noteText;
+                                    } else {
+                                        delete updated[selectedDayForNote];
+                                    }
+                                    setDayNotes(updated);
+                                    saveToStorage(STORAGE_KEYS.DAY_NOTES, updated);
+                                    setSelectedDayForNote(null);
+                                }} className="space-y-4">
+                                    <textarea
+                                        className="day-note-textarea w-full bg-black border border-cyan-500/40 rounded-xl p-4 text-base text-white outline-none shadow-inner font-normal min-h-[120px]"
+                                        placeholder="Add a note for this day..."
+                                        defaultValue={dayNotes[selectedDayForNote] || ''}
+                                    />
+                                    <div className="flex gap-3">
+                                        <button type="submit" className="flex-1 bg-white text-black py-3 rounded-xl font-black uppercase text-xs hover:bg-cyan-400 transition-colors shadow-lg">Save Note</button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = { ...dayNotes };
+                                                delete updated[selectedDayForNote];
+                                                setDayNotes(updated);
+                                                saveToStorage(STORAGE_KEYS.DAY_NOTES, updated);
+                                                setSelectedDayForNote(null);
+                                            }}
+                                            className="flex-1 bg-rose-600 text-white py-3 rounded-xl font-black uppercase text-xs hover:bg-rose-500 transition-colors shadow-lg"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                </form>
                                 </div>
                             </div>
                         </div>
