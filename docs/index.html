@@ -3232,12 +3232,47 @@
         ];
 
         const TRIVIA_PACK = [
-            { question: 'How many bones are in the adult human body?', answer: '206' },
-            { question: 'What does CPR stand for?', answer: 'Cardiopulmonary resuscitation' },
-            { question: 'What planet is known as the Red Planet?', answer: 'Mars' },
-            { question: 'How many minutes are in 2.5 hours?', answer: '150' },
-            { question: 'What vitamin is produced when skin is exposed to sunlight?', answer: 'Vitamin D' },
-            { question: 'What is the largest organ in the human body?', answer: 'Skin' }
+            {
+                question: 'How many bones are in the adult human body?',
+                answer: '206',
+                choices: ['186', '206', '226', '246']
+            },
+            {
+                question: 'What does CPR stand for?',
+                answer: 'Cardiopulmonary resuscitation',
+                choices: ['Cardio pressure response', 'Critical pulse routine', 'Cardiopulmonary resuscitation', 'Cardiac patient recovery']
+            },
+            {
+                question: 'What planet is known as the Red Planet?',
+                answer: 'Mars',
+                choices: ['Venus', 'Saturn', 'Mars', 'Jupiter']
+            },
+            {
+                question: 'How many minutes are in 2.5 hours?',
+                answer: '150',
+                choices: ['120', '135', '145', '150']
+            },
+            {
+                question: 'What vitamin is produced when skin is exposed to sunlight?',
+                answer: 'Vitamin D',
+                choices: ['Vitamin A', 'Vitamin D', 'Vitamin B12', 'Vitamin K']
+            },
+            {
+                question: 'What is the largest organ in the human body?',
+                answer: 'Skin',
+                choices: ['Liver', 'Lung', 'Skin', 'Brain']
+            }
+        ];
+
+        const WORD_SCRAMBLE_TERMS = [
+            { word: 'CHECKLIST', hint: 'Daily workflow tracker' },
+            { word: 'HANDOFF', hint: 'What each shift gives the next shift' },
+            { word: 'VISITOR', hint: 'Guest arriving at reception' },
+            { word: 'SCHEDULE', hint: 'Monthly staffing matrix' },
+            { word: 'TRIAGE', hint: 'Prioritizing urgency' },
+            { word: 'BADGE', hint: 'Identity card for staff/guests' },
+            { word: 'CLIPBOARD', hint: 'Portable writing board' },
+            { word: 'PAGER', hint: 'Alert device for urgent calls' }
         ];
 
         const EMOJI_CHARADES = [
@@ -3920,11 +3955,16 @@
             const reactionDuelTimerRef = useRef(null);
             const [partyGameDraft, setPartyGameDraft] = useState({ game: 'UNO', winnerId: '', runnerUpId: '' });
             const [pictionaryPrompt, setPictionaryPrompt] = useState(() => PICTIONARY_PROMPTS[Math.floor(Math.random() * PICTIONARY_PROMPTS.length)]);
+            const [pictionaryRound, setPictionaryRound] = useState({ drawerId: '', guesserId: '', prompt: '', active: false, timeLeft: 75 });
+            const pictionaryTimerRef = useRef(null);
             const [triviaCard, setTriviaCard] = useState(() => TRIVIA_PACK[Math.floor(Math.random() * TRIVIA_PACK.length)]);
-            const [triviaRevealAnswer, setTriviaRevealAnswer] = useState(false);
+            const [triviaRound, setTriviaRound] = useState({ playerId: '', selectedChoice: '', status: 'idle' });
             const [emojiCharadesCard, setEmojiCharadesCard] = useState(() => EMOJI_CHARADES[Math.floor(Math.random() * EMOJI_CHARADES.length)]);
-            const [emojiRevealAnswer, setEmojiRevealAnswer] = useState(false);
-            const [miniGameWinners, setMiniGameWinners] = useState({ pictionary: '', trivia: '', charades: '' });
+            const [emojiRound, setEmojiRound] = useState({ playerId: '', options: [], selectedChoice: '', status: 'idle' });
+            const [wordScrambleRound, setWordScrambleRound] = useState({ playerId: '', word: '', scrambled: '', hint: '', guess: '', status: 'idle' });
+            const [rewardWallet, setRewardWallet] = useState(() => loadFromStorage('reception_reward_wallet', {}));
+            const [claimedWorkRewards, setClaimedWorkRewards] = useState(() => loadFromStorage('reception_work_rewards_claimed', {}));
+            const [workQuestPlayerId, setWorkQuestPlayerId] = useState('');
             const [gameSoundEnabled, setGameSoundEnabled] = useState(() => loadFromStorage('reception_game_sound_enabled', true));
             const [confettiBursts, setConfettiBursts] = useState([]);
             const [gameOfDay, setGameOfDay] = useState(() => loadFromStorage('reception_game_of_day', null));
@@ -4125,6 +4165,60 @@
 
             const topGamer = gameLeaderboard[0] || null;
 
+            const workQuestStatsByStaff = useMemo(() => {
+                const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+                const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                const stats = {};
+
+                Object.entries(staff || {}).forEach(([staffId]) => {
+                    stats[staffId] = {
+                        shifts: 0,
+                        confirmedShifts: 0,
+                        weekendShifts: 0,
+                        kudosReceived: 0
+                    };
+                });
+
+                Object.entries(events || {}).forEach(([dateKey, dayShifts]) => {
+                    const pointInTime = new Date(`${dateKey}T00:00:00`);
+                    if (pointInTime < monthStart || pointInTime >= monthEnd) return;
+                    const day = pointInTime.getDay();
+                    (dayShifts || []).forEach(shift => {
+                        if (!stats[shift.empId]) {
+                            stats[shift.empId] = { shifts: 0, confirmedShifts: 0, weekendShifts: 0, kudosReceived: 0 };
+                        }
+                        stats[shift.empId].shifts += 1;
+                        if (shift.confirmed) stats[shift.empId].confirmedShifts += 1;
+                        if (day === 0 || day === 6) stats[shift.empId].weekendShifts += 1;
+                    });
+                });
+
+                const staffNameMap = Object.entries(staff || {}).reduce((map, [id, member]) => {
+                    map[id] = String(member?.name || '').trim().toLowerCase();
+                    return map;
+                }, {});
+
+                (kudosWall || []).forEach(entry => {
+                    const targetName = String(entry?.to || '').trim().toLowerCase();
+                    if (!targetName) return;
+                    const targetId = Object.keys(staffNameMap).find(staffId => staffNameMap[staffId] === targetName);
+                    if (!targetId) return;
+                    if (!stats[targetId]) {
+                        stats[targetId] = { shifts: 0, confirmedShifts: 0, weekendShifts: 0, kudosReceived: 0 };
+                    }
+                    stats[targetId].kudosReceived += 1;
+                });
+
+                return stats;
+            }, [events, staff, kudosWall, currentDate]);
+
+            const workQuestDefinitions = useMemo(() => ([
+                { id: 'coverage-master', title: 'Coverage Master', label: 'Schedule 10 shifts this month', metric: 'shifts', target: 10, reward: 8 },
+                { id: 'reliability-ace', title: 'Reliability Ace', label: 'Confirm 6 shifts this month', metric: 'confirmedShifts', target: 6, reward: 10 },
+                { id: 'weekend-anchor', title: 'Weekend Anchor', label: 'Work 2 weekend shifts', metric: 'weekendShifts', target: 2, reward: 7 },
+                { id: 'kudos-magnet', title: 'Kudos Magnet', label: 'Receive 3 kudos shout-outs', metric: 'kudosReceived', target: 3, reward: 6 }
+            ]), []);
+
             function rotateGameWeek(force = false) {
                 const currentWeekKey = getISOWeekKey();
                 if (!force && gameWeekKey === currentWeekKey) return;
@@ -4158,6 +4252,151 @@
                 setFn(nextItem);
             }
 
+            function shuffleItems(items) {
+                const next = [...items];
+                for (let i = next.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [next[i], next[j]] = [next[j], next[i]];
+                }
+                return next;
+            }
+
+            function scrambleWord(word) {
+                const chars = String(word || '').toUpperCase().split('');
+                if (chars.length < 2) return chars.join('');
+                let scrambled = chars.join('');
+                while (scrambled === chars.join('')) {
+                    scrambled = shuffleItems(chars).join('');
+                }
+                return scrambled;
+            }
+
+            function startPictionaryRound() {
+                if (!pictionaryRound.drawerId || !pictionaryRound.guesserId || pictionaryRound.drawerId === pictionaryRound.guesserId) {
+                    showNotification('Pick two different staff members for Pictionary.', 'error');
+                    return;
+                }
+                const prompt = PICTIONARY_PROMPTS[Math.floor(Math.random() * PICTIONARY_PROMPTS.length)];
+                setPictionaryPrompt(prompt);
+                setPictionaryRound(previous => ({ ...previous, prompt, active: true, timeLeft: 75 }));
+            }
+
+            function finishPictionaryRound(correct = false) {
+                if (!pictionaryRound.active) return;
+                if (correct) {
+                    recordGameResult('Live Pictionary', pictionaryRound.guesserId, pictionaryRound.drawerId, 4, 2);
+                } else {
+                    showNotification('Pictionary round ended with no winner.', 'info');
+                }
+                setPictionaryRound(previous => ({ ...previous, active: false, timeLeft: 75 }));
+            }
+
+            function startTriviaRound() {
+                if (!triviaRound.playerId) {
+                    showNotification('Pick a player for Trivia.', 'error');
+                    return;
+                }
+                const nextCard = TRIVIA_PACK[Math.floor(Math.random() * TRIVIA_PACK.length)];
+                setTriviaCard(nextCard);
+                setTriviaRound(previous => ({ ...previous, selectedChoice: '', status: 'live' }));
+            }
+
+            function answerTrivia(choice) {
+                if (triviaRound.status !== 'live') return;
+                const isCorrect = String(choice) === String(triviaCard?.answer || '');
+                setTriviaRound(previous => ({ ...previous, selectedChoice: choice, status: isCorrect ? 'correct' : 'incorrect' }));
+                if (isCorrect) {
+                    recordGameResult('Trivia Challenge', triviaRound.playerId, null, 3, 0);
+                } else {
+                    showNotification(`Not quite. Correct answer: ${triviaCard?.answer}`, 'error');
+                }
+            }
+
+            function startEmojiRound() {
+                if (!emojiRound.playerId) {
+                    showNotification('Pick a player for Emoji Decoder.', 'error');
+                    return;
+                }
+                const nextCard = EMOJI_CHARADES[Math.floor(Math.random() * EMOJI_CHARADES.length)];
+                const otherAnswers = shuffleItems(
+                    EMOJI_CHARADES
+                        .map(entry => entry.answer)
+                        .filter(answer => answer !== nextCard.answer)
+                ).slice(0, 3);
+                const nextOptions = shuffleItems([nextCard.answer, ...otherAnswers]);
+                setEmojiCharadesCard(nextCard);
+                setEmojiRound(previous => ({ ...previous, options: nextOptions, selectedChoice: '', status: 'live' }));
+            }
+
+            function answerEmoji(choice) {
+                if (emojiRound.status !== 'live') return;
+                const isCorrect = String(choice) === String(emojiCharadesCard?.answer || '');
+                setEmojiRound(previous => ({ ...previous, selectedChoice: choice, status: isCorrect ? 'correct' : 'incorrect' }));
+                if (isCorrect) {
+                    recordGameResult('Emoji Decoder', emojiRound.playerId, null, 3, 0);
+                } else {
+                    showNotification(`Close one. Correct answer: ${emojiCharadesCard?.answer}`, 'error');
+                }
+            }
+
+            function startWordScrambleRound() {
+                if (!wordScrambleRound.playerId) {
+                    showNotification('Pick a player for Word Scramble.', 'error');
+                    return;
+                }
+                const card = WORD_SCRAMBLE_TERMS[Math.floor(Math.random() * WORD_SCRAMBLE_TERMS.length)];
+                setWordScrambleRound(previous => ({
+                    ...previous,
+                    word: card.word,
+                    scrambled: scrambleWord(card.word),
+                    hint: card.hint,
+                    guess: '',
+                    status: 'live'
+                }));
+            }
+
+            function submitWordScrambleGuess() {
+                if (wordScrambleRound.status !== 'live') return;
+                const correct = String(wordScrambleRound.guess || '').trim().toUpperCase() === String(wordScrambleRound.word || '').trim().toUpperCase();
+                if (correct) {
+                    setWordScrambleRound(previous => ({ ...previous, status: 'correct' }));
+                    recordGameResult('Word Scramble', wordScrambleRound.playerId, null, 3, 0);
+                    return;
+                }
+                setWordScrambleRound(previous => ({ ...previous, status: 'incorrect' }));
+                showNotification(`Not yet. Word was ${wordScrambleRound.word}.`, 'error');
+            }
+
+            function claimWorkQuestReward(quest) {
+                if (!workQuestPlayerId) {
+                    showNotification('Pick a staff member for rewards first.', 'error');
+                    return;
+                }
+                const monthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                const claimKey = `${monthKey}:${workQuestPlayerId}:${quest.id}`;
+                if (claimedWorkRewards[claimKey]) {
+                    showNotification('Reward already claimed for this month.', 'info');
+                    return;
+                }
+                const nextClaimed = { ...claimedWorkRewards, [claimKey]: true };
+                const currentWallet = rewardWallet[workQuestPlayerId] || { tokens: 0, rewards: [] };
+                const nextWallet = {
+                    ...rewardWallet,
+                    [workQuestPlayerId]: {
+                        tokens: Number(currentWallet.tokens || 0) + quest.reward,
+                        rewards: [
+                            ...(currentWallet.rewards || []),
+                            { id: `${claimKey}-reward`, label: quest.title, reward: quest.reward, monthKey, claimedAt: Date.now() }
+                        ].slice(-80)
+                    }
+                };
+                setClaimedWorkRewards(nextClaimed);
+                setRewardWallet(nextWallet);
+                saveToStorage('reception_work_rewards_claimed', nextClaimed);
+                saveToStorage('reception_reward_wallet', nextWallet);
+                showNotification(`${staff[workQuestPlayerId]?.name || 'Staff'} earned ${quest.reward} reward tokens.`, 'success', true);
+            }
+
             function awardMiniGame(gameName, winnerId, points = 3) {
                 if (!winnerId) {
                     showNotification('Pick a winner first.', 'error');
@@ -4181,8 +4420,43 @@
                     if (memoryTimerRef.current) {
                         clearTimeout(memoryTimerRef.current);
                     }
+                    if (pictionaryTimerRef.current) {
+                        clearInterval(pictionaryTimerRef.current);
+                    }
                 };
             }, []);
+
+            useEffect(() => {
+                if (!pictionaryRound.active) {
+                    if (pictionaryTimerRef.current) {
+                        clearInterval(pictionaryTimerRef.current);
+                        pictionaryTimerRef.current = null;
+                    }
+                    return;
+                }
+                if (pictionaryTimerRef.current) clearInterval(pictionaryTimerRef.current);
+                pictionaryTimerRef.current = setInterval(() => {
+                    setPictionaryRound(previous => {
+                        if (!previous.active) return previous;
+                        const nextTime = Math.max(0, Number(previous.timeLeft || 0) - 1);
+                        if (nextTime === 0) {
+                            if (pictionaryTimerRef.current) {
+                                clearInterval(pictionaryTimerRef.current);
+                                pictionaryTimerRef.current = null;
+                            }
+                            showNotification('Pictionary timer ended.', 'info');
+                            return { ...previous, active: false, timeLeft: 0 };
+                        }
+                        return { ...previous, timeLeft: nextTime };
+                    });
+                }, 1000);
+                return () => {
+                    if (pictionaryTimerRef.current) {
+                        clearInterval(pictionaryTimerRef.current);
+                        pictionaryTimerRef.current = null;
+                    }
+                };
+            }, [pictionaryRound.active]);
 
             useEffect(() => {
                 setMemoryDeck(buildMemoryDeck());
@@ -4199,6 +4473,12 @@
                     saveToStorage('reception_game_of_day', next);
                 }
             }, [gameOfDay]);
+
+            useEffect(() => {
+                if (!workQuestPlayerId && Object.keys(staff || {}).length > 0) {
+                    setWorkQuestPlayerId(Object.keys(staff)[0]);
+                }
+            }, [staff, workQuestPlayerId]);
 
             function recordGameResult(gameName, winnerId, runnerUpId = null, winnerPoints = 3, runnerUpPoints = 1) {
                 if (!winnerId) return;
@@ -6435,6 +6715,17 @@
             const checklistCompletionPercent = checklist.length > 0 ? Math.round((checklistCompletedCount / checklist.length) * 100) : 0;
             const crewLeaderboardCount = Math.max(1, (crewPulse?.leaderboard || []).length);
             const crewRankProgress = crewRank > 0 ? Math.max(0.08, Math.min(1, (crewLeaderboardCount - crewRank + 1) / crewLeaderboardCount)) : 0.12;
+            const activeWorkQuestStaffId = workQuestPlayerId || Object.keys(staff || {})[0] || '';
+            const activeWorkQuestStats = workQuestStatsByStaff[activeWorkQuestStaffId] || { shifts: 0, confirmedShifts: 0, weekendShifts: 0, kudosReceived: 0 };
+            const activeRewardWallet = rewardWallet[activeWorkQuestStaffId] || { tokens: 0, rewards: [] };
+            const rewardMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+            const activeQuestRows = workQuestDefinitions.map(quest => {
+                const progress = Number(activeWorkQuestStats[quest.metric] || 0);
+                const complete = progress >= quest.target;
+                const claimKey = `${rewardMonthKey}:${activeWorkQuestStaffId}:${quest.id}`;
+                const claimed = !!claimedWorkRewards[claimKey];
+                return { ...quest, progress, complete, claimed, claimKey };
+            });
             const recentShiftSpark = Array.from({ length: 7 }, (_, i) => {
                 const dt = new Date(`${selectedDate}T12:00:00`);
                 dt.setDate(dt.getDate() - (6 - i));
@@ -8245,47 +8536,117 @@
                                             </div>
 
                                             <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(14,116,144,0.32), rgba(8,47,73,0.42))', border: '1px solid rgba(56,189,248,0.35)'}}>
-                                                <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100 mb-3">Party Mini Games</div>
-                                                <div className="grid md:grid-cols-3 gap-3">
+                                                <div className="flex items-center justify-between gap-3 mb-3">
+                                                    <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100">Live Mini-Game Arcade</div>
+                                                    <div className="text-[10px] text-cyan-100/80">Choose from 4 playable rounds</div>
+                                                </div>
+                                                <div className="grid xl:grid-cols-2 gap-3">
                                                     <div className="rounded-xl p-3 border border-cyan-300/25 bg-cyan-950/35">
-                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-200">Pictionary Prompt</div>
-                                                        <div className="text-sm text-white font-bold mt-2 min-h-[56px]">{pictionaryPrompt}</div>
-                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#0369a1'}} onClick={() => pickRandomFrom(PICTIONARY_PROMPTS, setPictionaryPrompt)}>New Prompt</button>
-                                                        <select value={miniGameWinners.pictionary} onChange={e => setMiniGameWinners(previous => ({ ...previous, pictionary: e.target.value }))} className="panel-input mt-2" style={{fontSize: '11px'}}>
-                                                            <option value="">Winner</option>
-                                                            {Object.entries(staff).map(([id, member]) => <option key={`mini-p-${id}`} value={id}>{member.name}</option>)}
-                                                        </select>
-                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#0e7490'}} onClick={() => awardMiniGame('Pictionary Prompt', miniGameWinners.pictionary, 3)}>Award Winner</button>
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-200">Live Pictionary</div>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            <select value={pictionaryRound.drawerId} onChange={e => setPictionaryRound(previous => ({ ...previous, drawerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
+                                                                <option value="">Drawer</option>
+                                                                {Object.entries(staff).map(([id, member]) => <option key={`pic-d-${id}`} value={id}>{member.name}</option>)}
+                                                            </select>
+                                                            <select value={pictionaryRound.guesserId} onChange={e => setPictionaryRound(previous => ({ ...previous, guesserId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
+                                                                <option value="">Guesser</option>
+                                                                {Object.entries(staff).map(([id, member]) => <option key={`pic-g-${id}`} value={id}>{member.name}</option>)}
+                                                            </select>
+                                                        </div>
+                                                        <div className="rounded-lg mt-2 px-3 py-2 bg-slate-950/65 border border-cyan-400/20 text-[12px] text-cyan-100 min-h-[48px]">
+                                                            {pictionaryRound.prompt || 'Start round to generate a drawing prompt.'}
+                                                        </div>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#0369a1'}} onClick={startPictionaryRound}>Start 75s</button>
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#0e7490'}} onClick={() => finishPictionaryRound(true)}>Solved</button>
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#334155'}} onClick={() => finishPictionaryRound(false)}>Skip</button>
+                                                        </div>
+                                                        <div className="text-[11px] text-cyan-100/80 mt-2">{pictionaryRound.active ? `Timer: ${pictionaryRound.timeLeft}s` : 'Round idle'}</div>
                                                     </div>
 
                                                     <div className="rounded-xl p-3 border border-violet-300/25 bg-violet-950/35">
-                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-violet-200">Trivia Blitz</div>
-                                                        <div className="text-sm text-white font-bold mt-2 min-h-[56px]">{triviaCard?.question}</div>
-                                                        <div className="text-xs mt-1" style={{color: triviaRevealAnswer ? '#a7f3d0' : '#c4b5fd'}}>{triviaRevealAnswer ? `Answer: ${triviaCard?.answer}` : 'Answer hidden'}</div>
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-violet-200">Trivia Challenge</div>
                                                         <div className="flex gap-2 mt-2">
-                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#6d28d9'}} onClick={() => { pickRandomFrom(TRIVIA_PACK, setTriviaCard); setTriviaRevealAnswer(false); }}>New Q</button>
-                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#7c3aed'}} onClick={() => setTriviaRevealAnswer(previous => !previous)}>{triviaRevealAnswer ? 'Hide' : 'Reveal'}</button>
+                                                            <select value={triviaRound.playerId} onChange={e => setTriviaRound(previous => ({ ...previous, playerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
+                                                                <option value="">Player</option>
+                                                                {Object.entries(staff).map(([id, member]) => <option key={`tri-p-${id}`} value={id}>{member.name}</option>)}
+                                                            </select>
+                                                            <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#6d28d9'}} onClick={startTriviaRound}>New Q</button>
                                                         </div>
-                                                        <select value={miniGameWinners.trivia} onChange={e => setMiniGameWinners(previous => ({ ...previous, trivia: e.target.value }))} className="panel-input mt-2" style={{fontSize: '11px'}}>
-                                                            <option value="">Winner</option>
-                                                            {Object.entries(staff).map(([id, member]) => <option key={`mini-t-${id}`} value={id}>{member.name}</option>)}
-                                                        </select>
-                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#7c3aed'}} onClick={() => awardMiniGame('Trivia Blitz', miniGameWinners.trivia, 3)}>Award Winner</button>
+                                                        <div className="text-sm text-white font-bold mt-2 min-h-[52px]">{triviaCard?.question}</div>
+                                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                                            {(triviaCard?.choices || []).map(choice => (
+                                                                <button
+                                                                    key={`trivia-choice-${choice}`}
+                                                                    type="button"
+                                                                    onClick={() => answerTrivia(choice)}
+                                                                    className="fancy-btn"
+                                                                    style={{padding: '6px 8px', fontSize: '10px', background: triviaRound.selectedChoice === choice ? '#7c3aed' : '#4c1d95'}}
+                                                                >
+                                                                    {choice}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <div className="text-[11px] text-violet-100/80 mt-2">
+                                                            {triviaRound.status === 'correct' && 'Correct! Points awarded.'}
+                                                            {triviaRound.status === 'incorrect' && `Incorrect. Answer: ${triviaCard?.answer}`}
+                                                            {triviaRound.status === 'live' && 'Choose one answer.'}
+                                                            {triviaRound.status === 'idle' && 'Start a round to play.'}
+                                                        </div>
                                                     </div>
 
                                                     <div className="rounded-xl p-3 border border-amber-300/25 bg-amber-950/30">
-                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-amber-200">Emoji Charades</div>
-                                                        <div className="text-2xl mt-2 min-h-[40px]">{emojiCharadesCard?.prompt}</div>
-                                                        <div className="text-xs mt-1" style={{color: emojiRevealAnswer ? '#fde68a' : '#fcd34d'}}>{emojiRevealAnswer ? emojiCharadesCard?.answer : 'Guess first, then reveal answer'}</div>
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-amber-200">Emoji Decoder</div>
                                                         <div className="flex gap-2 mt-2">
-                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#d97706'}} onClick={() => { pickRandomFrom(EMOJI_CHARADES, setEmojiCharadesCard); setEmojiRevealAnswer(false); }}>New Emojis</button>
-                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#b45309'}} onClick={() => setEmojiRevealAnswer(previous => !previous)}>{emojiRevealAnswer ? 'Hide' : 'Reveal'}</button>
+                                                            <select value={emojiRound.playerId} onChange={e => setEmojiRound(previous => ({ ...previous, playerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
+                                                                <option value="">Player</option>
+                                                                {Object.entries(staff).map(([id, member]) => <option key={`emo-p-${id}`} value={id}>{member.name}</option>)}
+                                                            </select>
+                                                            <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#b45309'}} onClick={startEmojiRound}>New Emojis</button>
                                                         </div>
-                                                        <select value={miniGameWinners.charades} onChange={e => setMiniGameWinners(previous => ({ ...previous, charades: e.target.value }))} className="panel-input mt-2" style={{fontSize: '11px'}}>
-                                                            <option value="">Winner</option>
-                                                            {Object.entries(staff).map(([id, member]) => <option key={`mini-c-${id}`} value={id}>{member.name}</option>)}
-                                                        </select>
-                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#ca8a04'}} onClick={() => awardMiniGame('Emoji Charades', miniGameWinners.charades, 3)}>Award Winner</button>
+                                                        <div className="text-2xl mt-2 min-h-[38px]">{emojiCharadesCard?.prompt}</div>
+                                                        <div className="grid grid-cols-1 gap-2 mt-2">
+                                                            {(emojiRound.options || []).map(choice => (
+                                                                <button
+                                                                    key={`emoji-choice-${choice}`}
+                                                                    type="button"
+                                                                    onClick={() => answerEmoji(choice)}
+                                                                    className="fancy-btn"
+                                                                    style={{padding: '6px 8px', fontSize: '10px', background: emojiRound.selectedChoice === choice ? '#ca8a04' : '#92400e'}}
+                                                                >
+                                                                    {choice}
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                        <div className="text-[11px] text-amber-100/80 mt-2">
+                                                            {emojiRound.status === 'correct' && 'Correct decode! Points awarded.'}
+                                                            {emojiRound.status === 'incorrect' && `Correct answer: ${emojiCharadesCard?.answer}`}
+                                                            {emojiRound.status === 'live' && 'Pick the best answer.'}
+                                                            {emojiRound.status === 'idle' && 'Start a round to play.'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="rounded-xl p-3 border border-emerald-300/25 bg-emerald-950/25">
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-emerald-200">Word Scramble</div>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <select value={wordScrambleRound.playerId} onChange={e => setWordScrambleRound(previous => ({ ...previous, playerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
+                                                                <option value="">Player</option>
+                                                                {Object.entries(staff).map(([id, member]) => <option key={`scramble-p-${id}`} value={id}>{member.name}</option>)}
+                                                            </select>
+                                                            <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#15803d'}} onClick={startWordScrambleRound}>New Word</button>
+                                                        </div>
+                                                        <div className="text-lg font-black text-emerald-100 mt-2 tracking-[0.08em] min-h-[34px]">{wordScrambleRound.scrambled || '------'}</div>
+                                                        <div className="text-[11px] text-emerald-100/80">Hint: {wordScrambleRound.hint || 'Start to get a hint'}</div>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <input value={wordScrambleRound.guess} onChange={e => setWordScrambleRound(previous => ({ ...previous, guess: e.target.value }))} className="panel-input" placeholder="Type your guess" />
+                                                            <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#0f766e'}} onClick={submitWordScrambleGuess}>Check</button>
+                                                        </div>
+                                                        <div className="text-[11px] text-emerald-100/80 mt-2">
+                                                            {wordScrambleRound.status === 'correct' && 'Correct! Points awarded.'}
+                                                            {wordScrambleRound.status === 'incorrect' && `Try another word. Answer was ${wordScrambleRound.word}.`}
+                                                            {wordScrambleRound.status === 'live' && 'Guess the term.'}
+                                                            {wordScrambleRound.status === 'idle' && 'Start a round to play.'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -8319,6 +8680,34 @@
                                                             <div className="text-[10px] text-cyan-100/75 mt-1">
                                                                 {week.topThree?.slice(1).map(entry => `${staff[entry.staffId]?.name || entry.staffId} (${entry.points})`).join(' • ') || 'No runners-up logged'}
                                                             </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(6,78,59,0.4), rgba(15,23,42,0.75))', border: '1px solid rgba(52,211,153,0.3)'}}>
+                                                <div className="flex items-center justify-between gap-2 mb-2">
+                                                    <div className="text-[10px] uppercase tracking-[0.2em] text-emerald-100">Work Quest Rewards</div>
+                                                    <div className="mini-stat-pill" style={{padding: '0.3rem 0.5rem'}}>{activeRewardWallet.tokens || 0} tokens</div>
+                                                </div>
+                                                <select value={activeWorkQuestStaffId} onChange={e => setWorkQuestPlayerId(e.target.value)} className="panel-input" style={{fontSize: '11px'}}>
+                                                    <option value="">Select staff</option>
+                                                    {Object.entries(staff).map(([id, member]) => <option key={`quest-${id}`} value={id}>{member.name}</option>)}
+                                                </select>
+                                                <div className="space-y-2 mt-3">
+                                                    {activeQuestRows.map(quest => (
+                                                        <div key={quest.id} className="rounded-lg border border-emerald-200/20 px-3 py-2 bg-emerald-950/20">
+                                                            <div className="text-[11px] font-black text-emerald-100">{quest.title}</div>
+                                                            <div className="text-[10px] text-emerald-100/75 mt-1">{quest.label}</div>
+                                                            <div className="text-[10px] text-emerald-100/80 mt-1">Progress: {quest.progress}/{quest.target}</div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => claimWorkQuestReward(quest)}
+                                                                disabled={!quest.complete || quest.claimed || !activeWorkQuestStaffId}
+                                                                className="fancy-btn w-full mt-2"
+                                                                style={{padding: '6px 8px', fontSize: '10px', background: quest.claimed ? '#334155' : (quest.complete ? '#059669' : '#1f2937'), opacity: (!quest.complete || quest.claimed || !activeWorkQuestStaffId) ? 0.7 : 1}}
+                                                            >
+                                                                {quest.claimed ? 'Claimed' : (quest.complete ? `Claim +${quest.reward} tokens` : 'In Progress')}
+                                                            </button>
                                                         </div>
                                                     ))}
                                                 </div>
