@@ -3902,6 +3902,9 @@
             const [emojiCharadesCard, setEmojiCharadesCard] = useState(() => EMOJI_CHARADES[Math.floor(Math.random() * EMOJI_CHARADES.length)]);
             const [emojiRevealAnswer, setEmojiRevealAnswer] = useState(false);
             const [miniGameWinners, setMiniGameWinners] = useState({ pictionary: '', trivia: '', charades: '' });
+            const [gameSoundEnabled, setGameSoundEnabled] = useState(() => loadFromStorage('reception_game_sound_enabled', true));
+            const [confettiBursts, setConfettiBursts] = useState([]);
+            const [gameOfDay, setGameOfDay] = useState(() => loadFromStorage('reception_game_of_day', null));
             const [motivationalQuote] = useState(() => {
                 const quotes = [
                     { text: "You make a difference every single day.", author: "Your Team" },
@@ -3913,6 +3916,54 @@
                 ];
                 return quotes[Math.floor(Math.random() * quotes.length)];
             });
+
+            function playCelebrationSound() {
+                if (!gameSoundEnabled) return;
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                try {
+                    const context = new AudioCtx();
+                    const notes = [523.25, 659.25, 783.99];
+                    notes.forEach((frequency, index) => {
+                        const oscillator = context.createOscillator();
+                        const gain = context.createGain();
+                        oscillator.type = 'triangle';
+                        oscillator.frequency.value = frequency;
+                        gain.gain.value = 0.0001;
+                        oscillator.connect(gain);
+                        gain.connect(context.destination);
+                        const startAt = context.currentTime + index * 0.08;
+                        oscillator.start(startAt);
+                        gain.gain.exponentialRampToValueAtTime(0.085, startAt + 0.02);
+                        gain.gain.exponentialRampToValueAtTime(0.0001, startAt + 0.17);
+                        oscillator.stop(startAt + 0.18);
+                    });
+                    setTimeout(() => context.close().catch(() => {}), 500);
+                } catch (_) {
+                    // Audio can fail if the browser blocks autoplay.
+                }
+            }
+
+            function triggerWinnerConfetti() {
+                const burstId = `burst-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+                const pieces = Array.from({ length: 28 }, (_, index) => ({
+                    id: `${burstId}-${index}`,
+                    left: `${Math.round(Math.random() * 100)}%`,
+                    delay: `${Math.random() * 0.25}s`,
+                    duration: `${1.1 + Math.random() * 1.1}s`,
+                    rotate: `${Math.round((Math.random() - 0.5) * 420)}deg`,
+                    color: ['#22d3ee', '#f59e0b', '#a78bfa', '#34d399', '#fb7185'][index % 5]
+                }));
+                setConfettiBursts(previous => [...previous, { id: burstId, pieces }]);
+                setTimeout(() => {
+                    setConfettiBursts(previous => previous.filter(burst => burst.id !== burstId));
+                }, 2400);
+            }
+
+            function getGameOfDayCandidate() {
+                const options = ['Reaction Duel', 'Pictionary Prompt', 'Trivia Blitz', 'Emoji Charades', 'UNO', 'Charades'];
+                return options[Math.floor(Math.random() * options.length)];
+            }
 
             const gameLeaderboard = useMemo(() => {
                 return Object.entries(gameStats || {})
@@ -3984,6 +4035,18 @@
                 };
             }, []);
 
+            useEffect(() => {
+                const todayKey = new Date().toISOString().slice(0, 10);
+                if (!gameOfDay || gameOfDay.date !== todayKey) {
+                    const next = {
+                        date: todayKey,
+                        game: getGameOfDayCandidate()
+                    };
+                    setGameOfDay(next);
+                    saveToStorage('reception_game_of_day', next);
+                }
+            }, [gameOfDay]);
+
             function recordGameResult(gameName, winnerId, runnerUpId = null, winnerPoints = 3, runnerUpPoints = 1) {
                 if (!winnerId) return;
                 const safeGame = String(gameName || 'Game Night');
@@ -4014,6 +4077,8 @@
                 setGameHistory(updatedHistory);
                 saveToStorage('reception_game_stats', updatedStats);
                 saveToStorage('reception_game_history', updatedHistory);
+                playCelebrationSound();
+                triggerWinnerConfetti();
                 showNotification(`${staff[winnerId]?.name || winnerId} won ${safeGame}!`, 'success', true);
             }
 
@@ -5147,6 +5212,113 @@
             function getDischargesByStatus(status = null) {
                 if (!status) return dischargeList;
                 return dischargeList.filter(d => d.status === status.toLowerCase());
+            }
+
+            function getStaffEmailRecipients() {
+                return Object.values(users || {}).reduce((emails, account) => {
+                    const explicitEmail = String(account?.email || '').trim();
+                    const usernameEmail = String(account?.username || '').trim();
+                    const candidate = explicitEmail || usernameEmail;
+                    if (!candidate || !candidate.includes('@')) return emails;
+                    const normalized = candidate.toLowerCase();
+                    if (!emails.includes(normalized)) emails.push(normalized);
+                    return emails;
+                }, []);
+            }
+
+            function buildMonthlyScheduleEmailPayload() {
+                const monthLabel = currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+                const year = currentDate.getFullYear();
+                const month = currentDate.getMonth();
+                const totalDays = new Date(year, month + 1, 0).getDate();
+                const lines = [`${appSettings.facilityName || 'Destiny Springs'} Schedule - ${monthLabel}`, ''];
+                let shiftTotal = 0;
+
+                for (let day = 1; day <= totalDays; day++) {
+                    const dateKey = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                    const dayShifts = [...(events[dateKey] || [])].sort((a, b) => toMinutes(a.start || a.time || '08:00') - toMinutes(b.start || b.time || '08:00'));
+                    if (!dayShifts.length) continue;
+
+                    lines.push(new Date(`${dateKey}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }));
+                    dayShifts.forEach(shift => {
+                        shiftTotal += 1;
+                        const start = shift.start || shift.time || '--:--';
+                        const end = shift.end || '--:--';
+                        const person = staff[shift.empId]?.name || shift.empId || 'Unassigned';
+                        const status = shift.confirmed ? 'Confirmed' : 'Pending';
+                        const note = (shift.note || '').trim();
+                        lines.push(`- ${person}: ${start}-${end} (${status})${note ? ` | ${note}` : ''}`);
+                    });
+                    lines.push('');
+                }
+
+                if (shiftTotal === 0) {
+                    lines.push('No shifts are currently scheduled for this month.');
+                }
+
+                return {
+                    monthLabel,
+                    subject: `${appSettings.facilityName || 'Destiny Springs'} Schedule | ${monthLabel}`,
+                    body: lines.join('\n'),
+                    shiftTotal
+                };
+            }
+
+            async function emailScheduleToStaff() {
+                const recipients = getStaffEmailRecipients();
+                if (!recipients.length) {
+                    showNotification('No staff emails found. Add emails to user accounts first.', 'error');
+                    return;
+                }
+
+                const payload = buildMonthlyScheduleEmailPayload();
+                if (graphAuthToken) {
+                    try {
+                        const graphResponse = await fetch('https://graph.microsoft.com/v1.0/me/sendMail', {
+                            method: 'POST',
+                            headers: {
+                                Authorization: `Bearer ${graphAuthToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                message: {
+                                    subject: payload.subject,
+                                    body: {
+                                        contentType: 'Text',
+                                        content: payload.body
+                                    },
+                                    bccRecipients: recipients.map(email => ({
+                                        emailAddress: { address: email }
+                                    }))
+                                },
+                                saveToSentItems: true
+                            })
+                        });
+
+                        if (graphResponse.ok) {
+                            showNotification(`Schedule sent to ${recipients.length} staff emails.`, 'success', true);
+                            return;
+                        }
+
+                        if (graphResponse.status === 401 || graphResponse.status === 403) {
+                            showNotification('Graph token expired or not authorized. Reconnect Outlook to send directly.', 'error');
+                        } else {
+                            const graphError = await graphResponse.text();
+                            throw new Error(graphError || `Graph send failed (${graphResponse.status})`);
+                        }
+                    } catch (error) {
+                        console.warn('Graph send failed, using mail client fallback:', error);
+                    }
+                }
+
+                const mailto = [
+                    'mailto:',
+                    '?subject=', encodeURIComponent(payload.subject),
+                    '&bcc=', encodeURIComponent(recipients.join(',')),
+                    '&body=', encodeURIComponent(payload.body)
+                ].join('');
+                window.location.href = mailto;
+                showNotification('Opened your mail app with the monthly schedule draft.', 'info', true);
             }
 
             function updateDischargeStatus(idx, newStatus) {
@@ -6596,8 +6768,13 @@
                                             style={{padding:'6px 12px', fontSize:'9px', background:'#dc2626'}}
                                             title="Clear all shifts for the current month only"
                                         >🗑 CLEAR THIS MONTH</button>
+                                        <button
+                                            onClick={emailScheduleToStaff}
+                                            className="fancy-btn"
+                                            style={{padding:'6px 12px', fontSize:'9px', background:'#0d9488'}}
+                                            title={graphAuthToken ? 'Send schedule directly via connected Outlook account' : 'Open your default mail app with recipients pre-filled'}
+                                        >EMAIL STAFF</button>
                                     </div>
-                                    <div style={{fontSize:'9px', color:'var(--text-primary)', opacity:0.5, marginLeft:'auto', flexShrink:0}}>Separate from Daily Census</div>
                                 </div>
                                 <div className="cal-staff-tray no-print">
                                     <div className="cal-staff-tray__kicker">Drag Staff Badges To Calendar</div>
