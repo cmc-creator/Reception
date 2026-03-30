@@ -3095,6 +3095,7 @@
             return {
                 ...(account || {}),
                 email: rawEmail,
+                disabled: !!(account && account.disabled),
                 preferences: { ...getDefaultUserPreferences(), ...((account && account.preferences) || {}) }
             };
         }
@@ -3775,11 +3776,16 @@
                     const normalizedEmail = String(firebaseUser.email || '').toLowerCase();
                     const allUsers = loadFromStorage(STORAGE_KEYS.USERS, {});
                     const profile = Object.values(allUsers).find(u => String(u.email || '').toLowerCase() === normalizedEmail);
+                    if (profile?.disabled) {
+                        setLoginError('This account is disabled. Contact an admin.');
+                        return;
+                    }
                     const account = profile || {
                         id: firebaseUser.uid,
                         username: normalizedEmail.split('@')[0],
                         displayName: firebaseUser.displayName || normalizedEmail.split('@')[0],
                         email: normalizedEmail,
+                        disabled: false,
                         role: 'staff',
                         password: ''
                     };
@@ -3870,6 +3876,7 @@
                         displayName,
                         email,
                         password,
+                        disabled: false,
                         role: newAccount.role,
                         createdAt: Date.now(),
                         preferences: getDefaultUserPreferences()
@@ -3894,6 +3901,53 @@
                     saveToStorage(STORAGE_KEYS.SESSION, { userId: updatedCurrentUser.id, loggedInAt: Date.now() });
                 }
                 showNotification(normalized ? 'Email updated.' : 'Email cleared.');
+            }
+
+            function updateUserDisplayName(userId, nextDisplayName) {
+                if (!requireAdmin()) return;
+                const normalized = String(nextDisplayName || '').trim();
+                if (!normalized) {
+                    showNotification('Display name cannot be blank.', 'error');
+                    return;
+                }
+                const updatedUsers = persistUsers({ ...users, [userId]: { ...users[userId], displayName: normalized } });
+                if (currentUser?.id === userId) {
+                    const updatedCurrentUser = updatedUsers[userId];
+                    setCurrentUser(updatedCurrentUser);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: updatedCurrentUser.id, loggedInAt: Date.now() });
+                }
+                showNotification('Display name updated.');
+            }
+
+            function updateUsername(userId, nextUsername) {
+                if (!requireAdmin()) return;
+                const normalized = String(nextUsername || '').trim().toLowerCase();
+                if (!normalized) {
+                    showNotification('Username cannot be blank.', 'error');
+                    return;
+                }
+                if (Object.values(users).some(user => user.id !== userId && String(user.username || '').toLowerCase() === normalized)) {
+                    showNotification('That username is already in use.', 'error');
+                    return;
+                }
+                const updatedUsers = persistUsers({ ...users, [userId]: { ...users[userId], username: normalized } });
+                if (currentUser?.id === userId) {
+                    const updatedCurrentUser = updatedUsers[userId];
+                    setCurrentUser(updatedCurrentUser);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: updatedCurrentUser.id, loggedInAt: Date.now() });
+                }
+                showNotification('Username updated.');
+            }
+
+            function toggleUserDisabled(userId) {
+                if (!requireAdmin()) return;
+                if (currentUser?.id === userId) {
+                    showNotification('You cannot disable the account you are currently using.', 'error');
+                    return;
+                }
+                const nextDisabled = !users[userId]?.disabled;
+                persistUsers({ ...users, [userId]: { ...users[userId], disabled: nextDisabled } });
+                showNotification(nextDisabled ? 'Account disabled.' : 'Account re-enabled.');
             }
 
             function updateUserRole(userId, role) {
@@ -7829,14 +7883,28 @@
                                             <div className="space-y-3">
                                                 {Object.values(users).map(account => (
                                                     <div key={account.id} className="rounded-2xl border border-white/10 p-4 flex flex-wrap items-center gap-3 justify-between bg-white/[0.02]">
-                                                        <div>
-                                                            <div className="font-black uppercase text-sm">{account.displayName}</div>
-                                                            <div className="text-[11px] text-white/55 mt-1">{account.username}</div>
-                                                            <div className="text-[11px] text-white/55 mt-1">{account.email || 'No email set'}</div>
+                                                        <div className="min-w-[260px] flex-1">
+                                                            <input
+                                                                type="text"
+                                                                defaultValue={account.displayName}
+                                                                onBlur={e => updateUserDisplayName(account.id, e.target.value)}
+                                                                className="panel-input"
+                                                                placeholder="Display name"
+                                                                style={{fontWeight: 800, textTransform: 'uppercase'}}
+                                                            />
+                                                            <input
+                                                                type="text"
+                                                                defaultValue={account.username}
+                                                                onBlur={e => updateUsername(account.id, e.target.value)}
+                                                                className="panel-input mt-2"
+                                                                placeholder="Username"
+                                                            />
+                                                            <div className="text-[11px] text-white/55 mt-2">{account.email || 'No email set'}</div>
                                                             <div className="text-[10px] text-white/45 mt-1">{(account.preferences?.callsign || '').trim() || 'No callsign set'} • {LAYOUT_OPTIONS.find(option => option.id === (account.preferences?.layoutMode || 'command'))?.label || 'Command Deck'}</div>
                                                         </div>
-                                                        <div className="flex items-center gap-3 ml-auto">
+                                                        <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
                                                             <span className={`role-badge ${account.role}`}>{account.role}</span>
+                                                            <span className={`role-badge ${account.disabled ? 'staff' : 'admin'}`}>{account.disabled ? 'disabled' : 'active'}</span>
                                                             <select value={account.role} onChange={e => updateUserRole(account.id, e.target.value)} className="panel-input" style={{width: 'auto', padding: '0.6rem 0.8rem'}}>
                                                                 <option value="staff">Staff</option>
                                                                 <option value="admin">Admin</option>
@@ -7849,6 +7917,7 @@
                                                                 placeholder="staff@destinysprings.com"
                                                                 style={{width: '230px', padding: '0.6rem 0.8rem'}}
                                                             />
+                                                            <button type="button" onClick={() => toggleUserDisabled(account.id)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: account.disabled ? '#0ea5e9' : '#f59e0b'}}>{account.disabled ? 'ENABLE' : 'DISABLE'}</button>
                                                             <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
                                                         </div>
                                                     </div>
