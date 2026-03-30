@@ -3759,46 +3759,43 @@
                 const emailInput = loginUsername.trim().toLowerCase();
                 setLoginError('');
 
-                // If Firebase Auth is available, use email login
-                if (isFirebaseAvailable && auth && emailInput.includes('@')) {
-                    try {
-                        const cred = await auth.signInWithEmailAndPassword(emailInput, loginPassword);
-                        const firebaseUser = cred.user;
-                        // Look up or build profile from Firestore users map
-                        const allUsers = loadFromStorage(STORAGE_KEYS.USERS, {});
-                        const profile = Object.values(allUsers).find(u => u.email === firebaseUser.email || u.username === firebaseUser.email.split('@')[0]);
-                        const account = profile || {
-                            id: firebaseUser.uid,
-                            username: firebaseUser.email.split('@')[0],
-                            displayName: firebaseUser.displayName || firebaseUser.email.split('@')[0],
-                            email: firebaseUser.email,
-                            role: 'staff',
-                            password: ''
-                        };
-                        setCurrentUser(account);
-                        saveToStorage(STORAGE_KEYS.SESSION, { userId: account.id, loggedInAt: Date.now() });
-                        setLoginPassword('');
-                        setIsAuthModalOpen(false);
-                        showNotification(`Signed in as ${account.displayName}.`);
-                    } catch (err) {
-                        setLoginError(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? 'Email or password is incorrect.' : err.message);
-                    }
+                if (!emailInput.endsWith('@destinysprings.com')) {
+                    setLoginError('Use your @destinysprings.com email to sign in.');
                     return;
                 }
 
-                // Fallback: legacy username/password lookup
-                const normalizedUsername = emailInput;
-                const account = Object.values(users).find(user => user.username.toLowerCase() === normalizedUsername && user.password === loginPassword);
-                if (!account) {
-                    setLoginError('Username or password did not match an account.');
+                if (!isFirebaseAvailable || !auth) {
+                    setLoginError('Email sign-in requires a network connection.');
                     return;
                 }
-                setCurrentUser(account);
-                saveToStorage(STORAGE_KEYS.SESSION, { userId: account.id, loggedInAt: Date.now() });
-                setLoginError('');
-                setLoginPassword('');
-                setIsAuthModalOpen(false);
-                showNotification(`Signed in as ${account.displayName}.`);
+
+                try {
+                    const cred = await auth.signInWithEmailAndPassword(emailInput, loginPassword);
+                    const firebaseUser = cred.user;
+                    const normalizedEmail = String(firebaseUser.email || '').toLowerCase();
+                    const allUsers = loadFromStorage(STORAGE_KEYS.USERS, {});
+                    const profile = Object.values(allUsers).find(u => String(u.email || '').toLowerCase() === normalizedEmail);
+                    const account = profile || {
+                        id: firebaseUser.uid,
+                        username: normalizedEmail.split('@')[0],
+                        displayName: firebaseUser.displayName || normalizedEmail.split('@')[0],
+                        email: normalizedEmail,
+                        role: 'staff',
+                        password: ''
+                    };
+
+                    if (!profile) {
+                        persistUsers({ ...allUsers, [account.id]: account });
+                    }
+
+                    setCurrentUser(account);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: account.id, loggedInAt: Date.now() });
+                    setLoginPassword('');
+                    setIsAuthModalOpen(false);
+                    showNotification(`Signed in as ${account.displayName}.`);
+                } catch (err) {
+                    setLoginError(err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' ? 'Email or password is incorrect.' : err.message);
+                }
             }
 
             async function handleRegister(event) {
@@ -3843,18 +3840,7 @@
             }
 
             function handleQuickStaffAccess() {
-                const staffAccount = Object.values(users).find(user => user.role === 'staff') || Object.values(users)[0];
-                if (!staffAccount) {
-                    setLoginError('No staff account is available yet. Ask an admin to create one.');
-                    return;
-                }
-                setCurrentUser(staffAccount);
-                saveToStorage(STORAGE_KEYS.SESSION, { userId: staffAccount.id, loggedInAt: Date.now() });
-                setLoginError('');
-                setLoginPassword('');
-                setLoginUsername('');
-                setIsAuthModalOpen(false);
-                showNotification(`Signed in as ${staffAccount.displayName}.`);
+                setLoginError('Quick Staff Access is disabled. Sign in with your @destinysprings.com email.');
             }
 
             function createAccount() {
@@ -3863,12 +3849,12 @@
                 const displayName = newAccount.displayName.trim();
                 const email = newAccount.email.trim().toLowerCase();
                 const password = newAccount.password.trim();
-                if (!username || !displayName || !password) {
-                    showNotification('Fill out username, display name, and password first.', 'error');
+                if (!username || !displayName || !email || !password) {
+                    showNotification('Fill out username, display name, email, and password first.', 'error');
                     return;
                 }
-                if (email && !email.includes('@')) {
-                    showNotification('Email must include @ or be left blank.', 'error');
+                if (!email.endsWith('@destinysprings.com')) {
+                    showNotification('Email must be a @destinysprings.com address.', 'error');
                     return;
                 }
                 if (Object.values(users).some(user => user.username.toLowerCase() === username)) {
@@ -3897,8 +3883,8 @@
             function updateUserEmail(userId, nextEmail) {
                 if (!requireAdmin()) return;
                 const normalized = String(nextEmail || '').trim().toLowerCase();
-                if (normalized && !normalized.includes('@')) {
-                    showNotification('Email must include @ or be left blank.', 'error');
+                if (normalized && !normalized.endsWith('@destinysprings.com')) {
+                    showNotification('Email must be a @destinysprings.com address or be left blank.', 'error');
                     return;
                 }
                 const updatedUsers = persistUsers({ ...users, [userId]: { ...users[userId], email: normalized } });
@@ -9594,13 +9580,12 @@
                                     </>
                                 ) : (
                                     <>
-                                    <div className="text-sm text-white/65 mt-3">Sign in with your work email, or use Quick Staff Access to skip login.</div>
+                                    <div className="text-sm text-white/65 mt-3">Sign in with your <strong>@destinysprings.com</strong> work email.</div>
                                     <form onSubmit={handleLoginSubmit} className="space-y-4 mt-6">
-                                        <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="Email or username" autoFocus />
+                                        <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="yourname@destinysprings.com" type="email" autoFocus />
                                         <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Password" />
                                         {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
                                         <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
-                                        <button type="button" onClick={handleQuickStaffAccess} className="w-full" style={{padding: '10px 16px', fontSize: '11px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)'}}>QUICK STAFF ACCESS</button>
                                     </form>
                                     <div className="mt-5 text-center text-[12px] text-white/50">
                                         No account yet?{' '}
