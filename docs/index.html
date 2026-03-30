@@ -5643,6 +5643,8 @@
                 const coverageStartMinutes = toMinutes(appSettings.defaultShiftStart || '08:00');
                 const coverageEndMinutes = Math.max(coverageStartMinutes + 60, toMinutes(appSettings.defaultShiftEnd || '20:00'));
                 const largeGapAlertMinutes = 60;
+                const unacknowledgedAppliedChanges = scheduleChangeAlerts.filter(alert => alert.alertType === 'applied' && !alert.acknowledgedAt);
+                const unacknowledgedAppliedDates = new Set(unacknowledgedAppliedChanges.map(alert => alert.shiftDate));
 
                 const formatGapDuration = (minutes) => {
                     const safe = Math.max(0, Math.round(minutes || 0));
