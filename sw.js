@@ -1,5 +1,5 @@
 // Service Worker for Offline Support
-const CACHE_NAME = 'reception-calendar-v9';
+const CACHE_NAME = 'reception-calendar-v10';
 const urlsToCache = [
   './',
   './index.html'

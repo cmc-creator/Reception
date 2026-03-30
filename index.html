@@ -9588,16 +9588,38 @@
         // Register Service Worker for offline support
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Use relative path to work with GitHub Pages subdirectory deployment
-                navigator.serviceWorker.register('./sw.js')
-                    .then(registration => {
-                        console.log('✅ Service Worker registered successfully:', registration);
-                        console.log('📱 App is now installable as a PWA');
-                    })
-                    .catch(err => {
-                        console.warn('⚠️ Service Worker registration failed (PWA features unavailable):', err);
-                        // App still works without service worker, just no offline caching
-                    });
+                const migrationKey = 'reception_sw_migration_v10';
+                const runMigration = localStorage.getItem(migrationKey) !== 'done';
+
+                const registerServiceWorker = () => {
+                    // Use relative path to work with GitHub Pages subdirectory deployment
+                    navigator.serviceWorker.register('./sw.js')
+                        .then(registration => {
+                            console.log('✅ Service Worker registered successfully:', registration);
+                            console.log('📱 App is now installable as a PWA');
+                        })
+                        .catch(err => {
+                            console.warn('⚠️ Service Worker registration failed (PWA features unavailable):', err);
+                            // App still works without service worker, just no offline caching
+                        });
+                };
+
+                if (!runMigration) {
+                    registerServiceWorker();
+                    return;
+                }
+
+                Promise.all([
+                    navigator.serviceWorker.getRegistrations()
+                        .then(registrations => Promise.all(registrations.map(registration => registration.unregister())))
+                        .catch(() => []),
+                    (window.caches
+                        ? caches.keys().then(keys => Promise.all(keys.map(key => caches.delete(key))))
+                        : Promise.resolve([]))
+                ]).finally(() => {
+                    localStorage.setItem(migrationKey, 'done');
+                    registerServiceWorker();
+                });
             });
         }
     </script>
