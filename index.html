@@ -7983,55 +7983,53 @@
                                                 <button type="button" className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}} onClick={createAccount}>CREATE ACCOUNT</button>
                                             </div>
                                             <div className="space-y-3">
-                                                {Object.values(users).map(account => (
-                                                    <div key={account.id} className="rounded-2xl border border-white/10 p-4 flex flex-wrap items-center gap-3 justify-between bg-white/[0.02]">
-                                                        {(() => {
-                                                            const provisioningState = getAccountProvisioningState(account);
-                                                            return (
-                                                        <div className="min-w-[260px] flex-1">
-                                                            <input
-                                                                type="text"
-                                                                defaultValue={account.displayName}
-                                                                onBlur={e => updateUserDisplayName(account.id, e.target.value)}
-                                                                className="panel-input"
-                                                                placeholder="Display name"
-                                                                style={{fontWeight: 800, textTransform: 'uppercase'}}
-                                                            />
-                                                            <input
-                                                                type="text"
-                                                                defaultValue={account.username}
-                                                                onBlur={e => updateUsername(account.id, e.target.value)}
-                                                                className="panel-input mt-2"
-                                                                placeholder="Username"
-                                                            />
-                                                            <div className="text-[11px] text-white/55 mt-2">{account.email || 'No email set'}</div>
-                                                            <div className="text-[10px] text-white/50 mt-1">{provisioningState.detail}</div>
-                                                            <div className="text-[10px] text-white/45 mt-1">{(account.preferences?.callsign || '').trim() || 'No callsign set'} • {LAYOUT_OPTIONS.find(option => option.id === (account.preferences?.layoutMode || 'command'))?.label || 'Command Deck'}</div>
+                                                {Object.values(users).map(account => {
+                                                    const provisioningState = getAccountProvisioningState(account);
+                                                    return (
+                                                        <div key={account.id} className="rounded-2xl border border-white/10 p-4 flex flex-wrap items-center gap-3 justify-between bg-white/[0.02]">
+                                                            <div className="min-w-[260px] flex-1">
+                                                                <input
+                                                                    type="text"
+                                                                    defaultValue={account.displayName}
+                                                                    onBlur={e => updateUserDisplayName(account.id, e.target.value)}
+                                                                    className="panel-input"
+                                                                    placeholder="Display name"
+                                                                    style={{fontWeight: 800, textTransform: 'uppercase'}}
+                                                                />
+                                                                <input
+                                                                    type="text"
+                                                                    defaultValue={account.username}
+                                                                    onBlur={e => updateUsername(account.id, e.target.value)}
+                                                                    className="panel-input mt-2"
+                                                                    placeholder="Username"
+                                                                />
+                                                                <div className="text-[11px] text-white/55 mt-2">{account.email || 'No email set'}</div>
+                                                                <div className="text-[10px] text-white/50 mt-1">{provisioningState.detail}</div>
+                                                                <div className="text-[10px] text-white/45 mt-1">{(account.preferences?.callsign || '').trim() || 'No callsign set'} • {LAYOUT_OPTIONS.find(option => option.id === (account.preferences?.layoutMode || 'command'))?.label || 'Command Deck'}</div>
+                                                            </div>
+                                                            <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
+                                                                <span className={`role-badge ${account.role}`}>{account.role}</span>
+                                                                <span className={`role-badge ${account.disabled ? 'staff' : 'admin'}`}>{account.disabled ? 'disabled' : 'active'}</span>
+                                                                <span className={`role-badge ${provisioningState.tone}`}>{provisioningState.label}</span>
+                                                                <select value={account.role} onChange={e => updateUserRole(account.id, e.target.value)} className="panel-input" style={{width: 'auto', padding: '0.6rem 0.8rem'}}>
+                                                                    <option value="staff">Staff</option>
+                                                                    <option value="admin">Admin</option>
+                                                                </select>
+                                                                <input
+                                                                    type="email"
+                                                                    defaultValue={account.email || ''}
+                                                                    onBlur={e => updateUserEmail(account.id, e.target.value)}
+                                                                    className="panel-input"
+                                                                    placeholder="staff@destinysprings.com"
+                                                                    style={{width: '230px', padding: '0.6rem 0.8rem'}}
+                                                                />
+                                                                <button type="button" onClick={() => sendPasswordReset(account.email)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: '#6366f1'}}>RESET PASSWORD</button>
+                                                                <button type="button" onClick={() => toggleUserDisabled(account.id)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: account.disabled ? '#0ea5e9' : '#f59e0b'}}>{account.disabled ? 'ENABLE' : 'DISABLE'}</button>
+                                                                <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
+                                                            </div>
                                                         </div>
-                                                        <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
-                                                            <span className={`role-badge ${account.role}`}>{account.role}</span>
-                                                            <span className={`role-badge ${account.disabled ? 'staff' : 'admin'}`}>{account.disabled ? 'disabled' : 'active'}</span>
-                                                            <span className={`role-badge ${provisioningState.tone}`}>{provisioningState.label}</span>
-                                                            <select value={account.role} onChange={e => updateUserRole(account.id, e.target.value)} className="panel-input" style={{width: 'auto', padding: '0.6rem 0.8rem'}}>
-                                                                <option value="staff">Staff</option>
-                                                                <option value="admin">Admin</option>
-                                                            </select>
-                                                            <input
-                                                                type="email"
-                                                                defaultValue={account.email || ''}
-                                                                onBlur={e => updateUserEmail(account.id, e.target.value)}
-                                                                className="panel-input"
-                                                                placeholder="staff@destinysprings.com"
-                                                                style={{width: '230px', padding: '0.6rem 0.8rem'}}
-                                                            />
-                                                            <button type="button" onClick={() => sendPasswordReset(account.email)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: '#6366f1'}}>RESET PASSWORD</button>
-                                                            <button type="button" onClick={() => toggleUserDisabled(account.id)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: account.disabled ? '#0ea5e9' : '#f59e0b'}}>{account.disabled ? 'ENABLE' : 'DISABLE'}</button>
-                                                            <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
-                                                        </div>
-                                                            );
-                                                        })()}
-                                                    </div>
-                                                ))}
+                                                    );
+                                                })}
                                             </div>
                                         </div>
                                     ) : (
