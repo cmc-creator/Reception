@@ -3214,6 +3214,47 @@
             { id: 'training', label: 'Training' }
         ];
 
+        const PICTIONARY_PROMPTS = [
+            'Coffee spill at front desk',
+            'Printer jam emergency',
+            'Lost visitor badge',
+            'Phone ringing nonstop',
+            'Wheelchair race in hallway',
+            'Nurse call bell symphony',
+            'Missing clipboard mystery',
+            'Elevator stuck between floors'
+        ];
+
+        const TRIVIA_PACK = [
+            { question: 'How many bones are in the adult human body?', answer: '206' },
+            { question: 'What does CPR stand for?', answer: 'Cardiopulmonary resuscitation' },
+            { question: 'What planet is known as the Red Planet?', answer: 'Mars' },
+            { question: 'How many minutes are in 2.5 hours?', answer: '150' },
+            { question: 'What vitamin is produced when skin is exposed to sunlight?', answer: 'Vitamin D' },
+            { question: 'What is the largest organ in the human body?', answer: 'Skin' }
+        ];
+
+        const EMOJI_CHARADES = [
+            { prompt: '📞😱☕', answer: 'Panic call before coffee' },
+            { prompt: '🧾🔍🏃', answer: 'Looking for missing paperwork' },
+            { prompt: '🚪👋🙂', answer: 'Welcoming visitors at the door' },
+            { prompt: '🖨️❌😤', answer: 'Printer stopped working' },
+            { prompt: '🧑‍⚕️📋✅', answer: 'Nurse completing checklist' },
+            { prompt: '⏰😴➡️🏃', answer: 'Running late for shift' }
+        ];
+
+        function getISOWeekKey(dateValue = new Date()) {
+            const d = new Date(dateValue);
+            d.setHours(0, 0, 0, 0);
+            const day = (d.getDay() + 6) % 7;
+            d.setDate(d.getDate() - day + 3);
+            const firstThursday = new Date(d.getFullYear(), 0, 4);
+            const firstDay = (firstThursday.getDay() + 6) % 7;
+            firstThursday.setDate(firstThursday.getDate() - firstDay + 3);
+            const week = 1 + Math.round((d.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+            return `${d.getFullYear()}-W${String(week).padStart(2, '0')}`;
+        }
+
         function saveToStorage(key, data) {
             try {
                 localStorage.setItem(key, JSON.stringify(data));
@@ -3847,12 +3888,20 @@
             const [kudosWall, setKudosWall] = useState(() => loadFromStorage('kudos_wall', []));
             const [gameStats, setGameStats] = useState(() => loadFromStorage('reception_game_stats', {}));
             const [gameHistory, setGameHistory] = useState(() => loadFromStorage('reception_game_history', []));
+            const [gameHallOfFame, setGameHallOfFame] = useState(() => loadFromStorage('reception_game_hall_of_fame', []));
+            const [gameWeekKey, setGameWeekKey] = useState(() => loadFromStorage('reception_game_week_key', getISOWeekKey()));
             const [reactionDuelPlayers, setReactionDuelPlayers] = useState({ playerOneId: '', playerTwoId: '' });
             const [reactionDuelState, setReactionDuelState] = useState('idle');
             const [reactionDuelMessage, setReactionDuelMessage] = useState('Pick two players, then start duel.');
             const [reactionDuelReadyAt, setReactionDuelReadyAt] = useState(0);
             const reactionDuelTimerRef = useRef(null);
             const [partyGameDraft, setPartyGameDraft] = useState({ game: 'UNO', winnerId: '', runnerUpId: '' });
+            const [pictionaryPrompt, setPictionaryPrompt] = useState(() => PICTIONARY_PROMPTS[Math.floor(Math.random() * PICTIONARY_PROMPTS.length)]);
+            const [triviaCard, setTriviaCard] = useState(() => TRIVIA_PACK[Math.floor(Math.random() * TRIVIA_PACK.length)]);
+            const [triviaRevealAnswer, setTriviaRevealAnswer] = useState(false);
+            const [emojiCharadesCard, setEmojiCharadesCard] = useState(() => EMOJI_CHARADES[Math.floor(Math.random() * EMOJI_CHARADES.length)]);
+            const [emojiRevealAnswer, setEmojiRevealAnswer] = useState(false);
+            const [miniGameWinners, setMiniGameWinners] = useState({ pictionary: '', trivia: '', charades: '' });
             const [motivationalQuote] = useState(() => {
                 const quotes = [
                     { text: "You make a difference every single day.", author: "Your Team" },
@@ -3878,6 +3927,54 @@
             }, [gameStats, staff]);
 
             const topGamer = gameLeaderboard[0] || null;
+
+            function rotateGameWeek(force = false) {
+                const currentWeekKey = getISOWeekKey();
+                if (!force && gameWeekKey === currentWeekKey) return;
+                if (gameLeaderboard.length > 0) {
+                    const hallEntry = {
+                        id: `hof-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                        weekKey: gameWeekKey,
+                        closedAt: new Date().toISOString(),
+                        topThree: gameLeaderboard.slice(0, 3).map(entry => ({
+                            staffId: entry.staffId,
+                            points: entry.points,
+                            wins: entry.wins
+                        }))
+                    };
+                    const updatedHall = [hallEntry, ...(gameHallOfFame || [])].slice(0, 64);
+                    setGameHallOfFame(updatedHall);
+                    saveToStorage('reception_game_hall_of_fame', updatedHall);
+                }
+                setGameStats({});
+                setGameHistory([]);
+                setGameWeekKey(currentWeekKey);
+                saveToStorage('reception_game_stats', {});
+                saveToStorage('reception_game_history', []);
+                saveToStorage('reception_game_week_key', currentWeekKey);
+                showNotification('New game week started. Leaderboard reset!', 'success', true);
+            }
+
+            function pickRandomFrom(list, setFn) {
+                if (!Array.isArray(list) || list.length === 0) return;
+                const nextItem = list[Math.floor(Math.random() * list.length)];
+                setFn(nextItem);
+            }
+
+            function awardMiniGame(gameName, winnerId, points = 3) {
+                if (!winnerId) {
+                    showNotification('Pick a winner first.', 'error');
+                    return;
+                }
+                recordGameResult(gameName, winnerId, null, points, 0);
+            }
+
+            useEffect(() => {
+                const currentWeekKey = getISOWeekKey();
+                if (gameWeekKey !== currentWeekKey) {
+                    rotateGameWeek();
+                }
+            }, [gameWeekKey]);
 
             useEffect(() => {
                 return () => {
@@ -7645,6 +7742,10 @@
                                     <div className="text-[10px] uppercase tracking-[0.28em]" style={{color: '#22d3ee'}}>Downtime</div>
                                     <h2 className="text-2xl font-black mt-2 text-cyan-200">🎮 Game Lounge</h2>
                                     <div className="text-sm text-cyan-100/80 mt-1">Friendly competition, shared laughs, and instant leaderboard updates.</div>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <div className="mini-stat-pill" style={{padding: '0.32rem 0.6rem'}}>Week: {gameWeekKey}</div>
+                                        <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#0ea5e9'}} onClick={() => rotateGameWeek(true)}>RESET WEEK NOW</button>
+                                    </div>
                                     <button onClick={() => setShowGameHub(false)} className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl">×</button>
                                 </div>
                                 <div className="crew-modal-body">
@@ -7737,6 +7838,52 @@
                                                     </button>
                                                 </div>
                                             </div>
+
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(14,116,144,0.32), rgba(8,47,73,0.42))', border: '1px solid rgba(56,189,248,0.35)'}}>
+                                                <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100 mb-3">Party Mini Games</div>
+                                                <div className="grid md:grid-cols-3 gap-3">
+                                                    <div className="rounded-xl p-3 border border-cyan-300/25 bg-cyan-950/35">
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-200">Pictionary Prompt</div>
+                                                        <div className="text-sm text-white font-bold mt-2 min-h-[56px]">{pictionaryPrompt}</div>
+                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#0369a1'}} onClick={() => pickRandomFrom(PICTIONARY_PROMPTS, setPictionaryPrompt)}>New Prompt</button>
+                                                        <select value={miniGameWinners.pictionary} onChange={e => setMiniGameWinners(previous => ({ ...previous, pictionary: e.target.value }))} className="panel-input mt-2" style={{fontSize: '11px'}}>
+                                                            <option value="">Winner</option>
+                                                            {Object.entries(staff).map(([id, member]) => <option key={`mini-p-${id}`} value={id}>{member.name}</option>)}
+                                                        </select>
+                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#0e7490'}} onClick={() => awardMiniGame('Pictionary Prompt', miniGameWinners.pictionary, 3)}>Award Winner</button>
+                                                    </div>
+
+                                                    <div className="rounded-xl p-3 border border-violet-300/25 bg-violet-950/35">
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-violet-200">Trivia Blitz</div>
+                                                        <div className="text-sm text-white font-bold mt-2 min-h-[56px]">{triviaCard?.question}</div>
+                                                        <div className="text-xs mt-1" style={{color: triviaRevealAnswer ? '#a7f3d0' : '#c4b5fd'}}>{triviaRevealAnswer ? `Answer: ${triviaCard?.answer}` : 'Answer hidden'}</div>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#6d28d9'}} onClick={() => { pickRandomFrom(TRIVIA_PACK, setTriviaCard); setTriviaRevealAnswer(false); }}>New Q</button>
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#7c3aed'}} onClick={() => setTriviaRevealAnswer(previous => !previous)}>{triviaRevealAnswer ? 'Hide' : 'Reveal'}</button>
+                                                        </div>
+                                                        <select value={miniGameWinners.trivia} onChange={e => setMiniGameWinners(previous => ({ ...previous, trivia: e.target.value }))} className="panel-input mt-2" style={{fontSize: '11px'}}>
+                                                            <option value="">Winner</option>
+                                                            {Object.entries(staff).map(([id, member]) => <option key={`mini-t-${id}`} value={id}>{member.name}</option>)}
+                                                        </select>
+                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#7c3aed'}} onClick={() => awardMiniGame('Trivia Blitz', miniGameWinners.trivia, 3)}>Award Winner</button>
+                                                    </div>
+
+                                                    <div className="rounded-xl p-3 border border-amber-300/25 bg-amber-950/30">
+                                                        <div className="text-[10px] uppercase tracking-[0.14em] text-amber-200">Emoji Charades</div>
+                                                        <div className="text-2xl mt-2 min-h-[40px]">{emojiCharadesCard?.prompt}</div>
+                                                        <div className="text-xs mt-1" style={{color: emojiRevealAnswer ? '#fde68a' : '#fcd34d'}}>{emojiRevealAnswer ? emojiCharadesCard?.answer : 'Guess first, then reveal answer'}</div>
+                                                        <div className="flex gap-2 mt-2">
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#d97706'}} onClick={() => { pickRandomFrom(EMOJI_CHARADES, setEmojiCharadesCard); setEmojiRevealAnswer(false); }}>New Emojis</button>
+                                                            <button type="button" className="fancy-btn flex-1" style={{padding: '6px 8px', fontSize: '10px', background: '#b45309'}} onClick={() => setEmojiRevealAnswer(previous => !previous)}>{emojiRevealAnswer ? 'Hide' : 'Reveal'}</button>
+                                                        </div>
+                                                        <select value={miniGameWinners.charades} onChange={e => setMiniGameWinners(previous => ({ ...previous, charades: e.target.value }))} className="panel-input mt-2" style={{fontSize: '11px'}}>
+                                                            <option value="">Winner</option>
+                                                            {Object.entries(staff).map(([id, member]) => <option key={`mini-c-${id}`} value={id}>{member.name}</option>)}
+                                                        </select>
+                                                        <button type="button" className="fancy-btn w-full mt-2" style={{padding: '6px 8px', fontSize: '10px', background: '#ca8a04'}} onClick={() => awardMiniGame('Emoji Charades', miniGameWinners.charades, 3)}>Award Winner</button>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
 
                                         <div className="space-y-4">
@@ -7752,6 +7899,21 @@
                                                                 <div className="leaderboard-row__meta">{entry.wins} wins • {entry.plays} games</div>
                                                             </div>
                                                             <div className="mini-stat-pill" style={{padding: '0.3rem 0.5rem'}}>{entry.points} pts</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(2,132,199,0.22), rgba(30,64,175,0.18))', border: '1px solid rgba(125,211,252,0.3)'}}>
+                                                <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100 mb-2">Hall of Fame</div>
+                                                <div className="space-y-2 max-h-48 overflow-y-auto no-scrollbar">
+                                                    {gameHallOfFame.length === 0 && <div className="text-sm text-cyan-100/70">No archived weeks yet.</div>}
+                                                    {gameHallOfFame.slice(0, 8).map(week => (
+                                                        <div key={week.id} className="rounded-lg border border-cyan-300/20 px-3 py-2 bg-cyan-950/30">
+                                                            <div className="text-[10px] uppercase tracking-[0.12em] text-cyan-200">{week.weekKey}</div>
+                                                            <div className="text-sm font-black text-white mt-1">{staff[week.topThree?.[0]?.staffId]?.name || week.topThree?.[0]?.staffId || 'No champion'} • {week.topThree?.[0]?.points || 0} pts</div>
+                                                            <div className="text-[10px] text-cyan-100/75 mt-1">
+                                                                {week.topThree?.slice(1).map(entry => `${staff[entry.staffId]?.name || entry.staffId} (${entry.points})`).join(' • ') || 'No runners-up logged'}
+                                                            </div>
                                                         </div>
                                                     ))}
                                                 </div>
