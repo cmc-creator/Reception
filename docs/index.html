@@ -3157,10 +3157,11 @@
         let db = null;
         let auth = null;
         let isFirebaseAvailable = false;
+        let firebaseConfig = null;
         
         try {
             if (typeof firebase !== 'undefined') {
-                const firebaseConfig = {
+                firebaseConfig = {
                     apiKey: "AIzaSyCmNpRkPR160wYwwmToPDSNFac4iKQXVbo",
                     authDomain: "rockstar-reception.firebaseapp.com",
                     projectId: "rockstar-reception",
@@ -3849,7 +3850,66 @@
                 setLoginError('Quick Staff Access is disabled. Sign in with your @destinysprings.com email.');
             }
 
-            function createAccount() {
+            async function sendPasswordReset(emailAddress, mode = 'admin') {
+                const normalizedEmail = String(emailAddress || '').trim().toLowerCase();
+                if (!normalizedEmail.endsWith('@destinysprings.com')) {
+                    const message = 'Enter a valid @destinysprings.com email first.';
+                    if (mode === 'login') {
+                        setLoginError(message);
+                    } else {
+                        showNotification(message, 'error');
+                    }
+                    return false;
+                }
+                if (!isFirebaseAvailable || !auth) {
+                    const message = 'Password reset requires a network connection.';
+                    if (mode === 'login') {
+                        setLoginError(message);
+                    } else {
+                        showNotification(message, 'error');
+                    }
+                    return false;
+                }
+                try {
+                    await auth.sendPasswordResetEmail(normalizedEmail);
+                    if (mode === 'login') {
+                        setLoginError('');
+                    }
+                    showNotification(`Password reset email sent to ${normalizedEmail}.`, 'success', true);
+                    return true;
+                } catch (err) {
+                    const message = err.code === 'auth/user-not-found'
+                        ? 'No Firebase sign-in exists for that email yet.'
+                        : err.message;
+                    if (mode === 'login') {
+                        setLoginError(message);
+                    } else {
+                        showNotification(message, 'error');
+                    }
+                    return false;
+                }
+            }
+
+            async function provisionManagedFirebaseUser(email, password) {
+                if (!isFirebaseAvailable || !auth || typeof firebase === 'undefined' || !firebaseConfig) {
+                    throw new Error('Account creation requires a network connection.');
+                }
+                const appName = `reception-admin-${Date.now()}`;
+                let secondaryApp = null;
+                try {
+                    secondaryApp = firebase.initializeApp(firebaseConfig, appName);
+                    const secondaryAuth = secondaryApp.auth();
+                    const cred = await secondaryAuth.createUserWithEmailAndPassword(email, password);
+                    await secondaryAuth.signOut().catch(() => {});
+                    return cred.user;
+                } finally {
+                    if (secondaryApp) {
+                        await secondaryApp.delete().catch(() => {});
+                    }
+                }
+            }
+
+            async function createAccount() {
                 if (!requireAdmin()) return;
                 const username = newAccount.username.trim().toLowerCase();
                 const displayName = newAccount.displayName.trim();
@@ -3863,28 +3923,42 @@
                     showNotification('Email must be a @destinysprings.com address.', 'error');
                     return;
                 }
+                if (password.length < 6) {
+                    showNotification('Password must be at least 6 characters.', 'error');
+                    return;
+                }
                 if (Object.values(users).some(user => user.username.toLowerCase() === username)) {
                     showNotification('That username is already in use.', 'error');
                     return;
                 }
-                const id = `user-${Date.now()}`;
-                const updatedUsers = {
-                    ...users,
-                    [id]: {
-                        id,
-                        username,
-                        displayName,
-                        email,
-                        password,
-                        disabled: false,
-                        role: newAccount.role,
-                        createdAt: Date.now(),
-                        preferences: getDefaultUserPreferences()
+                if (Object.values(users).some(user => String(user.email || '').toLowerCase() === email)) {
+                    showNotification('That email is already assigned to an account.', 'error');
+                    return;
+                }
+                try {
+                    const firebaseUser = await provisionManagedFirebaseUser(email, password);
+                    const id = firebaseUser.uid;
+                    const updatedUsers = {
+                        ...users,
+                        [id]: {
+                            id,
+                            username,
+                            displayName,
+                            email,
+                            password: '',
+                            disabled: false,
+                            role: newAccount.role,
+                            createdAt: Date.now(),
+                            preferences: getDefaultUserPreferences()
+                        }
+                    };
+                    persistUsers(updatedUsers);
+                    setNewAccount({ username: '', displayName: '', email: '', password: '', role: 'staff' });
+                    showNotification(`Created ${newAccount.role} account for ${displayName}.`, 'success', true);
+                } catch (err) {
+                    showNotification(err.code === 'auth/email-already-in-use' ? 'That email already has a Firebase sign-in.' : err.message, 'error');
                     }
-                };
-                persistUsers(updatedUsers);
-                setNewAccount({ username: '', displayName: '', email: '', password: '', role: 'staff' });
-                showNotification(`Created ${newAccount.role} account for ${displayName}.`);
+                }
             }
 
             function updateUserEmail(userId, nextEmail) {
@@ -7917,6 +7991,7 @@
                                                                 placeholder="staff@destinysprings.com"
                                                                 style={{width: '230px', padding: '0.6rem 0.8rem'}}
                                                             />
+                                                            <button type="button" onClick={() => sendPasswordReset(account.email)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: '#6366f1'}}>RESET PASSWORD</button>
                                                             <button type="button" onClick={() => toggleUserDisabled(account.id)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: account.disabled ? '#0ea5e9' : '#f59e0b'}}>{account.disabled ? 'ENABLE' : 'DISABLE'}</button>
                                                             <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
                                                         </div>
@@ -9655,6 +9730,7 @@
                                         <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Password" />
                                         {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
                                         <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
+                                        <button type="button" onClick={() => sendPasswordReset(loginUsername, 'login')} className="w-full" style={{padding: '10px 16px', fontSize: '11px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)'}}>SEND PASSWORD RESET EMAIL</button>
                                     </form>
                                     <div className="mt-5 text-center text-[12px] text-white/50">
                                         No account yet?{' '}
