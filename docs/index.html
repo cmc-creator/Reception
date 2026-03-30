@@ -3957,7 +3957,6 @@
                     showNotification(`Created ${newAccount.role} account for ${displayName}.`, 'success', true);
                 } catch (err) {
                     showNotification(err.code === 'auth/email-already-in-use' ? 'That email already has a Firebase sign-in.' : err.message, 'error');
-                    }
                 }
             }
 
