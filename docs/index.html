@@ -4024,6 +4024,34 @@
                 showNotification(nextDisabled ? 'Account disabled.' : 'Account re-enabled.');
             }
 
+            function getAccountProvisioningState(account) {
+                const email = String(account?.email || '').trim().toLowerCase();
+                const hasFirebaseEmail = email.endsWith('@destinysprings.com');
+                const hasLegacyPassword = String(account?.password || '').trim().length > 0;
+
+                if (!hasFirebaseEmail) {
+                    return {
+                        label: 'needs email',
+                        detail: 'Add a destinysprings.com email before this account can use email sign-in.',
+                        tone: 'staff'
+                    };
+                }
+
+                if (hasLegacyPassword) {
+                    return {
+                        label: 'needs re-created',
+                        detail: 'Older local-only account. Recreate it with the current admin create flow for Firebase sign-in and reset.',
+                        tone: 'staff'
+                    };
+                }
+
+                return {
+                    label: 'firebase ready',
+                    detail: 'This account supports work-email sign-in and password reset.',
+                    tone: 'admin'
+                };
+            }
+
             function updateUserRole(userId, role) {
                 if (!requireAdmin()) return;
                 const updatedUsers = persistUsers({ ...users, [userId]: { ...users[userId], role } });
@@ -7957,6 +7985,9 @@
                                             <div className="space-y-3">
                                                 {Object.values(users).map(account => (
                                                     <div key={account.id} className="rounded-2xl border border-white/10 p-4 flex flex-wrap items-center gap-3 justify-between bg-white/[0.02]">
+                                                        {(() => {
+                                                            const provisioningState = getAccountProvisioningState(account);
+                                                            return (
                                                         <div className="min-w-[260px] flex-1">
                                                             <input
                                                                 type="text"
@@ -7974,11 +8005,13 @@
                                                                 placeholder="Username"
                                                             />
                                                             <div className="text-[11px] text-white/55 mt-2">{account.email || 'No email set'}</div>
+                                                            <div className="text-[10px] text-white/50 mt-1">{provisioningState.detail}</div>
                                                             <div className="text-[10px] text-white/45 mt-1">{(account.preferences?.callsign || '').trim() || 'No callsign set'} • {LAYOUT_OPTIONS.find(option => option.id === (account.preferences?.layoutMode || 'command'))?.label || 'Command Deck'}</div>
                                                         </div>
                                                         <div className="flex items-center gap-3 ml-auto flex-wrap justify-end">
                                                             <span className={`role-badge ${account.role}`}>{account.role}</span>
                                                             <span className={`role-badge ${account.disabled ? 'staff' : 'admin'}`}>{account.disabled ? 'disabled' : 'active'}</span>
+                                                            <span className={`role-badge ${provisioningState.tone}`}>{provisioningState.label}</span>
                                                             <select value={account.role} onChange={e => updateUserRole(account.id, e.target.value)} className="panel-input" style={{width: 'auto', padding: '0.6rem 0.8rem'}}>
                                                                 <option value="staff">Staff</option>
                                                                 <option value="admin">Admin</option>
@@ -7995,6 +8028,8 @@
                                                             <button type="button" onClick={() => toggleUserDisabled(account.id)} className="fancy-btn" style={{padding: '10px 14px', fontSize: '10px', background: account.disabled ? '#0ea5e9' : '#f59e0b'}}>{account.disabled ? 'ENABLE' : 'DISABLE'}</button>
                                                             <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
                                                         </div>
+                                                            );
+                                                        })()}
                                                     </div>
                                                 ))}
                                             </div>
