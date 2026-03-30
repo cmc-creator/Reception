@@ -498,6 +498,12 @@
             box-shadow: 0 0 0 3px rgba(255,255,255,0.04), 0 0 18px var(--highlight-glow);
         }
 
+        .panel-input option,
+        .panel-input optgroup {
+            background: #0f172a;
+            color: #e2e8f0;
+        }
+
         .data-chip {
             display: inline-flex;
             align-items: center;
@@ -3432,6 +3438,21 @@
             }
         }
 
+        function ensureConnieStaffMember(staffMap) {
+            const current = { ...(staffMap || {}) };
+            const hasConnie = Object.values(current).some(member => String(member?.name || '').trim().toLowerCase() === 'connie');
+            if (hasConnie) return current;
+            current['staff-connie'] = {
+                id: 'staff-connie',
+                name: 'Connie',
+                bg: '',
+                color: '#ec4899',
+                createdAt: Date.now(),
+                isPrn: false
+            };
+            return current;
+        }
+
         function App() {
             // --- Application State ---
             const [currentDate, setCurrentDate] = useState(() => {
@@ -4487,6 +4508,9 @@
                         saveToStorage(STORAGE_KEYS.STAFF, loadedStaff);
                     }
                 }
+
+                loadedStaff = ensureConnieStaffMember(loadedStaff);
+                saveToStorage(STORAGE_KEYS.STAFF, loadedStaff);
 
                 saveToStorage(STORAGE_KEYS.USERS, loadedUsers);
                 saveToStorage(STORAGE_KEYS.SETTINGS, loadedSettings);
