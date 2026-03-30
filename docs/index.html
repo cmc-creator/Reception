@@ -3091,8 +3091,10 @@
         }
 
         function normalizeUserAccount(account) {
+            const rawEmail = String((account && account.email) || '').trim().toLowerCase();
             return {
                 ...(account || {}),
+                email: rawEmail,
                 preferences: { ...getDefaultUserPreferences(), ...((account && account.preferences) || {}) }
             };
         }
@@ -3524,7 +3526,7 @@
             const [isTelemetryExpanded, setIsTelemetryExpanded] = useState(true);
             const [newStaffName, setNewStaffName] = useState('');
             const [newStaffColor, setNewStaffColor] = useState('#0891b2');
-            const [newAccount, setNewAccount] = useState({ username: '', displayName: '', password: '', role: 'staff' });
+            const [newAccount, setNewAccount] = useState({ username: '', displayName: '', email: '', password: '', role: 'staff' });
             const [bulkAssign, setBulkAssign] = useState(() => {
                 const now = new Date();
                 const rangeStart = now.toISOString().split('T')[0];
@@ -3859,9 +3861,14 @@
                 if (!requireAdmin()) return;
                 const username = newAccount.username.trim().toLowerCase();
                 const displayName = newAccount.displayName.trim();
+                const email = newAccount.email.trim().toLowerCase();
                 const password = newAccount.password.trim();
                 if (!username || !displayName || !password) {
                     showNotification('Fill out username, display name, and password first.', 'error');
+                    return;
+                }
+                if (email && !email.includes('@')) {
+                    showNotification('Email must include @ or be left blank.', 'error');
                     return;
                 }
                 if (Object.values(users).some(user => user.username.toLowerCase() === username)) {
@@ -3875,6 +3882,7 @@
                         id,
                         username,
                         displayName,
+                        email,
                         password,
                         role: newAccount.role,
                         createdAt: Date.now(),
@@ -3882,8 +3890,24 @@
                     }
                 };
                 persistUsers(updatedUsers);
-                setNewAccount({ username: '', displayName: '', password: '', role: 'staff' });
+                setNewAccount({ username: '', displayName: '', email: '', password: '', role: 'staff' });
                 showNotification(`Created ${newAccount.role} account for ${displayName}.`);
+            }
+
+            function updateUserEmail(userId, nextEmail) {
+                if (!requireAdmin()) return;
+                const normalized = String(nextEmail || '').trim().toLowerCase();
+                if (normalized && !normalized.includes('@')) {
+                    showNotification('Email must include @ or be left blank.', 'error');
+                    return;
+                }
+                const updatedUsers = persistUsers({ ...users, [userId]: { ...users[userId], email: normalized } });
+                if (currentUser?.id === userId) {
+                    const updatedCurrentUser = updatedUsers[userId];
+                    setCurrentUser(updatedCurrentUser);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: updatedCurrentUser.id, loggedInAt: Date.now() });
+                }
+                showNotification(normalized ? 'Email updated.' : 'Email cleared.');
             }
 
             function updateUserRole(userId, role) {
@@ -7808,6 +7832,7 @@
                                             <div className="space-y-3">
                                                 <input value={newAccount.displayName} onChange={e => setNewAccount(account => ({ ...account, displayName: e.target.value }))} className="panel-input" placeholder="Display name" />
                                                 <input value={newAccount.username} onChange={e => setNewAccount(account => ({ ...account, username: e.target.value }))} className="panel-input" placeholder="Username" />
+                                                <input value={newAccount.email || ''} onChange={e => setNewAccount(account => ({ ...account, email: e.target.value }))} className="panel-input" placeholder="Email (optional)" type="email" />
                                                 <input type="password" value={newAccount.password} onChange={e => setNewAccount(account => ({ ...account, password: e.target.value }))} className="panel-input" placeholder="Temporary password" />
                                                 <select value={newAccount.role} onChange={e => setNewAccount(account => ({ ...account, role: e.target.value }))} className="panel-input">
                                                     <option value="staff">Staff</option>
@@ -7821,6 +7846,7 @@
                                                         <div>
                                                             <div className="font-black uppercase text-sm">{account.displayName}</div>
                                                             <div className="text-[11px] text-white/55 mt-1">{account.username}</div>
+                                                            <div className="text-[11px] text-white/55 mt-1">{account.email || 'No email set'}</div>
                                                             <div className="text-[10px] text-white/45 mt-1">{(account.preferences?.callsign || '').trim() || 'No callsign set'} • {LAYOUT_OPTIONS.find(option => option.id === (account.preferences?.layoutMode || 'command'))?.label || 'Command Deck'}</div>
                                                         </div>
                                                         <div className="flex items-center gap-3 ml-auto">
@@ -7829,6 +7855,14 @@
                                                                 <option value="staff">Staff</option>
                                                                 <option value="admin">Admin</option>
                                                             </select>
+                                                            <input
+                                                                type="email"
+                                                                defaultValue={account.email || ''}
+                                                                onBlur={e => updateUserEmail(account.id, e.target.value)}
+                                                                className="panel-input"
+                                                                placeholder="staff@destinysprings.com"
+                                                                style={{width: '230px', padding: '0.6rem 0.8rem'}}
+                                                            />
                                                             <button type="button" onClick={() => removeUserAccount(account.id)} className="text-rose-300 border border-rose-400/30 rounded-full px-3 py-2 text-[10px] uppercase tracking-[0.18em]">Remove</button>
                                                         </div>
                                                     </div>
