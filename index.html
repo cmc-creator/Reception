@@ -1526,6 +1526,38 @@
             padding-bottom: 0;
         }
 
+        .schedule-change-feed {
+            border: 1px solid rgba(245, 158, 11, 0.42);
+            border-radius: 12px;
+            background: linear-gradient(150deg, rgba(120, 53, 15, 0.3), rgba(113, 63, 18, 0.14));
+            padding: 8px;
+        }
+
+        .schedule-change-feed__item {
+            border: 1px solid rgba(251, 191, 36, 0.4);
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.25);
+            padding: 7px 8px;
+            animation: scheduleChangePulse 1.6s ease-in-out infinite;
+        }
+
+        .schedule-change-feed__item--acked {
+            animation: none;
+            border-color: rgba(148, 163, 184, 0.4);
+            opacity: 0.8;
+        }
+
+        @keyframes scheduleChangePulse {
+            0%, 100% {
+                box-shadow: 0 0 0 rgba(251,191,36,0);
+                transform: scale(1);
+            }
+            50% {
+                box-shadow: 0 0 16px rgba(251,191,36,0.5);
+                transform: scale(1.01);
+            }
+        }
+
         .fab-dock {
             position: fixed;
             right: 18px;
@@ -2768,6 +2800,11 @@
             border-color: rgba(239,68,68,0.6) !important;
             box-shadow: 0 0 0 1px rgba(127,29,29,0.75), 0 0 20px rgba(239,68,68,0.3), inset 0 1px 0 rgba(255,255,255,0.06) !important;
         }
+        .day-cell--change-unacked {
+            border-color: rgba(251,191,36,0.8) !important;
+            box-shadow: 0 0 0 1px rgba(245,158,11,0.65), 0 0 18px rgba(251,191,36,0.35), inset 0 1px 0 rgba(255,255,255,0.1) !important;
+            animation: scheduleChangePulse 1.6s ease-in-out infinite;
+        }
         .day-cell__num {
             font-size: 1.4rem;
             font-weight: 900;
@@ -2840,6 +2877,11 @@
             line-height: 1.2;
         }
         .shift-card:hover { transform: translateY(-2px); }
+        .shift-card--change-unacked {
+            animation: scheduleChangePulse 1.6s ease-in-out infinite;
+            border-color: #f59e0b;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.35), 0 4px 14px rgba(245,158,11,0.5), inset 0 1px 0 rgba(255,255,255,0.2);
+        }
         .shift-card__dot {
             width: 10px;
             height: 10px;
@@ -3397,6 +3439,7 @@
             const [showReportHistory, setShowReportHistory] = useState(false);
             const [isShiftSwapOpen, setIsShiftSwapOpen] = useState(false);
             const [shiftSwapRequests, setShiftSwapRequests] = useState(() => loadFromStorage('reception_shift_swaps', []));
+            const [scheduleChangeAlerts, setScheduleChangeAlerts] = useState(() => loadFromStorage('reception_schedule_change_alerts', []));
             const [isDocRepoOpen, setIsDocRepoOpen] = useState(false);
             const [documentLinks, setDocumentLinks] = useState(() => loadFromStorage('reception_document_links', []));
             const [isVisitationOpen, setIsVisitationOpen] = useState(false);
@@ -4621,13 +4664,45 @@
                 return prnList;
             }
 
+            function addScheduleChangeAlert(payload) {
+                const alert = {
+                    id: `change-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                    createdAt: Date.now(),
+                    acknowledgedAt: null,
+                    acknowledgedBy: null,
+                    ...payload
+                };
+                const updated = [alert, ...scheduleChangeAlerts].slice(0, 120);
+                setScheduleChangeAlerts(updated);
+                saveToStorage('reception_schedule_change_alerts', updated);
+                return alert;
+            }
+
+            function acknowledgeScheduleChange(alertId) {
+                if (!isAdmin) return;
+                const updated = scheduleChangeAlerts.map(alert =>
+                    alert.id === alertId
+                        ? {
+                            ...alert,
+                            acknowledgedAt: Date.now(),
+                            acknowledgedBy: currentUser?.displayName || currentUser?.username || 'Admin'
+                        }
+                        : alert
+                );
+                setScheduleChangeAlerts(updated);
+                saveToStorage('reception_schedule_change_alerts', updated);
+                showNotification('Schedule change acknowledged.', 'success', true);
+            }
+
             // --- Shift Swap Portal ---
-            function requestShiftSwap(fromStaffId, toStaffId, shiftDate) {
+            function requestShiftSwap(fromStaffId, toStaffId, shiftDate, requestType = 'swap', reason = '') {
                 const swapRequest = {
                     id: `swap-${Date.now()}`,
                     fromStaffId,
                     toStaffId,
                     shiftDate,
+                    requestType,
+                    reason,
                     requestedAt: Date.now(),
                     requestedBy: currentUser?.displayName,
                     status: 'pending',
@@ -4637,7 +4712,16 @@
                 const updated = [...shiftSwapRequests, swapRequest];
                 setShiftSwapRequests(updated);
                 saveToStorage('reception_shift_swaps', updated);
-                showNotification(`Swap request sent from ${staff[fromStaffId]?.name} to ${staff[toStaffId]?.name} for ${shiftDate}.`, 'info', true);
+                addScheduleChangeAlert({
+                    swapId: swapRequest.id,
+                    alertType: 'request',
+                    shiftDate,
+                    fromStaffId,
+                    toStaffId,
+                    requestedBy: swapRequest.requestedBy,
+                    message: `${requestType === 'coverage' ? 'Coverage request' : 'Swap request'}: ${staff[fromStaffId]?.name} ${String.fromCharCode(8594)} ${staff[toStaffId]?.name} on ${shiftDate}${reason ? ` (${reason})` : ''}`
+                });
+                showNotification(`Request sent from ${staff[fromStaffId]?.name} to ${staff[toStaffId]?.name} for ${shiftDate}.`, 'info', true);
             }
 
             function approveShiftSwap(swapId) {
@@ -4651,6 +4735,15 @@
                             dayShifts[shiftIndex] = { ...shift, empId: req.toStaffId };
                             setEvents({ ...events, [req.shiftDate]: dayShifts });
                             saveToStorage(STORAGE_KEYS.SHIFTS, { ...events, [req.shiftDate]: dayShifts });
+                            addScheduleChangeAlert({
+                                swapId: req.id,
+                                alertType: 'applied',
+                                shiftDate: req.shiftDate,
+                                fromStaffId: req.fromStaffId,
+                                toStaffId: req.toStaffId,
+                                requestedBy: req.requestedBy,
+                                message: `Applied change: ${staff[req.fromStaffId]?.name} ${String.fromCharCode(8594)} ${staff[req.toStaffId]?.name} on ${req.shiftDate}`
+                            });
                         }
                         return { ...req, status: 'approved', approvedBy: currentUser?.displayName, approvedAt: Date.now() };
                     }
@@ -5629,6 +5722,7 @@
                     }
                     const coverageGapStats = getCoverageGapStats(allDayShifts);
                     const hasLargeCoverageGap = coverageGapStats.largestGapMinutes >= largeGapAlertMinutes;
+                    const hasUnacknowledgedChange = unacknowledgedAppliedDates.has(dk);
                     const isToday = new Date().toISOString().split('T')[0] === dk;
                     cells.push(
                         <div key={dk}
@@ -5637,7 +5731,7 @@
                             onDrop={(event) => handleCalendarDrop(event, dk)}
                             onDragLeave={() => handleCalendarDragLeave(dk)}
                             style={{minHeight: minCellHeight}}
-                            className={`day-cell group ${isToday ? 'day-cell--today' : ''} ${selectedDate === dk ? 'day-cell--selected' : ''} ${dragOverDate === dk ? 'day-cell--drag-over' : ''} ${hasLargeCoverageGap ? 'day-cell--coverage-risk' : ''}`}>
+                            className={`day-cell group ${isToday ? 'day-cell--today' : ''} ${selectedDate === dk ? 'day-cell--selected' : ''} ${dragOverDate === dk ? 'day-cell--drag-over' : ''} ${hasLargeCoverageGap ? 'day-cell--coverage-risk' : ''} ${hasUnacknowledgedChange ? 'day-cell--change-unacked' : ''}`}>
                             {isToday && <div className="rivet" style={{top: '4px', left: '4px'}} />}
                             <div className="flex justify-between items-start">
                                 <span className="day-cell__num">{d}</span>
@@ -5662,7 +5756,7 @@
                                             onDragStart={(event) => { event.stopPropagation(); handleShiftDragStart(event, s, dk); }}
                                             onDragEnd={() => { setDraggedShift(null); setDragOverDate(null); }}
                                             onClick={(e) => { e.stopPropagation(); setEditingShift(s); }}
-                                            className="shift-card">
+                                            className={`shift-card ${hasUnacknowledgedChange ? 'shift-card--change-unacked' : ''}`}>
                                             <div className="rivet" style={{top: '3px', left: '3px', width: '6px', height: '6px'}} />
                                             <div className="rivet" style={{top: '3px', right: '3px', width: '6px', height: '6px'}} />
                                             <div className="flex items-center justify-between gap-2">
@@ -5680,7 +5774,7 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts]);
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
@@ -5731,6 +5825,9 @@
                 return count + (events[dateKey] || []).length;
             }, 0);
             const pendingSwapCount = shiftSwapRequests.filter(request => request.status === 'pending').length;
+            const unacknowledgedScheduleChanges = scheduleChangeAlerts.filter(alert => !alert.acknowledgedAt);
+            const unacknowledgedAppliedChanges = scheduleChangeAlerts.filter(alert => alert.alertType === 'applied' && !alert.acknowledgedAt);
+            const unacknowledgedAppliedDates = new Set(unacknowledgedAppliedChanges.map(alert => alert.shiftDate));
             const activeAlertLabel = globalAlert?.trim() || 'No critical directives posted.';
             const platformModeLabel = isFirebaseAvailable ? 'Live sync' : 'Local safe mode';
             const facilityMonogram = (appSettings.facilityName || 'DS').split(' ').map(part => part[0]).join('').slice(0, 2);
@@ -5925,6 +6022,24 @@
                                     <div className="data-chip header-chip">Alert: {activeAlertLabel}</div>
                                     <div className="data-chip header-chip">{latestDataUpdatedAt ? `Updated: ${new Date(latestDataUpdatedAt).toLocaleString()}` : 'Updated: no data yet'}</div>
                                 </div>
+                                {unacknowledgedScheduleChanges.length > 0 && (
+                                    <div className="schedule-change-feed">
+                                        <div className="text-[9px] uppercase tracking-[0.14em] font-black text-amber-300 mb-2">Schedule Change Queue ({unacknowledgedScheduleChanges.length})</div>
+                                        <div className="space-y-2 max-h-24 overflow-y-auto no-scrollbar">
+                                            {unacknowledgedScheduleChanges.slice(0, 4).map(alert => (
+                                                <div key={alert.id} className={`schedule-change-feed__item ${alert.acknowledgedAt ? 'schedule-change-feed__item--acked' : ''}`}>
+                                                    <div className="text-[10px] font-black text-amber-100 leading-relaxed">{alert.message}</div>
+                                                    <div className="flex items-center justify-between mt-1 gap-2">
+                                                        <div className="text-[9px] text-amber-200/80 uppercase tracking-[0.08em]">{new Date(alert.createdAt).toLocaleString()}</div>
+                                                        {isAdmin && !alert.acknowledgedAt && (
+                                                            <button onClick={() => acknowledgeScheduleChange(alert.id)} className="fancy-btn" style={{padding: '4px 8px', fontSize: '9px', background: '#f59e0b'}}>ACKNOWLEDGE</button>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
@@ -7511,6 +7626,19 @@
 
                                 <div className="mb-6 p-4 rounded-lg bg-purple-600/10 border border-purple-500/20">
                                     <div className="text-sm font-bold mb-4">Request a Swap:</div>
+                                    <div className="grid grid-cols-2 gap-3 mb-3">
+                                        <div>
+                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Request Type</label>
+                                            <select id="swapType" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}}>
+                                                <option value="swap">Swap Shift</option>
+                                                <option value="coverage">Coverage Change</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Reason (optional)</label>
+                                            <input type="text" id="swapReason" placeholder="Reason for request" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}} />
+                                        </div>
+                                    </div>
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
                                             <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Your Shift Date</label>
@@ -7535,11 +7663,14 @@
                                         const date = document.getElementById('swapDate').value;
                                         const from = document.getElementById('fromStaff').value;
                                         const to = document.getElementById('toStaff').value;
+                                        const type = document.getElementById('swapType').value || 'swap';
+                                        const reason = document.getElementById('swapReason').value || '';
                                         if (date && from && to) {
-                                            requestShiftSwap(from, to, date);
+                                            requestShiftSwap(from, to, date, type, reason);
                                             document.getElementById('swapDate').value = '';
                                             document.getElementById('fromStaff').value = '';
                                             document.getElementById('toStaff').value = '';
+                                            document.getElementById('swapReason').value = '';
                                         } else {
                                             showNotification('Please complete all fields', 'error');
                                         }
