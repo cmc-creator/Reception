@@ -1277,11 +1277,6 @@
             color: inherit;
         }
 
-        .header-metric-card * {
-            background: inherit !important;
-            background-image: none !important;
-        }
-
         .header-metric-label {
             color: var(--text-muted);
             font-size: 8px;
@@ -2896,25 +2891,10 @@
             align-items: flex-end;
             margin-bottom: 1.25rem;
             padding: 0.9rem 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.1) !important;
-            border-radius: 16px !important;
-            background: #000000 !important;
-            backdrop-filter: blur(8px);
-        }
-
-        .header-intel-card * {
-            background: inherit !important;
-            background-image: none !important;
-            font-size: clamp(1.8rem, 3vw, 2.6rem);
-            font-weight: 900;
-            text-transform: uppercase;
-            letter-spacing: -0.04em;
-            color: var(--text-primary);
-            text-shadow: 0 0 20px rgba(255,255,255,0.12);
-            line-height: 1;
+            border: 1px solid var(--border-muted);
+            border-radius: 16px;
+            background: linear-gradient(135deg, var(--panel-start), var(--panel-end));
+            box-shadow: 0 10px 24px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05);
         }
         .cal-command-bar__month {
             font-size: 10px;
