@@ -100,22 +100,22 @@
         }
 
         body[data-theme="midnight"] {
-            --accent: #a78bfa;
-            --accent-dark: #6d28d9;
-            --accent-soft: rgba(167, 139, 250, 0.24);
-            --accent-glow: rgba(167, 139, 250, 0.42);
-            --highlight: #22d3ee;
-            --highlight-glow: rgba(34, 211, 238, 0.55);
-            --rivet-color: #312e81;
-            --panel-edge: #1e1b4b;
-            --bg-top: #120f25;
-            --bg-mid: #0a1020;
-            --bg-bottom: #05070f;
-            --panel-start: rgba(11, 15, 30, 0.97);
-            --panel-end: rgba(25, 20, 53, 0.93);
-            --texture-layer: repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 4px), radial-gradient(circle at 80% 20%, rgba(167,139,250,0.08) 0px, rgba(167,139,250,0) 120px);
-            --text-primary: #e9e7ff;
-            --text-muted: #c4b5fd;
+            --accent: #00e5ff;
+            --accent-dark: #0369a1;
+            --accent-soft: rgba(0, 229, 255, 0.28);
+            --accent-glow: rgba(0, 229, 255, 0.58);
+            --highlight: #a3ff12;
+            --highlight-glow: rgba(163, 255, 18, 0.5);
+            --rivet-color: #4b5563;
+            --panel-edge: #1f2937;
+            --bg-top: #060606;
+            --bg-mid: #020202;
+            --bg-bottom: #000000;
+            --panel-start: rgba(7, 7, 7, 0.97);
+            --panel-end: rgba(17, 17, 17, 0.94);
+            --texture-layer: repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px), radial-gradient(circle at 78% 22%, rgba(0,229,255,0.07) 0px, rgba(0,229,255,0) 130px);
+            --text-primary: #f1f5f9;
+            --text-muted: #94a3b8;
             --critical: #f43f5e;
             --critical-soft: rgba(244, 63, 94, 0.2);
             --success: #10b981;
@@ -547,6 +547,22 @@
             background: linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0));
         }
 
+        .modal-footer-row {
+            margin-top: 1rem;
+            display: flex;
+            gap: 0.65rem;
+            justify-content: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .modal-footer-row--full {
+            justify-content: stretch;
+        }
+
+        .modal-footer-row--full .fancy-btn {
+            width: 100%;
+        }
+
         button.text-4xl.leading-none,
         button.text-5xl.font-light,
         button.text-5xl.font-light.leading-none,
@@ -672,6 +688,56 @@
             background: rgba(34, 211, 238, 0.14);
             color: #cffafe;
             border: 1px solid rgba(34, 211, 238, 0.2);
+        }
+
+        .account-health-pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.26rem 0.58rem;
+            font-size: 0.62rem;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            font-weight: 900;
+            border: 1px solid rgba(255,255,255,0.16);
+            background: rgba(255,255,255,0.06);
+            color: #f1f5f9;
+        }
+
+        .account-health-pill--neutral {
+            background: rgba(148,163,184,0.18);
+            border-color: rgba(148,163,184,0.34);
+            color: #e2e8f0;
+        }
+
+        .account-health-pill--good {
+            background: rgba(34,197,94,0.2);
+            border-color: rgba(34,197,94,0.38);
+            color: #dcfce7;
+        }
+
+        .account-health-pill--warn {
+            background: rgba(245,158,11,0.2);
+            border-color: rgba(245,158,11,0.36);
+            color: #fef3c7;
+        }
+
+        .account-health-pill--risk {
+            background: rgba(239,68,68,0.22);
+            border-color: rgba(239,68,68,0.38);
+            color: #fee2e2;
+        }
+
+        .account-health-pill--admin {
+            background: rgba(236,72,153,0.2);
+            border-color: rgba(236,72,153,0.36);
+            color: #fce7f3;
+        }
+
+        .account-health-pill--staff {
+            background: rgba(56,189,248,0.2);
+            border-color: rgba(56,189,248,0.34);
+            color: #e0f2fe;
         }
         
         @keyframes slideIn {
@@ -951,7 +1017,7 @@
         .nav-action-btn {
             width: 100%;
             min-height: 0;
-            aspect-ratio: 1 / 1;
+            aspect-ratio: 1 / 0.9;
             border-radius: 12px;
             border: 1px solid rgba(255,255,255,0.14);
             background: linear-gradient(155deg, rgba(255,255,255,0.08), rgba(255,255,255,0.02));
@@ -962,7 +1028,21 @@
             gap: 0;
             color: var(--text-primary);
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 8px 18px rgba(0,0,0,0.26);
-            padding: 0;
+            padding: 0.3rem 0.2rem;
+        }
+
+        .luxury-nav-rail {
+            background:
+                radial-gradient(120% 38% at 50% -5%, rgba(212,175,122,0.18), rgba(212,175,122,0) 55%),
+                linear-gradient(180deg, rgba(16,21,31,0.98) 0%, rgba(10,14,22,0.99) 100%) !important;
+            border-right: 1px solid rgba(212,175,122,0.22) !important;
+            box-shadow: inset -1px 0 0 rgba(255,255,255,0.05), 14px 0 30px rgba(0,0,0,0.4) !important;
+        }
+
+        .luxury-nav-rail .nav-section-title {
+            color: rgba(214,197,164,0.95);
+            letter-spacing: 0.2em;
+            font-size: 6.5px;
         }
 
         .nav-action-btn--danger {
@@ -1100,32 +1180,37 @@
         }
 
         .top-header {
-            padding: 0.9rem 1.15rem;
-            gap: 0.9rem;
+            padding: 1.1rem 1.25rem;
+            gap: 1rem;
             display: grid;
             grid-template-columns: minmax(220px, 0.95fr) minmax(320px, 1.35fr) auto;
             align-items: stretch;
         }
 
+        .luxury-top-header {
+            background: #000000 !important;
+            border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 4px 16px rgba(0,0,0,0.6) !important;
+        }
+
         .header-cluster,
-        .header-action-bank,
-        .header-intel-card {
-            border: 1px solid rgba(255,255,255,0.14);
-            border-radius: 22px;
-            background: linear-gradient(160deg, rgba(255,255,255,0.08), rgba(255,255,255,0.025));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 12px 26px rgba(0,0,0,0.28);
+        .header-action-bank {
+            border: 1px solid rgba(255,255,255,0.12) !important;
+            border-radius: 16px !important;
+            background: #000000 !important;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 8px 20px rgba(0,0,0,0.4) !important;
             position: relative;
             overflow: hidden;
+            backdrop-filter: blur(6px);
         }
 
         .header-cluster::before,
-        .header-action-bank::before,
-        .header-intel-card::before {
+        .header-action-bank::before {
             content: '';
             position: absolute;
             inset: 0;
             pointer-events: none;
-            background: linear-gradient(180deg, rgba(255,255,255,0.08), transparent 30%, transparent 70%, rgba(255,255,255,0.03));
+            background: none;
         }
 
         .header-cluster > *,
@@ -1133,6 +1218,15 @@
         .header-intel-card > * {
             position: relative;
             z-index: 1;
+        }
+
+        .header-intel-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            background: none;
+            border-radius: 16px;
         }
 
         .header-cluster {
@@ -1153,10 +1247,10 @@
 
         .header-facility-title {
             color: var(--text-primary);
-            font-size: 22px;
-            font-weight: 900;
-            letter-spacing: -0.04em;
-            line-height: 1;
+            font-size: 18px;
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
             text-transform: uppercase;
         }
 
@@ -1171,14 +1265,21 @@
         .header-metric-row {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.45rem;
+            gap: 0.6rem;
         }
 
         .header-metric-card {
-            padding: 0.5rem 0.55rem;
-            border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
+            padding: 0.65rem 0.75rem;
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            background: #1a1a1a !important;
+            backdrop-filter: blur(4px);
+            color: inherit;
+        }
+
+        .header-metric-card * {
+            background: inherit !important;
+            background-image: none !important;
         }
 
         .header-metric-label {
@@ -1191,16 +1292,20 @@
 
         .header-metric-value {
             color: var(--text-primary);
-            font-size: 12px;
-            font-weight: 900;
-            margin-top: 0.2rem;
+            font-size: 13px;
+            font-weight: 800;
+            margin-top: 0.3rem;
         }
 
         .header-intel-card {
-            padding: 0.85rem 0.95rem;
+            padding: 0.9rem 1rem;
             display: flex;
             flex-direction: column;
-            gap: 0.7rem;
+            gap: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            background: rgba(25,25,25,0.8) !important;
+            backdrop-filter: blur(8px);
         }
 
         .header-intel-top {
@@ -1297,6 +1402,104 @@
         .report-sidebar > * {
             position: relative;
             z-index: 1;
+        }
+
+        .luxury-report-sidebar {
+            background:
+                radial-gradient(150% 48% at 0% -8%, rgba(212,175,122,0.14), rgba(212,175,122,0) 56%),
+                linear-gradient(180deg, rgba(13,18,28,0.98), rgba(8,12,20,0.99)) !important;
+            border-right: 1px solid rgba(212,175,122,0.22) !important;
+        }
+
+        .admin-command-card {
+            border: 1px solid rgba(212,175,122,0.28);
+            background: linear-gradient(145deg, rgba(212,175,122,0.14), rgba(212,175,122,0.04));
+            border-radius: 14px;
+            padding: 0.65rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            box-shadow: 0 10px 22px rgba(0,0,0,0.28);
+        }
+
+        .admin-command-card__title {
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            color: #f5e6c5;
+        }
+
+        .report-archive-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 0.55rem;
+            align-items: stretch;
+        }
+
+        .report-archive-date {
+            min-height: 38px;
+            padding: 0.5rem 0.75rem !important;
+            font-size: 11px !important;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+            border-radius: 10px;
+            border-color: rgba(56,189,248,0.62);
+        }
+
+        .panel-input.date-input-luxe {
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+            border-color: rgba(56,189,248,0.56);
+        }
+
+        .panel-input.time-input-luxe {
+            font-size: 11px;
+            letter-spacing: 0.04em;
+            font-variant-numeric: tabular-nums;
+            border-color: rgba(56,189,248,0.48);
+        }
+
+        .report-archive-date::-webkit-calendar-picker-indicator,
+        .panel-input.date-input-luxe::-webkit-calendar-picker-indicator,
+        .panel-input.time-input-luxe::-webkit-calendar-picker-indicator {
+            cursor: pointer;
+            opacity: 0.95;
+            filter: invert(87%) sepia(17%) saturate(540%) hue-rotate(346deg) brightness(104%) contrast(94%);
+        }
+
+        .report-archive-open {
+            min-width: 112px;
+            min-height: 38px;
+            padding: 0.5rem 0.8rem !important;
+            font-size: 10px !important;
+            letter-spacing: 0.16em;
+        }
+
+        .settings-jump-row {
+            margin-top: 0.9rem;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .settings-jump-btn {
+            border-radius: 999px;
+            border: 1px solid rgba(255,255,255,0.18);
+            background: rgba(255,255,255,0.05);
+            color: var(--text-primary);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.4rem 0.7rem;
+            transition: border-color 0.14s ease, transform 0.14s ease;
+        }
+
+        .settings-jump-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(212,175,122,0.42);
         }
 
         .report-command-deck {
@@ -2058,6 +2261,27 @@
             border-color: rgba(255,255,255,0.28);
         }
 
+        .modal-panel__title,
+        .crew-modal-header h2 {
+            letter-spacing: 0.04em;
+        }
+
+        .modal-panel .fancy-btn,
+        .crew-modal-card .fancy-btn {
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-weight: 900;
+            border-radius: 12px;
+        }
+
+        .modal-panel .panel-input,
+        .crew-modal-card .panel-input,
+        .modal-panel textarea,
+        .crew-modal-card textarea {
+            font-size: 11px;
+            letter-spacing: 0.02em;
+        }
+
         .modal-surface-card {
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 20px;
@@ -2671,14 +2895,19 @@
             gap: 1.25rem;
             align-items: flex-end;
             margin-bottom: 1.25rem;
-            padding: 0.9rem 1.2rem;
-            border-radius: 16px;
-            background: linear-gradient(155deg, rgba(255,255,255,0.07), rgba(255,255,255,0.02));
-            border: 1px solid rgba(255,255,255,0.1);
-            box-shadow: 0 8px 28px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.07);
-            overflow: hidden;
+            padding: 0.9rem 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.1) !important;
+            border-radius: 16px !important;
+            background: #000000 !important;
+            backdrop-filter: blur(8px);
         }
-        .cal-command-bar__title {
+
+        .header-intel-card * {
+            background: inherit !important;
+            background-image: none !important;
             font-size: clamp(1.8rem, 3vw, 2.6rem);
             font-weight: 900;
             text-transform: uppercase;
@@ -3014,18 +3243,19 @@
         }
     </style>
     <script>
-        // Initialize theme from localStorage before React mounts to avoid flash
+        // Initialize theme from localStorage before React mounts to avoid flash.
         (function() {
-            const savedTheme = localStorage.getItem('reception_settings');
-            if (savedTheme) {
-                try {
-                    const settings = JSON.parse(savedTheme);
-                    if (settings.theme && document.body) {
-                        document.body.setAttribute('data-theme', settings.theme);
-                    }
-                } catch (e) {
-                    // Silently fail - React will set the theme
+            try {
+                const settings = JSON.parse(localStorage.getItem('reception_settings') || '{}');
+                const users = JSON.parse(localStorage.getItem('reception_users') || '{}');
+                const session = JSON.parse(localStorage.getItem('reception_session') || 'null');
+                const userTheme = session?.userId ? users?.[session.userId]?.preferences?.theme : null;
+                const effectiveTheme = userTheme && userTheme !== 'facility-default' ? userTheme : settings.theme;
+                if (effectiveTheme && document.body) {
+                    document.body.setAttribute('data-theme', effectiveTheme);
                 }
+            } catch (e) {
+                // Silently fail - React will set the theme
             }
         })();
     </script>
@@ -3044,7 +3274,7 @@
             { id: 'forge', label: 'Forge', description: 'Industrial copper terminal', swatch: 'linear-gradient(135deg, #b87333, #00f3ff)' },
             { id: 'aurora', label: 'Aurora', description: 'Cold blue operations room', swatch: 'linear-gradient(135deg, #7dd3fc, #6ee7b7)' },
             { id: 'daybreak', label: 'Daybreak', description: 'Warm daylight command center', swatch: 'linear-gradient(135deg, #f97316, #facc15)' },
-            { id: 'midnight', label: 'Midnight', description: 'Deep violet overnight mode', swatch: 'linear-gradient(135deg, #a78bfa, #22d3ee)' },
+            { id: 'midnight', label: 'Midnight', description: 'Black glass and metal neon mode', swatch: 'linear-gradient(135deg, #00e5ff, #a3ff12)' },
             { id: 'walnut', label: 'Walnut', description: 'Woodgrain command deck', swatch: 'linear-gradient(135deg, #8d5a2b, #f2cc8f)' },
             { id: 'slatework', label: 'Slatework', description: 'Stone-cut tactical board', swatch: 'linear-gradient(135deg, #334155, #94a3b8)' },
             { id: 'linen', label: 'Linen', description: 'Textured paper operations wall', swatch: 'linear-gradient(135deg, #f3eee6, #c9915d)' },
@@ -3704,6 +3934,13 @@
             }
 
             function handleThemeChange(themeId, scope = canCustomizeExperience ? 'personal' : 'facility') {
+                if (!THEME_OPTIONS.some(theme => theme.id === themeId)) {
+                    showNotification('That theme is not available.', 'error');
+                    return;
+                }
+                if (scope === 'facility' && !requireAdmin('Only admins can change the facility theme.')) {
+                    return;
+                }
                 document.body.setAttribute('data-theme', themeId);
                 if (scope === 'personal' && canCustomizeExperience) {
                     updateCurrentUserPreferences({ theme: themeId });
@@ -3718,6 +3955,15 @@
                 const currentTheme = activeTheme || DEFAULT_THEME;
                 const nextTheme = currentTheme === 'midnight' ? 'linen' : 'midnight';
                 handleThemeChange(nextTheme, canCustomizeExperience ? 'personal' : 'facility');
+            }
+
+            function resetPersonalWorkspacePreferences() {
+                if (!canCustomizeExperience || !currentUser) {
+                    showNotification('Personal workspace controls are currently locked.', 'error');
+                    return;
+                }
+                updateCurrentUserPreferences(getDefaultUserPreferences());
+                showNotification('Personal workspace reset to facility defaults.', 'success');
             }
 
             function openChecklistBuilder() {
@@ -3928,13 +4174,24 @@
 
             async function createAccount() {
                 if (!requireAdmin()) return;
-                const username = newAccount.username.trim().toLowerCase();
                 const displayName = newAccount.displayName.trim();
-                const email = newAccount.email.trim().toLowerCase();
+                const requestedUsername = newAccount.username.trim().toLowerCase();
+                const requestedEmail = newAccount.email.trim().toLowerCase();
                 const password = newAccount.password.trim();
-                if (!username || !displayName || !email || !password) {
-                    showNotification('Fill out username, display name, email, and password first.', 'error');
+                if (!displayName || !password) {
+                    showNotification('Fill out display name and temporary password first.', 'error');
                     return;
+                }
+                const baseUsername = requestedUsername || displayName.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 24) || `staff.${Date.now().toString().slice(-4)}`;
+                let username = baseUsername;
+                let counter = 1;
+                while (Object.values(users).some(user => String(user.username || '').toLowerCase() === username)) {
+                    username = `${baseUsername}.${counter}`;
+                    counter += 1;
+                }
+                let email = requestedEmail || `${username}@destinysprings.com`;
+                if (Object.values(users).some(user => String(user.email || '').toLowerCase() === email)) {
+                    email = `${username}.${Date.now().toString().slice(-3)}@destinysprings.com`;
                 }
                 if (!email.endsWith('@destinysprings.com')) {
                     showNotification('Email must be a @destinysprings.com address.', 'error');
@@ -3975,6 +4232,46 @@
                 } catch (err) {
                     showNotification(err.code === 'auth/email-already-in-use' ? 'That email already has a Firebase sign-in.' : err.message, 'error');
                 }
+            }
+
+            function buildTempPassword() {
+                const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%^&*';
+                let generated = '';
+                for (let index = 0; index < 14; index += 1) {
+                    generated += alphabet[Math.floor(Math.random() * alphabet.length)];
+                }
+                return generated;
+            }
+
+            function applyAccountTemplate(role = 'staff') {
+                if (!requireAdmin()) return;
+                const stamp = Date.now().toString().slice(-4);
+                const base = role === 'admin' ? 'admin' : 'staff';
+                setNewAccount(previous => ({
+                    ...previous,
+                    role,
+                    displayName: previous.displayName || `${role === 'admin' ? 'Admin' : 'Staff'} ${stamp}`,
+                    username: previous.username || `${base}.${stamp}`,
+                    email: previous.email || `${base}.${stamp}@destinysprings.com`,
+                    password: previous.password || buildTempPassword()
+                }));
+                showNotification(`${role === 'admin' ? 'Admin' : 'Staff'} template applied.`);
+            }
+
+            function autofillAccountIdentity() {
+                if (!requireAdmin()) return;
+                const source = String(newAccount.displayName || '').trim();
+                if (!source) {
+                    showNotification('Enter a display name first.', 'error');
+                    return;
+                }
+                const slug = source.toLowerCase().replace(/[^a-z0-9]+/g, '.').replace(/^\.+|\.+$/g, '').slice(0, 24) || `staff.${Date.now().toString().slice(-4)}`;
+                setNewAccount(previous => ({
+                    ...previous,
+                    username: previous.username || slug,
+                    email: previous.email || `${slug}@destinysprings.com`
+                }));
+                showNotification('Username and email autofilled from display name.');
             }
 
             function updateUserEmail(userId, nextEmail) {
@@ -6078,6 +6375,21 @@
                 }
             }
 
+            function focusSettingsSection(sectionId = 'settings-accounts') {
+                if (sectionId === 'settings-accounts' && !requireAdmin('Only admins can open account access controls.')) {
+                    return;
+                }
+                setIsSettingsOpen(true);
+                window.requestAnimationFrame(() => {
+                    window.setTimeout(() => {
+                        const section = document.getElementById(sectionId);
+                        if (section) {
+                            section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                        }
+                    }, 80);
+                });
+            }
+
             function runReportUtility(action) {
                 if (!action) return;
                 if (action === 'history') {
@@ -6106,6 +6418,7 @@
             }
 
             function exportFullBackup() {
+                if (!requireAdmin('Only admins can export full system backups.')) return;
                 const backup = {};
                 for (let index = 0; index < localStorage.length; index++) {
                     const key = localStorage.key(index);
@@ -6143,6 +6456,10 @@
             }
 
             function importFullBackup(event) {
+                if (!requireAdmin('Only admins can import full system backups.')) {
+                    event.target.value = '';
+                    return;
+                }
                 const file = event.target.files?.[0];
                 if (!file) return;
                 const reader = new FileReader();
@@ -6300,7 +6617,7 @@
                 const legacyBg = String(member.bg || '').toLowerCase();
                 if (legacyBg.includes('cyan')) return '#06b6d4';
                 if (legacyBg.includes('rose')) return '#f43f5e';
-                if (legacyBg.includes('fuchsia')) return '#d946ef';
+                if (legacyBg.includes('fuchsia')) return '#a3ff12';
                 if (legacyBg.includes('blue')) return '#3b82f6';
                 return '#94a3b8';
             }
@@ -6813,7 +7130,7 @@
                                             <div className="flex items-center justify-between gap-2">
                                                 <span className="shift-card__identity flex items-center gap-2 min-w-0">
                                                     {appSettings.showStaffColorMarkers && <span className="shift-card__dot" style={{background: getStaffColor(s.empId)}} />}
-                                                    <span style={{color: appSettings.showStaffColorMarkers ? getStaffColor(s.empId) : 'var(--text-primary)'}} className="shift-card__name truncate">{staff[s.empId]?.name || '...'}</span>
+                                                    <span style={{color: 'var(--text-primary)', textShadow: appSettings.showStaffColorMarkers ? `0 0 6px ${getStaffColor(s.empId)}55` : 'none'}} className="shift-card__name truncate">{staff[s.empId]?.name || '...'}</span>
                                                 </span>
                                                 <span className="shift-card__time">{(s.start || s.time) + (s.end ? ` - ${s.end}` : '')}</span>
                                             </div>
@@ -6871,6 +7188,63 @@
                 { id: 'achievements', icon: '🏆', title: 'Leaderboard', hint: 'See points, badges, and streaks', run: () => setShowAchievements(true) },
                 { id: 'history', icon: '🗂', title: 'Report Browser', hint: 'Jump to a saved handoff instantly', run: openReportHistory }
             ];
+            const selectableMembers = useMemo(() => {
+                const merged = new Map();
+                Object.entries(staff || {}).forEach(([id, member]) => {
+                    merged.set(id, { id, name: String(member?.name || id) });
+                });
+                Object.values(users || {}).forEach(account => {
+                    if (!account || account.disabled) return;
+                    if (merged.has(account.id)) return;
+                    merged.set(account.id, {
+                        id: account.id,
+                        name: String(account.displayName || account.username || account.email || account.id)
+                    });
+                });
+                return Array.from(merged.values()).sort((a, b) => a.name.localeCompare(b.name));
+            }, [staff, users]);
+            const memberNameById = (memberId, fallback = 'Unknown') => {
+                if (!memberId) return fallback;
+                const fromStaff = staff?.[memberId]?.name;
+                if (fromStaff) return String(fromStaff);
+                const fromUser = users?.[memberId];
+                if (fromUser) return String(fromUser.displayName || fromUser.username || fromUser.email || memberId);
+                const fromList = selectableMembers.find(member => member.id === memberId);
+                return fromList ? fromList.name : String(memberId);
+            };
+            const accountHealth = useMemo(() => {
+                const summary = {
+                    total: 0,
+                    active: 0,
+                    disabled: 0,
+                    admins: 0,
+                    staff: 0,
+                    needsEmail: 0,
+                    firebaseReady: 0
+                };
+                Object.values(users || {}).forEach(account => {
+                    if (!account) return;
+                    summary.total += 1;
+                    if (account.disabled) {
+                        summary.disabled += 1;
+                    } else {
+                        summary.active += 1;
+                    }
+                    if (account.role === 'admin') {
+                        summary.admins += 1;
+                    } else {
+                        summary.staff += 1;
+                    }
+                    const provisioning = getAccountProvisioningState(account);
+                    if (provisioning.label === 'needs email') {
+                        summary.needsEmail += 1;
+                    }
+                    if (provisioning.label === 'firebase ready') {
+                        summary.firebaseReady += 1;
+                    }
+                });
+                return summary;
+            }, [users]);
             const unreadNotificationCount = notifications.filter(n => !n.read).length;
             const currentChatIdentity = String(currentUser?.displayName || currentUser?.username || 'USER').toLowerCase();
             const unreadChatCount = messages.filter(message => {
@@ -6897,7 +7271,7 @@
             const checklistCompletionPercent = checklist.length > 0 ? Math.round((checklistCompletedCount / checklist.length) * 100) : 0;
             const crewLeaderboardCount = Math.max(1, (crewPulse?.leaderboard || []).length);
             const crewRankProgress = crewRank > 0 ? Math.max(0.08, Math.min(1, (crewLeaderboardCount - crewRank + 1) / crewLeaderboardCount)) : 0.12;
-            const activeWorkQuestStaffId = workQuestPlayerId || Object.keys(staff || {})[0] || '';
+            const activeWorkQuestStaffId = workQuestPlayerId || selectableMembers[0]?.id || Object.keys(staff || {})[0] || '';
             const activeWorkQuestStats = workQuestStatsByStaff[activeWorkQuestStaffId] || { shifts: 0, confirmedShifts: 0, weekendShifts: 0, kudosReceived: 0 };
             const activeRewardWallet = rewardWallet[activeWorkQuestStaffId] || { tokens: 0, rewards: [] };
             const rewardMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
@@ -6982,7 +7356,7 @@
                         </div>
                     )}
                     {/* NAV RAIL */}
-                    <nav style={{width: navRailWidth, background: 'linear-gradient(180deg, var(--bg-mid) 0%, var(--bg-bottom) 100%)', borderRight: '2px solid var(--accent-soft)', boxShadow: 'inset -2px 0 5px rgba(0,0,0,0.5)'}} className="nav-rail nav-rail--elevated nav-shell no-print flex flex-col items-center">
+                    <nav style={{width: navRailWidth}} className="nav-rail nav-rail--elevated luxury-nav-rail nav-shell no-print flex flex-col items-center">
                         <div className="nav-brand-card">
                             <div className="nav-monogram" style={{color: 'var(--accent)', fontWeight: 900, fontSize: '1.2rem', textShadow: '0 0 10px var(--accent-glow)', letterSpacing: '0.1em'}}>{facilityMonogram}</div>
                             <div className="nav-brand-label">Reception Grid</div>
@@ -7047,6 +7421,7 @@
                         {isAdmin && (
                             <div className="nav-section-card">
                                 <div className="nav-section-title">Admin</div>
+                                <button onClick={() => focusSettingsSection('settings-accounts')} className="nav-action-btn nav-action-btn--gold" title="Manage users, roles, and account status"><span className="nav-action-icon">🔐</span><span className="nav-action-text">Users</span></button>
                                 <button onClick={saveBaseline} className="nav-action-btn" title="Save baseline"><span className="nav-action-icon">💾</span><span className="nav-action-text">Save Base</span></button>
                                 <button onClick={restoreBaseline} className="nav-action-btn" title="Restore baseline"><span className="nav-action-icon">♻️</span><span className="nav-action-text">Restore</span></button>
                                 <button onClick={handleMasterReset} className="nav-action-btn" title="Master reset"><span className="nav-action-icon">🛠</span><span className="nav-action-text">Reset</span></button>
@@ -7061,26 +7436,26 @@
                     </nav>
 
                     <div className="main-stack flex-1 flex flex-col min-h-0">
-                        <header className="top-header command-strip no-print min-h-10 bg-rose-950/20 border-b border-rose-500/30 text-left font-bold">
-                            <div className="header-cluster">
+                        <header className="top-header command-strip luxury-top-header no-print min-h-10 text-left font-bold">
+                            <div className="header-cluster" style={{ background: '#000000', borderColor: 'rgba(255,255,255,0.14)' }}>
                                 <div>
                                     <div className="header-kicker">Facility Command</div>
                                     <div className="header-facility-title neon-heading">{appSettings.facilityName || 'Destiny Springs'}</div>
                                     <div className="header-facility-meta">{currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</div>
                                 </div>
                                 <div className="header-metric-row">
-                                    <div className="header-metric-card rivet-frame">
+                                    <div className="header-metric-card rivet-frame" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.14)' }}>
                                         <div className="header-metric-label">Pending Swaps</div>
                                         <div className="header-metric-value">{pendingSwapCount}</div>
                                         <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentSwapSpark)} /></svg>
                                     </div>
-                                    <div className="header-metric-card rivet-frame">
+                                    <div className="header-metric-card rivet-frame" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.14)' }}>
                                         <div className="header-metric-label">Game Lounge</div>
                                         <div className="header-metric-value">{gameHistory.length}</div>
                                         <div className="text-[9px] text-cyan-200/80 uppercase tracking-[0.11em] mb-2">Matches Logged</div>
                                         <button className="fancy-btn w-full" style={{padding: '6px 10px', fontSize: '9px', background: '#0ea5e9'}} onClick={() => setShowGameHub(true)}>OPEN GAMES</button>
                                     </div>
-                                    <div className="header-metric-card rivet-frame">
+                                    <div className="header-metric-card rivet-frame" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.14)' }}>
                                         <div className="header-metric-label">Top Gamer</div>
                                         <div className="header-metric-value">{topGamer ? topGamer.points : 0}</div>
                                         <div className="text-[10px] text-amber-200 truncate">{topGamer ? topGamer.name : 'No winner yet'}</div>
@@ -7089,7 +7464,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div className="header-intel-card">
+                            <div className="header-intel-card" style={{ background: '#000000', borderColor: 'rgba(255,255,255,0.14)' }}>
                                 <div className="header-intel-top">
                                     <div className="alert-pill flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
                                     <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
@@ -7126,10 +7501,11 @@
                                     </div>
                                 )}
                             </div>
-                            <div className="header-action-bank">
+                            <div className="header-action-bank" style={{ background: '#000000', borderColor: 'rgba(255,255,255,0.14)' }}>
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
                                 <button onClick={() => setShowGameHub(true)} className="data-chip header-chip" title="Open game lounge">GAMES</button>
                                 <button onClick={() => setIsRequestDrawerOpen(previous => !previous)} className="data-chip header-chip" title="Open pending requests">REQUESTS {pendingSwapCount > 0 ? `(${pendingSwapCount})` : ''}</button>
+                                {isAdmin && <button onClick={() => focusSettingsSection('settings-accounts')} className="data-chip header-chip" title="Manage account access">USER ACCESS</button>}
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>
@@ -7142,7 +7518,7 @@
 
                         <div className="work-area flex-1 flex overflow-hidden min-h-0">
                             {/* SIDEBAR LOGS */}
-                            <aside className="report-sidebar no-print p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar min-h-0" style={{width: reportSidebarWidth, background: 'linear-gradient(180deg, var(--panel-start), var(--panel-end))', borderRight: '1px solid var(--accent-soft)'}}>
+                            <aside className="report-sidebar luxury-report-sidebar no-print p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar min-h-0" style={{width: reportSidebarWidth}}>
                                 <header className="pb-3 text-left font-black flex flex-col gap-1" style={{borderBottom: '1px solid var(--accent-soft)', position: 'sticky', top: 0, zIndex: 6, background: 'linear-gradient(180deg, var(--panel-start), var(--panel-end))', paddingTop: '4px'}}>
                                     <div className="flex items-center justify-between gap-3">
                                         <div className="text-[9px] uppercase tracking-[0.22em]" style={{color: 'var(--text-muted)', fontWeight: 700}}>
@@ -7182,6 +7558,23 @@
                                     </button>
                                     <div className={useNeonLabels ? 'neon-heading' : ''} style={{fontSize: '1.2rem', letterSpacing: '-0.03em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 900, lineHeight: 1}}>Shift Report</div>
                                 </header>
+
+                                {isAdmin && (
+                                    <div className="admin-command-card">
+                                        <div className="admin-command-card__title">Admin Access</div>
+                                        <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}} onClick={() => focusSettingsSection('settings-accounts')}>MANAGE USERS</button>
+                                        <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#2563eb'}} onClick={() => setIsPersonnelModalOpen(true)}>OPEN PERSONNEL</button>
+                                    </div>
+                                )}
+
+                                <div className="admin-command-card">
+                                    <div className="admin-command-card__title">Report Archive</div>
+                                    <div className="report-archive-row">
+                                        <input type="date" value={reportJumpDate} onChange={e => setReportJumpDate(e.target.value)} className="panel-input report-archive-date" />
+                                        <button type="button" onClick={() => openReportByDate(reportJumpDate)} className="fancy-btn report-archive-open">OPEN</button>
+                                    </div>
+                                    <button type="button" onClick={openReportHistory} className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0f766e'}}>BROWSE HISTORY</button>
+                                </div>
 
 
 
@@ -7283,10 +7676,6 @@
                                             {reportReadinessHint}
                                         </div>
                                     )}
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <input type="date" value={reportJumpDate} onChange={e => setReportJumpDate(e.target.value)} className="panel-input" style={{padding: '7px 8px', fontSize: '10px'}} />
-                                        <button type="button" onClick={() => openReportByDate(reportJumpDate)} className="fancy-btn" style={{padding: '7px 8px', fontSize: '10px'}}>OPEN</button>
-                                    </div>
                                     <select onChange={e => { runReportUtility(e.target.value); e.target.value = ''; }} className="panel-input" style={{padding: '7px 8px', fontSize: '10px'}} defaultValue="">
                                         <option value="">Report Utilities</option>
                                         <option value="history">Open Report Browser</option>
@@ -7415,12 +7804,12 @@
                                                 draggable
                                                 onDragStart={(event) => handleStaffDragStart(event, id)}
                                                 onDragEnd={() => { setDraggedStaff(null); setDragOverDate(null); }}
-                                                style={{background: 'linear-gradient(145deg, var(--accent), var(--accent-dark))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid var(--accent-dark)', borderRadius: '999px', padding: '12px 16px', color: 'var(--text-primary)', fontWeight: 900, fontSize: '13px', letterSpacing: '0.05em', textTransform: 'uppercase'}}
+                                                style={{background: 'linear-gradient(145deg, rgba(8,8,8,0.95), rgba(20,20,20,0.92))', border: draggedStaff === id ? '2px solid var(--highlight)' : '2px solid var(--accent)', borderRadius: '999px', padding: '12px 16px', color: 'var(--text-primary)', fontWeight: 900, fontSize: '13px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: draggedStaff === id ? '0 0 16px var(--highlight-glow), inset 0 1px 0 rgba(255,255,255,0.1)' : '0 0 12px var(--accent-soft), inset 0 1px 0 rgba(255,255,255,0.08)'}}
                                                 className="transition-all hover:translate-y-[-1px]"
                                             >
                                                 <span className="flex items-center gap-2">
                                                     {appSettings.showStaffColorMarkers && <span style={{width: '9px', height: '9px', borderRadius: '999px', background: getStaffColor(id), boxShadow: '0 0 8px rgba(255,255,255,0.35), inset 0 0 0 1px rgba(0,0,0,0.35)'}} />}
-                                                    <span style={{color: appSettings.showStaffColorMarkers ? getStaffColor(id) : 'var(--text-primary)', fontSize: '13px', lineHeight: 1.18}}>{String(s.name)}</span>
+                                                    <span style={{color: 'var(--text-primary)', textShadow: appSettings.showStaffColorMarkers ? `0 0 6px ${getStaffColor(id)}66` : 'none', fontSize: '13px', lineHeight: 1.18}}>{String(s.name)}</span>
                                                 </span>
                                             </button>
                                         ))}
@@ -7622,8 +8011,14 @@
                                     <button onClick={() => setIsSettingsOpen(false)} className="modal-panel__close">&times;</button>
                                 </div>
                                 <div className="modal-panel__body">
+                                <div className="settings-jump-row">
+                                    <button type="button" className="settings-jump-btn" onClick={() => focusSettingsSection('settings-personal')}>Personal</button>
+                                    <button type="button" className="settings-jump-btn" onClick={() => focusSettingsSection('settings-facility')}>Facility</button>
+                                    <button type="button" className="settings-jump-btn" onClick={() => focusSettingsSection('settings-accounts')}>Accounts</button>
+                                    <button type="button" className="settings-jump-btn" onClick={() => focusSettingsSection('settings-engagement')}>Engagement</button>
+                                </div>
                                 <div className="grid xl:grid-cols-[1.1fr_0.9fr] gap-6">
-                                    <section className="glass-panel p-5 rounded-3xl">
+                                    <section id="settings-personal" className="glass-panel p-5 rounded-3xl">
                                         <div className="flex items-center justify-between gap-3 mb-4">
                                             <div>
                                                 <div className="text-[10px] uppercase tracking-[0.3em]" style={{color: 'var(--accent)'}}>Personal Portal</div>
@@ -7634,6 +8029,10 @@
                                         <div className="settings-subgrid">
                                             <div>
                                                 <div className="text-[11px] uppercase tracking-[0.2em] mb-3 text-white/60">Theme Override</div>
+                                                <div className="flex flex-wrap gap-2 mb-3">
+                                                    <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}} onClick={resetPersonalWorkspacePreferences} disabled={!canCustomizeExperience}>RESET PERSONAL DEFAULTS</button>
+                                                    <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#334155'}} onClick={() => handleThemeChange(appSettings.theme || DEFAULT_THEME, 'personal')} disabled={!canCustomizeExperience}>APPLY FACILITY THEME NOW</button>
+                                                </div>
                                                 <div className="grid sm:grid-cols-2 gap-4">
                                                     {portalThemeCards.map(theme => {
                                                         const isSelected = currentUserPreferences.theme === theme.id;
@@ -7823,7 +8222,7 @@
                                         </div>
                                     </section>
 
-                                    <section className="glass-panel p-5 rounded-3xl">
+                                    <section id="settings-facility" className="glass-panel p-5 rounded-3xl">
                                         <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{color: 'var(--accent)'}}>Facility Console</div>
                                         <div className="settings-subgrid">
                                             <div>
@@ -7839,7 +8238,7 @@
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Facility Theme</label>
-                                                    <select value={appSettings.theme || DEFAULT_THEME} onChange={e => updateSettings({ theme: e.target.value })} className="panel-input" disabled={!isAdmin}>
+                                                    <select value={appSettings.theme || DEFAULT_THEME} onChange={e => handleThemeChange(e.target.value, 'facility')} className="panel-input" disabled={!isAdmin}>
                                                         {THEME_OPTIONS.map(theme => <option key={theme.id} value={theme.id}>{theme.label}</option>)}
                                                     </select>
                                                 </div>
@@ -7865,11 +8264,11 @@
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div>
                                                     <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Default Start</label>
-                                                    <input type="time" value={appSettings.defaultShiftStart || '08:00'} onChange={e => updateSettings({ defaultShiftStart: e.target.value })} className="panel-input" disabled={!isAdmin} />
+                                                    <input type="time" value={appSettings.defaultShiftStart || '08:00'} onChange={e => updateSettings({ defaultShiftStart: e.target.value })} className="panel-input time-input-luxe" disabled={!isAdmin} />
                                                 </div>
                                                 <div>
                                                     <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Default End</label>
-                                                    <input type="time" value={appSettings.defaultShiftEnd || '20:00'} onChange={e => updateSettings({ defaultShiftEnd: e.target.value })} className="panel-input" disabled={!isAdmin} />
+                                                    <input type="time" value={appSettings.defaultShiftEnd || '20:00'} onChange={e => updateSettings({ defaultShiftEnd: e.target.value })} className="panel-input time-input-luxe" disabled={!isAdmin} />
                                                 </div>
                                             </div>
                                             <label className="flex items-center justify-between gap-4 rounded-2xl border border-white/10 p-4">
@@ -7928,7 +8327,7 @@
                                     </section>
                                 </div>
 
-                                <section className="glass-panel p-5 rounded-3xl mt-6">
+                                <section id="settings-engagement" className="glass-panel p-5 rounded-3xl mt-6">
                                     <div className="flex items-center justify-between gap-3 mb-4">
                                         <div>
                                             <div className="text-[10px] uppercase tracking-[0.3em]" style={{color: 'var(--accent)'}}>Crew Engagement</div>
@@ -7983,14 +8382,21 @@
                                     </div>
                                 </section>
 
-                                <section className="glass-panel p-5 rounded-3xl mt-6">
-                                    <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{color: 'var(--accent)'}}>Accounts</div>
+                                <section id="settings-accounts" className="glass-panel p-5 rounded-3xl mt-6">
+                                    <div className="text-[10px] uppercase tracking-[0.3em] mb-4" style={{color: 'var(--accent)'}}>Accounts & Access</div>
                                     {isAdmin ? (
                                         <div className="grid lg:grid-cols-[1.1fr_1.4fr] gap-6">
                                             <div className="space-y-3">
+                                                <div className="text-[11px] text-white/65">Add new users, remove old users, and update each account's role, email, and enabled status here.</div>
+                                                <div className="flex flex-wrap gap-2">
+                                                    <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}} onClick={() => applyAccountTemplate('staff')}>STAFF TEMPLATE</button>
+                                                    <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#334155'}} onClick={() => applyAccountTemplate('admin')}>ADMIN TEMPLATE</button>
+                                                    <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0f766e'}} onClick={autofillAccountIdentity}>AUTOFILL IDS</button>
+                                                    <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#6366f1'}} onClick={() => setNewAccount(account => ({ ...account, password: buildTempPassword() }))}>GENERATE PASSWORD</button>
+                                                </div>
                                                 <input value={newAccount.displayName} onChange={e => setNewAccount(account => ({ ...account, displayName: e.target.value }))} className="panel-input" placeholder="Display name" />
                                                 <input value={newAccount.username} onChange={e => setNewAccount(account => ({ ...account, username: e.target.value }))} className="panel-input" placeholder="Username" />
-                                                <input value={newAccount.email || ''} onChange={e => setNewAccount(account => ({ ...account, email: e.target.value }))} className="panel-input" placeholder="Email (optional)" type="email" />
+                                                <input value={newAccount.email || ''} onChange={e => setNewAccount(account => ({ ...account, email: e.target.value }))} className="panel-input" placeholder="Email (auto-generates if blank)" type="email" />
                                                 <input type="password" value={newAccount.password} onChange={e => setNewAccount(account => ({ ...account, password: e.target.value }))} className="panel-input" placeholder="Temporary password" />
                                                 <select value={newAccount.role} onChange={e => setNewAccount(account => ({ ...account, role: e.target.value }))} className="panel-input">
                                                     <option value="staff">Staff</option>
@@ -7999,6 +8405,18 @@
                                                 <button type="button" className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}} onClick={createAccount}>CREATE ACCOUNT</button>
                                             </div>
                                             <div className="space-y-3">
+                                                <div className="rounded-2xl border border-white/10 p-3 bg-white/[0.03]">
+                                                    <div className="text-[10px] uppercase tracking-[0.2em] text-white/60 mb-2">Account Health</div>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <div className="account-health-pill account-health-pill--neutral">Total {accountHealth.total}</div>
+                                                        <div className="account-health-pill account-health-pill--good">Active {accountHealth.active}</div>
+                                                        <div className="account-health-pill account-health-pill--risk">Disabled {accountHealth.disabled}</div>
+                                                        <div className="account-health-pill account-health-pill--admin">Admins {accountHealth.admins}</div>
+                                                        <div className="account-health-pill account-health-pill--staff">Staff {accountHealth.staff}</div>
+                                                        <div className="account-health-pill account-health-pill--warn">Needs Email {accountHealth.needsEmail}</div>
+                                                        <div className="account-health-pill account-health-pill--good">Firebase Ready {accountHealth.firebaseReady}</div>
+                                                    </div>
+                                                </div>
                                                 {Object.values(users).map(account => {
                                                     const provisioningState = getAccountProvisioningState(account);
                                                     return (
@@ -8285,11 +8703,11 @@
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
                                             <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Start</label>
-                                            <input type="time" value={bulkAssign.start} onChange={e => setBulkAssign(previous => ({ ...previous, start: e.target.value }))} className="panel-input" />
+                                            <input type="time" value={bulkAssign.start} onChange={e => setBulkAssign(previous => ({ ...previous, start: e.target.value }))} className="panel-input time-input-luxe" />
                                         </div>
                                         <div>
                                             <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">End</label>
-                                            <input type="time" value={bulkAssign.end} onChange={e => setBulkAssign(previous => ({ ...previous, end: e.target.value }))} className="panel-input" />
+                                            <input type="time" value={bulkAssign.end} onChange={e => setBulkAssign(previous => ({ ...previous, end: e.target.value }))} className="panel-input time-input-luxe" />
                                         </div>
                                     </div>
                                 </div>
@@ -8297,11 +8715,11 @@
                                 <div className="grid md:grid-cols-2 gap-4 mt-4">
                                     <div>
                                         <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Range Start</label>
-                                        <input type="date" value={bulkAssign.rangeStart} onChange={e => setBulkAssign(previous => ({ ...previous, rangeStart: e.target.value }))} className="panel-input" />
+                                        <input type="date" value={bulkAssign.rangeStart} onChange={e => setBulkAssign(previous => ({ ...previous, rangeStart: e.target.value }))} className="panel-input date-input-luxe" />
                                     </div>
                                     <div>
                                         <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Range End</label>
-                                        <input type="date" value={bulkAssign.rangeEnd} onChange={e => setBulkAssign(previous => ({ ...previous, rangeEnd: e.target.value }))} className="panel-input" />
+                                        <input type="date" value={bulkAssign.rangeEnd} onChange={e => setBulkAssign(previous => ({ ...previous, rangeEnd: e.target.value }))} className="panel-input date-input-luxe" />
                                     </div>
                                 </div>
 
@@ -8324,7 +8742,7 @@
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex justify-end gap-3 modal-footer-sticky">
+                                <div className="mt-6 modal-footer-row modal-footer-sticky">
                                     <button type="button" onClick={() => setIsBulkAssignOpen(false)} className="panel-input" style={{width: 'auto', padding: '10px 16px'}}>Cancel</button>
                                     <button type="button" className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}} onClick={applyBulkAssignments}>Apply Recurring Shifts</button>
                                 </div>
@@ -8492,7 +8910,9 @@
                                             ))
                                         )}
                                     </div>
-                                    <button onClick={() => setShowKudos(false)} className="w-full fancy-btn mt-5" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
+                                    <div className="modal-footer-row modal-footer-row--full">
+                                        <button onClick={() => setShowKudos(false)} className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -8565,7 +8985,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowAchievements(false)} className="w-full fancy-btn mt-5" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
+                                    <div className="modal-footer-row modal-footer-row--full">
+                                        <button onClick={() => setShowAchievements(false)} className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -8576,12 +8998,12 @@
                         <div className="fixed inset-0 bg-black/84 backdrop-blur-md flex items-center justify-center p-4 z-[1320] modal-surface" onClick={() => setShowGameHub(false)}>
                             <div className="crew-modal-card max-w-6xl w-full max-h-[92vh] overflow-y-auto modal-card-enter" onClick={(e) => e.stopPropagation()}>
                                 <div className="crew-modal-header">
-                                    <div className="text-[10px] uppercase tracking-[0.28em]" style={{color: '#22d3ee'}}>Downtime</div>
-                                    <h2 className="text-2xl font-black mt-2 text-cyan-200">🎮 Game Lounge</h2>
-                                    <div className="text-sm text-cyan-100/80 mt-1">Friendly competition, shared laughs, and instant leaderboard updates.</div>
+                                    <div className="text-[10px] uppercase tracking-[0.28em]" style={{color: '#22d3ee'}}>Recreation Suite</div>
+                                    <h2 className="text-2xl font-black mt-2 text-cyan-200">Game Lounge</h2>
+                                    <div className="text-sm text-cyan-100/80 mt-1">Structured team games with automatic ranking and match history.</div>
                                     <div className="mt-3 flex flex-wrap gap-2">
                                         <div className="mini-stat-pill" style={{padding: '0.32rem 0.6rem'}}>Week: {gameWeekKey}</div>
-                                        <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#0ea5e9'}} onClick={() => rotateGameWeek(true)}>RESET WEEK NOW</button>
+                                        <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#0ea5e9'}} onClick={() => rotateGameWeek(true)}>RESET WEEKLY RANKING</button>
                                     </div>
                                     <button onClick={() => setShowGameHub(false)} className="absolute top-4 right-4 text-white/80 hover:text-white text-3xl">×</button>
                                 </div>
@@ -8599,11 +9021,11 @@
                                                 <div className="grid md:grid-cols-2 gap-3 mb-3">
                                                     <select value={reactionDuelPlayers.playerOneId} onChange={e => setReactionDuelPlayers(previous => ({ ...previous, playerOneId: e.target.value }))} className="panel-input">
                                                         <option value="">Player One</option>
-                                                        {Object.entries(staff).map(([id, member]) => <option key={`duel-1-${id}`} value={id}>{member.name}</option>)}
+                                                        {selectableMembers.map(member => <option key={`duel-1-${member.id}`} value={member.id}>{member.name}</option>)}
                                                     </select>
                                                     <select value={reactionDuelPlayers.playerTwoId} onChange={e => setReactionDuelPlayers(previous => ({ ...previous, playerTwoId: e.target.value }))} className="panel-input">
                                                         <option value="">Player Two</option>
-                                                        {Object.entries(staff).map(([id, member]) => <option key={`duel-2-${id}`} value={id}>{member.name}</option>)}
+                                                        {selectableMembers.map(member => <option key={`duel-2-${member.id}`} value={member.id}>{member.name}</option>)}
                                                     </select>
                                                 </div>
                                                 <div className="rounded-xl px-3 py-2 mb-3" style={{background: 'rgba(2,6,23,0.5)', border: '1px solid rgba(125,211,252,0.22)', color: '#e0f2fe'}}>{reactionDuelMessage}</div>
@@ -8615,7 +9037,7 @@
                                                         className="fancy-btn"
                                                         style={{padding: '14px 10px', fontSize: '12px', background: '#0ea5e9', opacity: reactionDuelPlayers.playerOneId ? 1 : 0.45, cursor: reactionDuelPlayers.playerOneId ? 'pointer' : 'not-allowed'}}
                                                     >
-                                                        TAP {staff[reactionDuelPlayers.playerOneId]?.name || 'P1'}
+                                                        TAP {memberNameById(reactionDuelPlayers.playerOneId, 'P1')}
                                                     </button>
                                                     <button
                                                         type="button"
@@ -8624,7 +9046,7 @@
                                                         className="fancy-btn"
                                                         style={{padding: '14px 10px', fontSize: '12px', background: '#7c3aed', opacity: reactionDuelPlayers.playerTwoId ? 1 : 0.45, cursor: reactionDuelPlayers.playerTwoId ? 'pointer' : 'not-allowed'}}
                                                     >
-                                                        TAP {staff[reactionDuelPlayers.playerTwoId]?.name || 'P2'}
+                                                        TAP {memberNameById(reactionDuelPlayers.playerTwoId, 'P2')}
                                                     </button>
                                                 </div>
                                             </div>
@@ -8633,7 +9055,7 @@
                                                 <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(30,41,59,0.88), rgba(17,24,39,0.8))', border: '1px solid rgba(148,163,184,0.3)'}}>
                                                     <div className="flex items-center justify-between mb-3">
                                                         <div>
-                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-sky-200">Playable</div>
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-sky-200">Game Board</div>
                                                             <div className="text-lg font-black text-white">Tic-Tac-Toe</div>
                                                         </div>
                                                         <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#334155'}} onClick={resetTicTacToe}>Reset Board</button>
@@ -8641,15 +9063,15 @@
                                                     <div className="grid grid-cols-2 gap-2 mb-3">
                                                         <select value={ticTacToePlayers.xId} onChange={e => setTicTacToePlayers(previous => ({ ...previous, xId: e.target.value }))} className="panel-input">
                                                             <option value="">Player X</option>
-                                                            {Object.entries(staff).map(([id, member]) => <option key={`ttt-x-${id}`} value={id}>{member.name}</option>)}
+                                                            {selectableMembers.map(member => <option key={`ttt-x-${member.id}`} value={member.id}>{member.name}</option>)}
                                                         </select>
                                                         <select value={ticTacToePlayers.oId} onChange={e => setTicTacToePlayers(previous => ({ ...previous, oId: e.target.value }))} className="panel-input">
                                                             <option value="">Player O</option>
-                                                            {Object.entries(staff).map(([id, member]) => <option key={`ttt-o-${id}`} value={id}>{member.name}</option>)}
+                                                            {selectableMembers.map(member => <option key={`ttt-o-${member.id}`} value={member.id}>{member.name}</option>)}
                                                         </select>
                                                     </div>
                                                     <div className="text-[11px] text-white/70 mb-2">
-                                                        {ticTacToeResult || `Turn: ${ticTacToeTurn} (${ticTacToeTurn === 'X' ? (staff[ticTacToePlayers.xId]?.name || 'Player X') : (staff[ticTacToePlayers.oId]?.name || 'Player O')})`}
+                                                        {ticTacToeResult || `Turn: ${ticTacToeTurn} (${ticTacToeTurn === 'X' ? memberNameById(ticTacToePlayers.xId, 'Player X') : memberNameById(ticTacToePlayers.oId, 'Player O')})`}
                                                     </div>
                                                     <div className="grid grid-cols-3 gap-2">
                                                         {ticTacToeBoard.map((cell, index) => (
@@ -8669,7 +9091,7 @@
                                                 <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(22,78,99,0.72), rgba(15,23,42,0.82))', border: '1px solid rgba(56,189,248,0.35)'}}>
                                                     <div className="flex items-center justify-between mb-3">
                                                         <div>
-                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-200">Playable</div>
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-200">Game Board</div>
                                                             <div className="text-lg font-black text-white">Memory Match</div>
                                                         </div>
                                                         <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#0e7490'}} onClick={resetMemoryMatch}>New Deck</button>
@@ -8677,7 +9099,7 @@
                                                     <div className="grid grid-cols-[1fr_auto] gap-2 mb-3 items-center">
                                                         <select value={memoryPlayerId} onChange={e => setMemoryPlayerId(e.target.value)} className="panel-input">
                                                             <option value="">Select player for points</option>
-                                                            {Object.entries(staff).map(([id, member]) => <option key={`memory-${id}`} value={id}>{member.name}</option>)}
+                                                            {selectableMembers.map(member => <option key={`memory-${member.id}`} value={member.id}>{member.name}</option>)}
                                                         </select>
                                                         <div className="mini-stat-pill" style={{padding: '0.32rem 0.52rem'}}>Moves: {memoryMoves}</div>
                                                     </div>
@@ -8702,8 +9124,8 @@
                                             </div>
 
                                             <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(30,41,59,0.7), rgba(15,23,42,0.65))', border: '1px solid rgba(148,163,184,0.28)'}}>
-                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/70 mb-2">Party Game Log</div>
-                                                <div className="text-sm text-white/70 mb-3">Log winners from any team game, cards, trivia, board games, or quick challenges.</div>
+                                                <div className="text-[10px] uppercase tracking-[0.2em] text-white/70 mb-2">Match Log</div>
+                                                <div className="text-sm text-white/70 mb-3">Record winners from any team game and keep rankings current.</div>
                                                 <div className="grid md:grid-cols-3 gap-3 mb-3">
                                                     <select value={partyGameDraft.game} onChange={e => setPartyGameDraft(previous => ({ ...previous, game: e.target.value }))} className="panel-input">
                                                         <option value="UNO">UNO</option>
@@ -8715,11 +9137,11 @@
                                                     </select>
                                                     <select value={partyGameDraft.winnerId} onChange={e => setPartyGameDraft(previous => ({ ...previous, winnerId: e.target.value }))} className="panel-input">
                                                         <option value="">Winner</option>
-                                                        {Object.entries(staff).map(([id, member]) => <option key={`winner-${id}`} value={id}>{member.name}</option>)}
+                                                        {selectableMembers.map(member => <option key={`winner-${member.id}`} value={member.id}>{member.name}</option>)}
                                                     </select>
                                                     <select value={partyGameDraft.runnerUpId} onChange={e => setPartyGameDraft(previous => ({ ...previous, runnerUpId: e.target.value }))} className="panel-input">
                                                         <option value="">Runner-Up (optional)</option>
-                                                        {Object.entries(staff).map(([id, member]) => <option key={`runner-${id}`} value={id}>{member.name}</option>)}
+                                                        {selectableMembers.map(member => <option key={`runner-${member.id}`} value={member.id}>{member.name}</option>)}
                                                     </select>
                                                 </div>
                                                 <div className="flex gap-3">
@@ -8750,8 +9172,8 @@
 
                                             <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(14,116,144,0.32), rgba(8,47,73,0.42))', border: '1px solid rgba(56,189,248,0.35)'}}>
                                                 <div className="flex items-center justify-between gap-3 mb-3">
-                                                    <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100">Live Mini-Game Arcade</div>
-                                                    <div className="text-[10px] text-cyan-100/80">Choose from 4 playable rounds</div>
+                                                    <div className="text-[10px] uppercase tracking-[0.2em] text-cyan-100">Mini-Game Arcade</div>
+                                                    <div className="text-[10px] text-cyan-100/80">Choose from four live rounds</div>
                                                 </div>
                                                 <div className="grid xl:grid-cols-2 gap-3">
                                                     <div className="rounded-xl p-3 border border-cyan-300/25 bg-cyan-950/35">
@@ -8759,11 +9181,11 @@
                                                         <div className="grid grid-cols-2 gap-2 mt-2">
                                                             <select value={pictionaryRound.drawerId} onChange={e => setPictionaryRound(previous => ({ ...previous, drawerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
                                                                 <option value="">Drawer</option>
-                                                                {Object.entries(staff).map(([id, member]) => <option key={`pic-d-${id}`} value={id}>{member.name}</option>)}
+                                                                {selectableMembers.map(member => <option key={`pic-d-${member.id}`} value={member.id}>{member.name}</option>)}
                                                             </select>
                                                             <select value={pictionaryRound.guesserId} onChange={e => setPictionaryRound(previous => ({ ...previous, guesserId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
                                                                 <option value="">Guesser</option>
-                                                                {Object.entries(staff).map(([id, member]) => <option key={`pic-g-${id}`} value={id}>{member.name}</option>)}
+                                                                {selectableMembers.map(member => <option key={`pic-g-${member.id}`} value={member.id}>{member.name}</option>)}
                                                             </select>
                                                         </div>
                                                         <div className="rounded-lg mt-2 px-3 py-2 bg-slate-950/65 border border-cyan-400/20 text-[12px] text-cyan-100 min-h-[48px]">
@@ -8782,7 +9204,7 @@
                                                         <div className="flex gap-2 mt-2">
                                                             <select value={triviaRound.playerId} onChange={e => setTriviaRound(previous => ({ ...previous, playerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
                                                                 <option value="">Player</option>
-                                                                {Object.entries(staff).map(([id, member]) => <option key={`tri-p-${id}`} value={id}>{member.name}</option>)}
+                                                                {selectableMembers.map(member => <option key={`tri-p-${member.id}`} value={member.id}>{member.name}</option>)}
                                                             </select>
                                                             <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#6d28d9'}} onClick={startTriviaRound}>New Q</button>
                                                         </div>
@@ -8813,7 +9235,7 @@
                                                         <div className="flex gap-2 mt-2">
                                                             <select value={emojiRound.playerId} onChange={e => setEmojiRound(previous => ({ ...previous, playerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
                                                                 <option value="">Player</option>
-                                                                {Object.entries(staff).map(([id, member]) => <option key={`emo-p-${id}`} value={id}>{member.name}</option>)}
+                                                                {selectableMembers.map(member => <option key={`emo-p-${member.id}`} value={member.id}>{member.name}</option>)}
                                                             </select>
                                                             <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#b45309'}} onClick={startEmojiRound}>New Emojis</button>
                                                         </div>
@@ -8844,7 +9266,7 @@
                                                         <div className="flex gap-2 mt-2">
                                                             <select value={wordScrambleRound.playerId} onChange={e => setWordScrambleRound(previous => ({ ...previous, playerId: e.target.value }))} className="panel-input" style={{fontSize: '11px'}}>
                                                                 <option value="">Player</option>
-                                                                {Object.entries(staff).map(([id, member]) => <option key={`scramble-p-${id}`} value={id}>{member.name}</option>)}
+                                                                {selectableMembers.map(member => <option key={`scramble-p-${member.id}`} value={member.id}>{member.name}</option>)}
                                                             </select>
                                                             <button type="button" className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#15803d'}} onClick={startWordScrambleRound}>New Word</button>
                                                         </div>
@@ -8904,7 +9326,7 @@
                                                 </div>
                                                 <select value={activeWorkQuestStaffId} onChange={e => setWorkQuestPlayerId(e.target.value)} className="panel-input" style={{fontSize: '11px'}}>
                                                     <option value="">Select staff</option>
-                                                    {Object.entries(staff).map(([id, member]) => <option key={`quest-${id}`} value={id}>{member.name}</option>)}
+                                                    {selectableMembers.map(member => <option key={`quest-${member.id}`} value={member.id}>{member.name}</option>)}
                                                 </select>
                                                 <div className="space-y-2 mt-3">
                                                     {activeQuestRows.map(quest => (
@@ -8928,7 +9350,7 @@
                                             <div className="rounded-2xl p-4" style={{background: 'linear-gradient(145deg, rgba(15,23,42,0.82), rgba(30,41,59,0.72))', border: '1px solid rgba(148,163,184,0.25)'}}>
                                                 <div className="text-[10px] uppercase tracking-[0.2em] text-white/70 mb-2">Recent Matches</div>
                                                 <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
-                                                    {gameHistory.length === 0 && <div className="text-sm text-white/60">No game history yet.</div>}
+                                                    {gameHistory.length === 0 && <div className="text-sm text-white/60">No matches recorded yet.</div>}
                                                     {gameHistory.slice(0, 12).map(match => (
                                                         <div key={match.id} className="rounded-lg border border-white/15 px-3 py-2 bg-white/5">
                                                             <div className="text-[10px] uppercase tracking-[0.12em] text-cyan-200/80">{match.game}</div>
@@ -8941,7 +9363,9 @@
                                             </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => setShowGameHub(false)} className="w-full fancy-btn mt-5" style={{padding: '10px 18px', fontSize: '11px'}}>Back to Dashboard</button>
+                                    <div className="modal-footer-row modal-footer-row--full">
+                                        <button onClick={() => setShowGameHub(false)} className="fancy-btn" style={{padding: '10px 18px', fontSize: '11px'}}>Close Lounge</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -9294,7 +9718,7 @@
                                     <div className="grid grid-cols-3 gap-3">
                                         <div>
                                             <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Your Shift Date</label>
-                                            <input type="date" id="swapDate" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}} />
+                                            <input type="date" id="swapDate" className="panel-input date-input-luxe w-full" style={{padding: '8px', fontSize: '11px'}} />
                                         </div>
                                         <div>
                                             <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Your Name</label>
@@ -9686,7 +10110,7 @@
                                         </div>
                                     </section>
 
-                                    <div style={{display: 'flex', gap: '8px', justifyContent: 'flex-end', flexWrap: 'wrap'}}>
+                                    <div className="modal-footer-row">
                                         <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px'}} onClick={loadChecklistTemplate}>RELOAD</button>
                                         <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px', background: '#0ea5e9'}} onClick={saveChecklistTemplate}>SAVE TEMPLATE</button>
                                         <button type="button" className="fancy-btn" style={{padding: '9px 12px', fontSize: '11px', background: '#10b981'}} onClick={applyChecklistTemplateToToday}>APPLY TO TODAY</button>
