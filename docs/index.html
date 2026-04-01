@@ -3761,6 +3761,23 @@
                 const emailInput = loginUsername.trim().toLowerCase();
                 setLoginError('');
 
+                // Recovery path: allow seeded admin account login with username + admin code.
+                const adminAccount = Object.values(users || {}).find(user => String(user.role || '').toLowerCase() === 'admin');
+                if ((emailInput === 'admin' || emailInput === String(adminAccount?.username || '').toLowerCase()) && loginPassword === ADMIN_CODE) {
+                    const fallbackAdmin = getDefaultUsers()['user-admin'];
+                    const account = adminAccount || fallbackAdmin;
+                    if (account?.disabled) {
+                        setLoginError('This admin account is disabled. Re-enable it from another admin account.');
+                        return;
+                    }
+                    setCurrentUser(account);
+                    saveToStorage(STORAGE_KEYS.SESSION, { userId: account.id, loggedInAt: Date.now() });
+                    setLoginPassword('');
+                    setIsAuthModalOpen(false);
+                    showNotification(`Signed in as ${account.displayName}.`);
+                    return;
+                }
+
                 if (!emailInput.endsWith('@destinysprings.com')) {
                     setLoginError('Use your @destinysprings.com email to sign in.');
                     return;
@@ -9756,9 +9773,9 @@
                                     </>
                                 ) : (
                                     <>
-                                    <div className="text-sm text-white/65 mt-3">Sign in with your <strong>@destinysprings.com</strong> work email.</div>
+                                    <div className="text-sm text-white/65 mt-3">Sign in with your <strong>@destinysprings.com</strong> work email. Admin recovery can use username <strong>admin</strong>.</div>
                                     <form onSubmit={handleLoginSubmit} className="space-y-4 mt-6">
-                                        <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="yourname@destinysprings.com" type="email" autoFocus />
+                                        <input value={loginUsername} onChange={e => setLoginUsername(e.target.value)} className="panel-input" placeholder="yourname@destinysprings.com or admin" autoFocus />
                                         <input type="password" value={loginPassword} onChange={e => setLoginPassword(e.target.value)} className="panel-input" placeholder="Password" />
                                         {loginError && <div className="text-sm text-rose-300">{loginError}</div>}
                                         <button type="submit" className="fancy-btn w-full" style={{padding: '12px 18px', fontSize: '11px'}}>ENTER PLATFORM</button>
