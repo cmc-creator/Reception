@@ -3704,51 +3704,47 @@
             return current;
         }
 
+        // Remove staff entries that are artifacts of ID-based name generation:
+        // purely numeric names (timestamp IDs after prefix strip) and "Unit NNNN" patterns.
+        function cleanStaffRoster(staffMap) {
+            const cleaned = {};
+            for (const [id, member] of Object.entries(staffMap || {})) {
+                if (!member || !String(id).trim()) continue;
+                const name = String(member.name || '').trim();
+                if (!name) continue;
+                if (/^\d+$/.test(name)) continue;           // timestamp artifact e.g. "1711234567890"
+                if (/^unit\s+\d+$/i.test(name)) continue;  // unit-timestamp artifact e.g. "Unit 1711234567890"
+                cleaned[id] = member;
+            }
+            return cleaned;
+        }
+
         function ensureStaffRoster(staffMap, usersMap, shiftsMap) {
-            const current = ensureConnieStaffMember(staffMap);
+            // Clean bad entries before counting
+            const current = ensureConnieStaffMember(cleanStaffRoster(staffMap));
             if (Object.keys(current).length > 1) return current;
 
             const recovered = { ...current };
             const now = Date.now();
             const fallbackColor = '#38bdf8';
-            const usedStaffIds = new Set();
 
-            Object.values(shiftsMap || {}).forEach(dayShifts => {
-                (Array.isArray(dayShifts) ? dayShifts : []).forEach(shift => {
-                    if (shift && shift.empId) usedStaffIds.add(String(shift.empId));
-                });
-            });
-
-            const buildNameFromId = (rawId) => String(rawId || 'Staff')
-                .replace(/^user[-_]/i, '')
-                .replace(/^staff[-_]/i, '')
-                .replace(/[._-]+/g, ' ')
-                .replace(/\s+/g, ' ')
-                .trim()
-                .replace(/\b\w/g, ch => ch.toUpperCase()) || 'Staff';
-
-            const addMember = (id, name) => {
-                const staffId = String(id || '').trim();
-                if (!staffId || recovered[staffId]) return;
+            // Only seed staff from user accounts that have real names.
+            // Do NOT scan shifts — shift empIds are timestamps and produce garbage names.
+            Object.values(usersMap || {}).forEach(user => {
+                if (!user || user.disabled) return;
+                if (user.role !== 'staff' && user.role !== 'admin') return;
+                const staffId = String(user.id || user.username || '').trim();
+                const memberName = String(user.displayName || user.username || '').trim();
+                if (!staffId || !memberName || recovered[staffId]) return;
+                if (/^\d+$/.test(memberName)) return; // skip if name is purely numeric
                 recovered[staffId] = {
                     id: staffId,
-                    name: String(name || '').trim() || buildNameFromId(staffId),
+                    name: memberName,
                     bg: '',
                     color: fallbackColor,
                     createdAt: now,
                     isPrn: false
                 };
-            };
-
-            usedStaffIds.forEach(staffId => {
-                const linkedUser = (usersMap || {})[staffId];
-                addMember(staffId, linkedUser?.displayName || linkedUser?.username || buildNameFromId(staffId));
-            });
-
-            Object.values(usersMap || {}).forEach(user => {
-                if (!user || user.disabled) return;
-                if (user.role !== 'staff' && user.role !== 'admin') return;
-                addMember(user.id || user.username, user.displayName || user.username || 'Staff');
             });
 
             return recovered;
@@ -6673,8 +6669,11 @@
                     if (!snap.exists || snap.metadata.hasPendingWrites) return;
                     const data = snap.data();
                     if (data && Object.keys(data).length > 0) {
-                        try { localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(data)); } catch(e) {}
-                        setStaff(data);
+                        const cleaned = cleanStaffRoster(data);
+                        if (Object.keys(cleaned).length > 0) {
+                            try { localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(cleaned)); } catch(e) {}
+                            setStaff(cleaned);
+                        }
                     }
                 }));
 
