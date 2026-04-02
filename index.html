@@ -3704,6 +3704,56 @@
             return current;
         }
 
+        function ensureStaffRoster(staffMap, usersMap, shiftsMap) {
+            const current = ensureConnieStaffMember(staffMap);
+            if (Object.keys(current).length > 1) return current;
+
+            const recovered = { ...current };
+            const now = Date.now();
+            const fallbackColor = '#38bdf8';
+            const usedStaffIds = new Set();
+
+            Object.values(shiftsMap || {}).forEach(dayShifts => {
+                (Array.isArray(dayShifts) ? dayShifts : []).forEach(shift => {
+                    if (shift && shift.empId) usedStaffIds.add(String(shift.empId));
+                });
+            });
+
+            const buildNameFromId = (rawId) => String(rawId || 'Staff')
+                .replace(/^user[-_]/i, '')
+                .replace(/^staff[-_]/i, '')
+                .replace(/[._-]+/g, ' ')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .replace(/\b\w/g, ch => ch.toUpperCase()) || 'Staff';
+
+            const addMember = (id, name) => {
+                const staffId = String(id || '').trim();
+                if (!staffId || recovered[staffId]) return;
+                recovered[staffId] = {
+                    id: staffId,
+                    name: String(name || '').trim() || buildNameFromId(staffId),
+                    bg: '',
+                    color: fallbackColor,
+                    createdAt: now,
+                    isPrn: false
+                };
+            };
+
+            usedStaffIds.forEach(staffId => {
+                const linkedUser = (usersMap || {})[staffId];
+                addMember(staffId, linkedUser?.displayName || linkedUser?.username || buildNameFromId(staffId));
+            });
+
+            Object.values(usersMap || {}).forEach(user => {
+                if (!user || user.disabled) return;
+                if (user.role !== 'staff' && user.role !== 'admin') return;
+                addMember(user.id || user.username, user.displayName || user.username || 'Staff');
+            });
+
+            return recovered;
+        }
+
         function App() {
             // --- Application State ---
             const [currentDate, setCurrentDate] = useState(() => {
@@ -5380,7 +5430,7 @@
                     }
                 }
 
-                loadedStaff = ensureConnieStaffMember(loadedStaff);
+                loadedStaff = ensureStaffRoster(loadedStaff, loadedUsers, loadedShifts);
                 saveToStorage(STORAGE_KEYS.STAFF, loadedStaff);
 
                 saveToStorage(STORAGE_KEYS.USERS, loadedUsers);
