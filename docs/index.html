@@ -3226,11 +3226,13 @@
         // Initialize theme from localStorage before React mounts to avoid flash.
         (function() {
             try {
-                const settings = JSON.parse(localStorage.getItem('reception_settings') || '{}');
-                const users = JSON.parse(localStorage.getItem('reception_users') || '{}');
-                const session = JSON.parse(localStorage.getItem('reception_session') || 'null');
-                const userTheme = session?.userId ? users?.[session.userId]?.preferences?.theme : null;
-                const effectiveTheme = userTheme && userTheme !== 'facility-default' ? userTheme : settings.theme;
+                var settings = JSON.parse(localStorage.getItem('reception_settings') || '{}');
+                var users = JSON.parse(localStorage.getItem('reception_users') || '{}');
+                var session = JSON.parse(localStorage.getItem('reception_session') || 'null');
+                var userId = session && session.userId;
+                var userPrefs = userId && users[userId] && users[userId].preferences;
+                var userTheme = userPrefs && userPrefs.theme ? userPrefs.theme : null;
+                var effectiveTheme = (userTheme && userTheme !== 'facility-default') ? userTheme : settings.theme;
                 if (effectiveTheme && document.body) {
                     document.body.setAttribute('data-theme', effectiveTheme);
                 }
