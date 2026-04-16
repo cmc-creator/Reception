@@ -7484,34 +7484,21 @@
 
                     <div className="main-stack flex-1 flex flex-col min-h-0">
                         <header className="top-header command-strip luxury-top-header no-print min-h-10 text-left font-bold">
-                            <div className="header-cluster" style={{ background: '#000000', borderColor: 'rgba(255,255,255,0.14)' }}>
+                            <div className="header-cluster">
                                 <div>
                                     <div className="header-kicker">Facility Command</div>
                                     <div className="header-facility-title neon-heading">{appSettings.facilityName || 'Destiny Springs'}</div>
                                     <div className="header-facility-meta">{currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</div>
                                 </div>
                                 <div className="header-metric-row">
-                                    <div className="header-metric-card rivet-frame" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.14)' }}>
+                                    <div className="header-metric-card rivet-frame">
                                         <div className="header-metric-label">Pending Swaps</div>
                                         <div className="header-metric-value">{pendingSwapCount}</div>
                                         <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentSwapSpark)} /></svg>
                                     </div>
-                                    <div className="header-metric-card rivet-frame" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.14)' }}>
-                                        <div className="header-metric-label">Game Lounge</div>
-                                        <div className="header-metric-value">{gameHistory.length}</div>
-                                        <div className="text-[9px] text-cyan-200/80 uppercase tracking-[0.11em] mb-2">Matches Logged</div>
-                                        <button className="fancy-btn w-full" style={{padding: '6px 10px', fontSize: '9px', background: '#0ea5e9'}} onClick={() => setShowGameHub(true)}>OPEN GAMES</button>
-                                    </div>
-                                    <div className="header-metric-card rivet-frame" style={{ background: '#111111', borderColor: 'rgba(255,255,255,0.14)' }}>
-                                        <div className="header-metric-label">Top Gamer</div>
-                                        <div className="header-metric-value">{topGamer ? topGamer.points : 0}</div>
-                                        <div className="text-[10px] text-amber-200 truncate">{topGamer ? topGamer.name : 'No winner yet'}</div>
-                                        <div className="text-[9px] text-white/60 mt-1">{topGamer ? `${topGamer.wins} wins` : 'Start first match'}</div>
-                                        <button className="fancy-btn w-full mt-2" style={{padding: '6px 10px', fontSize: '9px', background: '#7c3aed'}} onClick={() => setShowGameHub(true)}>LEADERBOARD</button>
-                                    </div>
                                 </div>
                             </div>
-                            <div className="header-intel-card" style={{ background: '#000000', borderColor: 'rgba(255,255,255,0.14)' }}>
+                            <div className="header-intel-card">
                                 <div className="header-intel-top">
                                     <div className="alert-pill flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
                                     <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
@@ -7548,16 +7535,13 @@
                                     </div>
                                 )}
                             </div>
-                            <div className="header-action-bank" style={{ background: '#000000', borderColor: 'rgba(255,255,255,0.14)' }}>
+                            <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
-                                <button onClick={() => setShowGameHub(true)} className="data-chip header-chip" title="Open game lounge">GAMES</button>
                                 <button onClick={() => setIsRequestDrawerOpen(previous => !previous)} className="data-chip header-chip" title="Open pending requests">REQUESTS {pendingSwapCount > 0 ? `(${pendingSwapCount})` : ''}</button>
-                                {isAdmin && <button onClick={() => focusSettingsSection('settings-accounts')} className="data-chip header-chip" title="Manage account access">USER ACCESS</button>}
                                 <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>
                                 {currentUser && <div className={`role-badge ${currentUser.role}`}><IconUser /> {currentUser.displayName}</div>}
-                                <button onClick={toggleDarkMode} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="header-orb-btn uppercase flex items-center gap-2" title="Toggle dark mode">{activeTheme === 'midnight' ? <IconSun /> : <IconMoon />} {activeTheme === 'midnight' ? 'LIGHT' : 'DARK'}</button>
                                 <button className="fancy-btn" onClick={() => setIsSettingsOpen(true)} style={{padding: '8px 14px', fontSize: '10px'}}>SETTINGS</button>
                                 {currentUser && <button onClick={handleLogout} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="header-orb-btn uppercase">Sign Out</button>}
                             </div>
@@ -7605,14 +7589,6 @@
                                     </button>
                                     <div className={useNeonLabels ? 'neon-heading' : ''} style={{fontSize: '1.2rem', letterSpacing: '-0.03em', textTransform: 'uppercase', color: 'var(--accent)', fontWeight: 900, lineHeight: 1}}>Shift Report</div>
                                 </header>
-
-                                {isAdmin && (
-                                    <div className="admin-command-card">
-                                        <div className="admin-command-card__title">Admin Access</div>
-                                        <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}} onClick={() => focusSettingsSection('settings-accounts')}>MANAGE USERS</button>
-                                        <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#2563eb'}} onClick={() => setIsPersonnelModalOpen(true)}>OPEN PERSONNEL</button>
-                                    </div>
-                                )}
 
                                 <div className="admin-command-card">
                                     <div className="admin-command-card__title">Report Archive</div>
