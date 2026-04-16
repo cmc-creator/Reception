@@ -6,27 +6,13 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then(keys => Promise.all(keys.map(key => caches.delete(key))))
       .then(() => self.clients.matchAll({ includeUncontrolled: true }))
-      .then(clients => clients.forEach(client => client.navigate(client.url)))
+      .then(clients => clients.forEach(client => {
+        // Use cache-busting query param to bypass HTTP disk cache
+        var base = client.url.split('?')[0];
+        client.navigate(base + '?nocache=' + Date.now());
+      }))
       .then(() => self.registration.unregister())
   );
-});
-
-
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Service Worker: Clearing old cache');
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
-  );
-  return self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
