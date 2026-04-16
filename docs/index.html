@@ -3706,16 +3706,27 @@
             return current;
         }
 
-        // Remove staff entries that are artifacts of ID-based name generation:
-        // purely numeric names (timestamp IDs after prefix strip) and "Unit NNNN" patterns.
+        // Remove or repair staff entries that are artifacts of ID-based name generation.
+        // The old buildNameFromId stripped "user-" and "staff-" but not "unit-", so
+        // IDs like "unit-sarah" became names like "Unit Sarah". Strip that prefix from
+        // any entry whose ID starts with "unit-" and whose name starts with "Unit ".
         function cleanStaffRoster(staffMap) {
             const cleaned = {};
             for (const [id, member] of Object.entries(staffMap || {})) {
                 if (!member || !String(id).trim()) continue;
-                const name = String(member.name || '').trim();
+                let name = String(member.name || '').trim();
                 if (!name) continue;
-                if (/^\d+$/.test(name)) continue;           // timestamp artifact e.g. "1711234567890"
-                if (/^unit\s+\d+$/i.test(name)) continue;  // unit-timestamp artifact e.g. "Unit 1711234567890"
+                if (/^\d+$/.test(name)) continue;           // purely numeric, e.g. "1711234567890"
+                if (/^unit\s+\d+$/i.test(name)) continue;  // "Unit 1711234567890" artifact
+
+                // ID was "unit-sarah" → name was built as "Unit Sarah" - strip the bogus prefix
+                if (/^unit[-_]/i.test(id) && /^unit\s+/i.test(name)) {
+                    name = name.replace(/^unit\s+/i, '').trim();
+                    if (!name) continue;
+                    cleaned[id] = { ...member, name };
+                    continue;
+                }
+
                 cleaned[id] = member;
             }
             return cleaned;
