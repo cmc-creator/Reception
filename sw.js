@@ -1,22 +1,16 @@
-// Service Worker for Offline Support
-const CACHE_NAME = 'reception-calendar-v12';
-const urlsToCache = [
-  './',
-  './index.html'
-];
-
-// Install event - cache resources
-self.addEventListener('install', (event) => {
+// Service worker intentionally disabled.
+// This file exists only to unregister any previously installed SW and clear caches.
+self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Service Worker: Caching files');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((err) => console.log('Service Worker: Cache failed', err))
+    caches.keys()
+      .then(keys => Promise.all(keys.map(key => caches.delete(key))))
+      .then(() => self.clients.matchAll({ includeUncontrolled: true }))
+      .then(clients => clients.forEach(client => client.navigate(client.url)))
+      .then(() => self.registration.unregister())
   );
-  self.skipWaiting();
 });
+
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
