@@ -7466,42 +7466,14 @@
                                     </div>
                                 </div>
                             </div>
-                            <div className="header-intel-card">
-                                <div className="header-intel-top">
-                                    <div className="alert-pill flex items-center gap-2 text-rose-500 font-black text-[9px] uppercase tracking-widest alert-pulse shrink-0"><IconAlert /> Critical Intel</div>
-                                    <div className={`text-[9px] font-black uppercase tracking-wider px-3 py-1 rounded-full ${isFirebaseAvailable ? 'bg-green-600/20 text-green-400 border border-green-500/40' : 'bg-amber-600/20 text-amber-400 border border-amber-500/40'}`} title={isFirebaseAvailable ? 'Multi-user mode: Data synced via Firebase' : 'Single-user mode: Data stored locally only'}>
-                                        <span className="sync-indicator-dot" style={{marginRight: '6px', background: isFirebaseAvailable ? '#34d399' : '#fbbf24', boxShadow: isFirebaseAvailable ? '0 0 12px rgba(52,211,153,0.8)' : '0 0 12px rgba(251,191,36,0.8)'}} />
-                                        {isFirebaseAvailable ? 'LIVE SYNC' : 'LOCAL MODE'}
-                                    </div>
+                            <div className="header-intel-card" style={{cursor: 'pointer', justifyContent: 'space-between'}} onClick={() => setShowGameHub(true)}>
+                                <div className="header-kicker">Recreation Suite</div>
+                                <div style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-primary)', lineHeight: 1.1}}>Game Lounge</div>
+                                <div style={{fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4}}>Reaction Duel, Trivia &amp; team rankings</div>
+                                <div className="header-chip-grid" style={{marginTop: 'auto'}}>
+                                    <div className="data-chip header-chip">Week: {gameWeekKey}</div>
+                                    <div className="data-chip header-chip">{gameHistory.length} matches</div>
                                 </div>
-                                <input value={globalAlert} onChange={e => {
-                                    if (!isAdmin && !appSettings.allowStaffAlertEdits) return;
-                                    const newAlert = String(e.target.value);
-                                    setGlobalAlert(newAlert);
-                                    saveToStorage(STORAGE_KEYS.ALERT, newAlert);
-                                }} readOnly={!isAdmin && !appSettings.allowStaffAlertEdits} className="header-alert-input" placeholder={isAdmin || appSettings.allowStaffAlertEdits ? 'Broadcast immediate hub directive...' : 'Admin-only global alert channel'} />
-                                <div className="header-chip-grid">
-                                    <div className="data-chip header-chip">Alert: {activeAlertLabel}</div>
-                                    <div className="data-chip header-chip">{latestDataUpdatedAt ? `Updated: ${new Date(latestDataUpdatedAt).toLocaleString()}` : 'Updated: no data yet'}</div>
-                                </div>
-                                {unacknowledgedScheduleChanges.length > 0 && (
-                                    <div className="schedule-change-feed">
-                                        <div className="text-[9px] uppercase tracking-[0.14em] font-black text-amber-300 mb-2">Schedule Change Queue ({unacknowledgedScheduleChanges.length})</div>
-                                        <div className="space-y-2 max-h-24 overflow-y-auto no-scrollbar">
-                                            {unacknowledgedScheduleChanges.slice(0, 4).map(alert => (
-                                                <div key={alert.id} className={`schedule-change-feed__item ${alert.acknowledgedAt ? 'schedule-change-feed__item--acked' : ''}`}>
-                                                    <div className="text-[10px] font-black text-amber-100 leading-relaxed">{alert.message}</div>
-                                                    <div className="flex items-center justify-between mt-1 gap-2">
-                                                        <div className="text-[9px] text-amber-200/80 uppercase tracking-[0.08em]">{new Date(alert.createdAt).toLocaleString()}</div>
-                                                        {isAdmin && !alert.acknowledgedAt && (
-                                                            <button onClick={() => acknowledgeScheduleChange(alert.id)} className="fancy-btn" style={{padding: '4px 8px', fontSize: '9px', background: '#f59e0b'}}>ACKNOWLEDGE</button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
                             </div>
                             <div className="header-action-bank">
                                 <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>
