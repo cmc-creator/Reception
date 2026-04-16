@@ -2967,25 +2967,25 @@
         .cal-grid {
             display: grid;
             grid-template-columns: repeat(7, 1fr);
-            gap: 0;
+            gap: 1px;
             position: relative;
             overflow: hidden;
             border-radius: 14px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.01);
-            box-shadow: 0 4px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+            border: 2px solid var(--accent-soft);
+            background: rgba(255,255,255,0.12); /* gap color — becomes visible grid lines */
+            box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
         }
         .cal-weekday-hdr {
-            padding: 12px 8px;
+            padding: 13px 8px;
             text-align: center;
-            font-size: 10px;
+            font-size: 11px;
             font-weight: 900;
             color: var(--accent);
-            opacity: 0.55;
+            opacity: 1;
             text-transform: uppercase;
-            letter-spacing: 0.2em;
-            border-bottom: 1px solid rgba(255,255,255,0.07);
-            background: rgba(255,255,255,0.02);
+            letter-spacing: 0.18em;
+            border-bottom: none;
+            background: linear-gradient(135deg, var(--accent-soft), rgba(255,255,255,0.03));
         }
         .day-cell {
             min-height: 150px;
@@ -2993,14 +2993,15 @@
             cursor: pointer;
             position: relative;
             transition: background 0.14s, box-shadow 0.14s;
-            border: 1px solid var(--accent-soft);
-            background: linear-gradient(135deg, var(--panel-start), var(--panel-end));
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 0 rgba(0,0,0,0.45);
+            border: none;
+            background: rgba(8, 10, 15, 0.9);
+            box-shadow: none;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
-        .day-cell:hover { background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.01)); }
+        .day-cell--weekend { background: rgba(255,255,255,0.025); }
+        .day-cell:hover { background: rgba(255,255,255,0.04); }
         .day-cell--selected {
             background: linear-gradient(135deg, var(--accent-soft), rgba(255,255,255,0.02)) !important;
             border-color: var(--accent) !important;
@@ -3021,9 +3022,10 @@
             animation: scheduleChangePulse 1.6s ease-in-out infinite;
         }
         .day-cell__num {
-            font-size: 1.4rem;
+            font-size: 1.55rem;
             font-weight: 900;
-            color: var(--text-muted);
+            color: var(--text-primary);
+            opacity: 0.7;
             transition: color 0.14s, text-shadow 0.14s;
         }
         .day-cell--selected .day-cell__num {
@@ -7123,6 +7125,8 @@
                     const hasLargeCoverageGap = coverageGapStats.largestGapMinutes >= largeGapAlertMinutes;
                     const hasUnacknowledgedChange = unacknowledgedAppliedDates.has(dk);
                     const isToday = new Date().toISOString().split('T')[0] === dk;
+                    const dayOfWeek = new Date(yIdx, mIdx, d).getDay();
+                    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                     const dayNoteEntry = normalizeDayNoteEntry(dayNotes[dk]);
                     const shouldShowNote = !!dayNoteEntry && (noteTagFilter === 'all' || dayNoteEntry.tag === noteTagFilter);
                     cells.push(
@@ -7132,7 +7136,7 @@
                             onDrop={(event) => handleCalendarDrop(event, dk)}
                             onDragLeave={() => handleCalendarDragLeave(dk)}
                             style={{minHeight: minCellHeight}}
-                            className={`day-cell group ${isToday ? 'day-cell--today' : ''} ${selectedDate === dk ? 'day-cell--selected' : ''} ${dragOverDate === dk ? 'day-cell--drag-over' : ''} ${hasLargeCoverageGap ? 'day-cell--coverage-risk' : ''} ${hasUnacknowledgedChange ? 'day-cell--change-unacked' : ''}`}>
+                            className={`day-cell group ${isWeekend ? 'day-cell--weekend' : ''} ${isToday ? 'day-cell--today' : ''} ${selectedDate === dk ? 'day-cell--selected' : ''} ${dragOverDate === dk ? 'day-cell--drag-over' : ''} ${hasLargeCoverageGap ? 'day-cell--coverage-risk' : ''} ${hasUnacknowledgedChange ? 'day-cell--change-unacked' : ''}`}>
                             {isToday && <div className="rivet" style={{top: '4px', left: '4px'}} />}
                             <div className="flex justify-between items-start">
                                 <span className="day-cell__num">{d}</span>
