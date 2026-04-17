@@ -1,5 +1,6 @@
 // Service worker intentionally disabled.
 // This file exists only to unregister any previously installed SW and clear caches.
+const CACHE_NAME = 'reception-cache-disabled';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
   event.waitUntil(
