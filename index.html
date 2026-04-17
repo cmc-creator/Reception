@@ -473,7 +473,7 @@
             background: rgba(10, 10, 12, 0.7);
             border: 1px solid var(--accent-soft);
             border-radius: var(--radius-soft);
-            padding: 0.85rem 0.95rem;
+            padding: 0.4rem 0.7rem;
             color: var(--text-primary);
             outline: none;
             font-size: 0.85rem;
@@ -1161,8 +1161,8 @@
         }
 
         .top-header {
-            padding: 1.1rem 1.25rem;
-            gap: 1rem;
+            padding: 0.5rem 1rem;
+            gap: 0.7rem;
             display: grid;
             grid-template-columns: minmax(220px, 0.95fr) minmax(320px, 1.35fr) auto;
             align-items: stretch;
@@ -1211,11 +1211,11 @@
         }
 
         .header-cluster {
-            padding: 0.85rem 0.95rem;
+            padding: 0.4rem 0.7rem;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            gap: 0.5rem;
+            gap: 0.2rem;
         }
 
         .header-kicker {
@@ -1229,7 +1229,7 @@
         .header-facility-title {
             color: var(--text-primary);
             font-family: 'Cormorant Garamond', serif;
-            font-size: 24px;
+            font-size: 17px;
             font-weight: 600;
             letter-spacing: 0.04em;
             line-height: 1.1;
@@ -1246,12 +1246,12 @@
         .header-metric-row {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.6rem;
+            gap: 0.35rem;
         }
 
         .header-metric-card {
-            padding: 0.7rem 0.8rem;
-            border-radius: 16px;
+            padding: 0.3rem 0.55rem;
+            border-radius: 10px;
             border: 1px solid rgba(200,169,110,0.22) !important;
             background: linear-gradient(145deg, rgba(16,15,14,0.85), rgba(13,12,12,0.8)) !important;
             backdrop-filter: blur(4px);
@@ -1268,16 +1268,16 @@
 
         .header-metric-value {
             color: var(--text-primary);
-            font-size: 13px;
+            font-size: 11px;
             font-weight: 600;
-            margin-top: 0.3rem;
+            margin-top: 0.1rem;
         }
 
         .header-intel-card {
-            padding: 0.9rem 1rem;
+            padding: 0.4rem 0.7rem;
             display: flex;
             flex-direction: column;
-            gap: 0.75rem;
+            gap: 0.25rem;
             border: 1px solid rgba(200,169,110,0.22);
             border-radius: 16px;
             background: linear-gradient(145deg, rgba(17,16,15,0.85), rgba(13,12,11,0.88)) !important;
@@ -1314,20 +1314,20 @@
         }
 
         .header-action-bank {
-            padding: 0.65rem;
+            padding: 0.4rem 0.6rem;
             display: flex;
             align-items: center;
             gap: 0.45rem;
             flex-wrap: wrap;
             justify-content: flex-end;
-            min-width: 290px;
+            min-width: 260px;
         }
 
         .header-action-bank .fancy-btn,
         .header-action-bank .header-orb-btn,
         .header-action-bank .data-chip,
         .header-action-bank .role-badge {
-            min-height: 40px;
+            min-height: 28px;
         }
 
         .header-action-bank .role-badge {
@@ -2250,7 +2250,7 @@
         .modal-surface-card {
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 20px;
-            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            background: linear-gradient(155deg, rgba(18,6,40,0.97), rgba(30,10,60,0.97));
             padding: 1rem;
         }
 
@@ -2860,7 +2860,7 @@
             gap: 1.25rem;
             align-items: flex-end;
             margin-bottom: 1.25rem;
-            padding: 0.9rem 1rem;
+            padding: 0.4rem 0.7rem;
             border: 1px solid var(--border-muted);
             border-radius: 16px;
             background: linear-gradient(135deg, var(--panel-start), var(--panel-end));
@@ -2918,14 +2918,17 @@
         }
         .cal-input:focus { border-color: var(--accent); }
         .cal-staff-tray {
-            position: relative;
+            position: sticky;
+            top: 0;
+            z-index: 20;
             overflow: hidden;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid rgba(139,92,246,0.35);
             border-radius: 14px;
-            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            background: linear-gradient(155deg, rgba(18,6,40,0.97), rgba(30,10,60,0.97));
             box-shadow: 0 4px 16px rgba(0,0,0,0.28);
-            padding: 0.85rem 1rem;
+            padding: 0.55rem 0.85rem;
             margin-bottom: 1rem;
+            backdrop-filter: blur(14px);
         }
         .cal-staff-tray__kicker {
             font-size: 10px;
@@ -3089,7 +3092,7 @@
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
-            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            background: linear-gradient(155deg, rgba(18,6,40,0.97), rgba(30,10,60,0.97));
             padding: 10px 12px;
             text-align: left;
             font-weight: 700;
@@ -3110,7 +3113,7 @@
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
-            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            background: linear-gradient(155deg, rgba(18,6,40,0.97), rgba(30,10,60,0.97));
             padding: 14px 14px;
             margin-top: 0.75rem;
             text-align: left;
@@ -3122,7 +3125,7 @@
             overflow: hidden;
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
-            background: linear-gradient(155deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            background: linear-gradient(155deg, rgba(18,6,40,0.97), rgba(30,10,60,0.97));
             padding: 10px 12px;
             margin-top: auto;
             text-align: left;
@@ -7841,7 +7844,7 @@
                                 </div>
                                 <div className="cal-staff-tray no-print">
                                     <div className="cal-staff-tray__kicker">Drag Staff Badges To Calendar</div>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {Object.entries(staff).filter(([,s]) => !/^(front\s+desk\s+staff|platform\s+admin|connie)$/i.test(String(s.name||"").trim())).map(([id, s]) => (
                                             <button
                                                 key={id}
@@ -7849,15 +7852,12 @@
                                                 draggable
                                                 onDragStart={(event) => handleStaffDragStart(event, id)}
                                                 onDragEnd={() => { setDraggedStaff(null); setDragOverDate(null); }}
-                                                style={{background: draggedStaff === id ? `linear-gradient(135deg, ${getStaffColor(id)}77, ${getStaffColor(id)}44)` : `linear-gradient(135deg, ${getStaffColor(id)}55, ${getStaffColor(id)}2a)`, border: draggedStaff === id ? '2px solid var(--highlight)' : `2px solid ${getStaffColor(id)}cc`, borderRadius: '999px', padding: '10px 18px', color: '#fff', fontWeight: 900, fontSize: '13px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: draggedStaff === id ? `0 0 18px var(--highlight-glow), inset 0 1px 0 rgba(255,255,255,0.12)` : `0 0 14px ${getStaffColor(id)}44, inset 0 1px 0 rgba(255,255,255,0.1)`}}
+                                                style={{background: draggedStaff === id ? `linear-gradient(135deg, ${getStaffColor(id)}77, ${getStaffColor(id)}44)` : `linear-gradient(135deg, ${getStaffColor(id)}55, ${getStaffColor(id)}2a)`, border: draggedStaff === id ? '2px solid var(--highlight)' : `2px solid ${getStaffColor(id)}cc`, borderRadius: '999px', padding: '5px 13px', color: '#fff', fontWeight: 900, fontSize: '11px', letterSpacing: '0.05em', textTransform: 'uppercase', boxShadow: draggedStaff === id ? `0 0 18px var(--highlight-glow), inset 0 1px 0 rgba(255,255,255,0.12)` : `0 0 14px ${getStaffColor(id)}44, inset 0 1px 0 rgba(255,255,255,0.1)`}}
                                                 className="transition-all hover:translate-y-[-1px]"
                                             >
-                                                <span style={{fontSize: '13px', lineHeight: 1.18}}>{String(s.name)}</span>
+                                                <span style={{fontSize: '11px', lineHeight: 1.18}}>{String(s.name)}</span>
                                             </button>
                                         ))}
-                                    </div>
-                                    <div className="text-[10px] mt-3" style={{color: 'var(--text-muted)'}}>
-                                        Tip: drag a badge onto a day to create a shift, or drag an existing shift card to move it.
                                     </div>
                                 </div>
                                 {calendarViewMode === 'grid' && (
@@ -8430,7 +8430,7 @@
                                         <div className="grid lg:grid-cols-[1.1fr_1.4fr] gap-6">
                                             <div className="space-y-3">
                                                 <div className="text-[11px] text-white/65">Add new users, remove old users, and update each account's role, email, and enabled status here.</div>
-                                                <div className="flex flex-wrap gap-2">
+                                                <div className="flex flex-wrap gap-1.5">
                                                     <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px'}} onClick={() => applyAccountTemplate('staff')}>STAFF TEMPLATE</button>
                                                     <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#334155'}} onClick={() => applyAccountTemplate('admin')}>ADMIN TEMPLATE</button>
                                                     <button type="button" className="fancy-btn" style={{padding: '8px 10px', fontSize: '10px', background: '#0f766e'}} onClick={autofillAccountIdentity}>AUTOFILL IDS</button>
@@ -8449,7 +8449,7 @@
                                             <div className="space-y-3">
                                                 <div className="rounded-2xl border border-white/10 p-3 bg-white/[0.03]">
                                                     <div className="text-[10px] uppercase tracking-[0.2em] text-white/60 mb-2">Account Health</div>
-                                                    <div className="flex flex-wrap gap-2">
+                                                    <div className="flex flex-wrap gap-1.5">
                                                         <div className="account-health-pill account-health-pill--neutral">Total {accountHealth.total}</div>
                                                         <div className="account-health-pill account-health-pill--good">Active {accountHealth.active}</div>
                                                         <div className="account-health-pill account-health-pill--risk">Disabled {accountHealth.disabled}</div>
@@ -8767,7 +8767,7 @@
 
                                 <div className="mt-5">
                                     <label className="block text-[11px] uppercase tracking-[0.2em] mb-2 text-white/60">Weekdays</label>
-                                    <div className="flex flex-wrap gap-2">
+                                    <div className="flex flex-wrap gap-1.5">
                                         {(appSettings.weekStartsOnMonday ? [{ label: 'Mon', value: 1 }, { label: 'Tue', value: 2 }, { label: 'Wed', value: 3 }, { label: 'Thu', value: 4 }, { label: 'Fri', value: 5 }, { label: 'Sat', value: 6 }, { label: 'Sun', value: 0 }] : [{ label: 'Sun', value: 0 }, { label: 'Mon', value: 1 }, { label: 'Tue', value: 2 }, { label: 'Wed', value: 3 }, { label: 'Thu', value: 4 }, { label: 'Fri', value: 5 }, { label: 'Sat', value: 6 }]).map(({ label, value }) => {
                                             const selected = bulkAssign.weekdays.includes(value);
                                             return (
