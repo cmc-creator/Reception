@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -3691,7 +3691,17 @@
                 if (!name) continue;
                 if (/^\d+$/.test(name)) continue;           // purely numeric, e.g. "1711234567890"
                 if (/^unit\s+\d+$/i.test(name)) continue;  // "Unit 1711234567890" artifact
+                // Skip generic placeholder entries
+                if (/^(front\s+desk\s+staff|platform\s+admin)$/i.test(name)) continue;
 
+                // "UNIT-KAREN" or "Unit Karen" format - strip prefix and proper-case
+                if (/^unit[-_\s]/i.test(name)) {
+                    name = name.replace(/^unit[-_\s]/i, '').trim();
+                    if (!name || /^\d+$/.test(name)) continue;
+                    name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                    cleaned[id] = { ...member, name };
+                    continue;
+                }
                 // ID was "unit-sarah" → name was built as "Unit Sarah" - strip the bogus prefix
                 if (/^unit[-_]/i.test(id) && /^unit\s+/i.test(name)) {
                     name = name.replace(/^unit\s+/i, '').trim();
@@ -6831,6 +6841,35 @@
                 }
             }
 
+            async function fixStaffNames() {
+                if (!isAdmin) { showNotification('Admin access required.', 'error'); return; }
+                const PLACEHOLDERS = /^(front\s+desk\s+staff|platform\s+admin|connie)$/i;
+                const fixed = {};
+                let count = 0;
+                for (const [id, member] of Object.entries(staff)) {
+                    if (!member) continue;
+                    let name = String(member.name || '').trim();
+                    if (!name) continue;
+                    // Remove UNIT- / UNIT_ prefix
+                    if (/^unit[-_\s]/i.test(name)) {
+                        name = name.replace(/^unit[-_\s]/i, '').trim();
+                        if (!name || /^\d+$/.test(name)) continue;
+                        name = name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+                        count++;
+                    }
+                    // Skip generic placeholders
+                    if (PLACEHOLDERS.test(name)) continue;
+                    fixed[id] = { ...member, name };
+                }
+                if (!window.confirm(`Clean staff names?\n\nThis will:\n- Strip UNIT- prefix from all names (e.g. UNIT-KAREN → Karen)\n- Remove placeholder entries (Front Desk Staff, Platform Admin)\n\n${count} names will be fixed. Saves to Firebase immediately.`)) return;
+                setStaff(fixed);
+                localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(fixed));
+                if (isFirebaseAvailable && db) {
+                    try { await db.collection('shared').doc('staff').set(fixed); } catch(e) {}
+                }
+                showNotification(`Done. ${Object.keys(fixed).length} staff members after cleanup.`, 'success');
+            }
+
             function handleMasterReset() {
                 if (!requireAdmin()) return;
                 const year = new Date().getFullYear();
@@ -7480,6 +7519,7 @@
                                 <button onClick={restoreBaseline} className="nav-action-btn" title="Restore baseline"><span className="nav-action-icon">♻️</span><span className="nav-action-text">Restore</span></button>
                                 <button onClick={handleMasterReset} className="nav-action-btn" title="Master reset"><span className="nav-action-icon">🛠</span><span className="nav-action-text">Reset</span></button>
                                 <button onClick={forceReloadFromFirebase} className="nav-action-btn nav-action-btn--gold" title="Force pull fresh data from Firebase"><span className="nav-action-icon">🔄</span><span className="nav-action-text">Reload DB</span></button>
+                                <button onClick={fixStaffNames} className="nav-action-btn nav-action-btn--gold" title="Strip UNIT- prefix and remove placeholder entries"><span className="nav-action-icon">✏️</span><span className="nav-action-text">Fix Names</span></button>
                             </div>
                         )}
                         <div className="nav-footer-card">
