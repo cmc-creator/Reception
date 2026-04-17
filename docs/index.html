@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -7842,7 +7842,7 @@
                                 <div className="cal-staff-tray no-print">
                                     <div className="cal-staff-tray__kicker">Drag Staff Badges To Calendar</div>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {Object.entries(staff).map(([id, s]) => (
+                                        {Object.entries(staff).filter(([id, s]) => { const n = String(s.name||"").trim(); const uName = (currentUser?.displayName || currentUser?.username || "").toLowerCase().trim(); return !/^(front\s+desk\s+staff|platform\s+admin|connie)$/i.test(n) && (!uName || (n.toLowerCase() !== uName && id.toLowerCase() !== uName)); }).map(([id, s]) => (
                                             <button
                                                 key={id}
                                                 type="button"
