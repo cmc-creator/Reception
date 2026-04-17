@@ -5413,7 +5413,9 @@
                 }
 
                 loadedStaff = ensureStaffRoster(loadedStaff, loadedUsers, loadedShifts);
-                saveToStorage(STORAGE_KEYS.STAFF, loadedStaff);
+                // BUG FIX: Do NOT call saveToStorage(STAFF) here - it would sync local defaults to Firebase
+                // erasing real server data when localStorage is empty. Firebase snapshots provide the real data.
+                try { localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(loadedStaff)); } catch(e) {}
 
                 saveToStorage(STORAGE_KEYS.USERS, loadedUsers);
                 saveToStorage(STORAGE_KEYS.SETTINGS, loadedSettings);
@@ -6792,6 +6794,43 @@
                 alert('Baseline restored for this month!');
             }
 
+            async function forceReloadFromFirebase() {
+                if (!isFirebaseAvailable || !db) {
+                    showNotification('Firebase is not available.', 'error');
+                    return;
+                }
+                showNotification('Pulling fresh data from Firebase...', 'info');
+                try {
+                    const [staffSnap, shiftsSnap] = await Promise.all([
+                        db.collection('shared').doc('staff').get(),
+                        db.collection('shared').doc('shifts').get()
+                    ]);
+                    let anyRestored = false;
+                    if (staffSnap.exists) {
+                        const data = staffSnap.data();
+                        if (data && Object.keys(data).length > 0) {
+                            const cleaned = cleanStaffRoster(data);
+                            if (Object.keys(cleaned).length > 0) {
+                                setStaff(cleaned);
+                                try { localStorage.setItem(STORAGE_KEYS.STAFF, JSON.stringify(cleaned)); } catch(e) {}
+                                anyRestored = true;
+                            }
+                        }
+                    }
+                    if (shiftsSnap.exists) {
+                        const data = shiftsSnap.data();
+                        if (data && Object.keys(data).length > 0) {
+                            setEvents(data);
+                            try { localStorage.setItem(STORAGE_KEYS.SHIFTS, JSON.stringify(data)); } catch(e) {}
+                            anyRestored = true;
+                        }
+                    }
+                    showNotification(anyRestored ? 'Data reloaded from Firebase.' : 'Firebase documents exist but appear empty. Data may need to be re-entered.', anyRestored ? 'success' : 'error');
+                } catch (err) {
+                    showNotification('Firebase reload failed: ' + (err.message || err), 'error');
+                }
+            }
+
             function handleMasterReset() {
                 if (!requireAdmin()) return;
                 const year = new Date().getFullYear();
@@ -7440,6 +7479,7 @@
                                 <button onClick={saveBaseline} className="nav-action-btn" title="Save baseline"><span className="nav-action-icon">💾</span><span className="nav-action-text">Save Base</span></button>
                                 <button onClick={restoreBaseline} className="nav-action-btn" title="Restore baseline"><span className="nav-action-icon">♻️</span><span className="nav-action-text">Restore</span></button>
                                 <button onClick={handleMasterReset} className="nav-action-btn" title="Master reset"><span className="nav-action-icon">🛠</span><span className="nav-action-text">Reset</span></button>
+                                <button onClick={forceReloadFromFirebase} className="nav-action-btn nav-action-btn--gold" title="Force pull fresh data from Firebase"><span className="nav-action-icon">🔄</span><span className="nav-action-text">Reload DB</span></button>
                             </div>
                         )}
                         <div className="nav-footer-card">
