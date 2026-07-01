@@ -3648,7 +3648,7 @@
                 setCurrentUser(null);
                 setLoginPassword('');
                 setLoginError('');
-                setIsAuthModalOpen(true);
+                setIsAuthModalOpen(false);
                 setIsSettingsOpen(false);
             }
 
@@ -3672,6 +3672,14 @@
                 completeLogout();
             }
 
+            function openAdminLogin() {
+                setLoginMode('signin');
+                setLoginUsername('admin');
+                setLoginPassword('');
+                setLoginError('');
+                setIsAuthModalOpen(true);
+            }
+
             async function handleLoginSubmit(event) {
                 event.preventDefault();
                 const emailInput = loginUsername.trim().toLowerCase();
@@ -3691,6 +3699,13 @@
                     setLoginPassword('');
                     setIsAuthModalOpen(false);
                     showNotification(`Signed in as ${account.displayName}.`);
+                    return;
+                }
+
+                const adminEmail = String(adminAccount?.email || '').toLowerCase();
+                const adminUsername = String(adminAccount?.username || '').toLowerCase();
+                if (emailInput !== 'admin' && emailInput !== adminUsername && emailInput !== adminEmail) {
+                    setLoginError('Guest view is already available. Only admin sign-in is enabled.');
                     return;
                 }
 
@@ -5085,7 +5100,7 @@
                 setUsers(loadedUsers);
                 setAppSettings(loadedSettings);
                 setCurrentUser(sessionUser || null);
-                setIsAuthModalOpen(!sessionUser);
+                setIsAuthModalOpen(false);
                 setMessages(loadedMessages);
                 setGlobalAlert(loadedAlert);
                 setAllReports(loadedReports);
@@ -7214,7 +7229,12 @@
                         <div className="nav-footer-card">
                             <button onClick={toggleDarkMode} className="nav-action-btn" title="Toggle dark mode"><span className="nav-action-icon">{activeTheme === 'midnight' ? '☀️' : '🌙'}</span><span className="nav-action-text">Theme</span></button>
                             <button onClick={() => setIsSettingsOpen(true)} className="nav-action-btn" title="Platform settings"><span className="nav-action-icon">⚙️</span><span className="nav-action-text">Portal</span></button>
-                            <div className="mini-stat-pill" style={{padding: '0.25rem 0.38rem', fontSize: '7px', letterSpacing: '0.08em', maxWidth: '100%', overflowWrap: 'anywhere', textAlign: 'center'}}>{isAdmin ? 'ADMIN' : 'STAFF'}</div>
+                            {currentUser ? (
+                                <button onClick={handleLogout} className="nav-action-btn" title="Sign out of admin mode"><span className="nav-action-icon">🚪</span><span className="nav-action-text">Sign Out</span></button>
+                            ) : (
+                                <button onClick={openAdminLogin} className="nav-action-btn nav-action-btn--gold" title="Admin sign in"><span className="nav-action-icon">🔐</span><span className="nav-action-text">Admin Sign In</span></button>
+                            )}
+                            <div className="mini-stat-pill" style={{padding: '0.25rem 0.38rem', fontSize: '7px', letterSpacing: '0.08em', maxWidth: '100%', overflowWrap: 'anywhere', textAlign: 'center'}}>{currentUser ? (isAdmin ? 'ADMIN' : 'STAFF') : 'GUEST'}</div>
                             <div className="mini-stat-pill" style={{padding: '0.25rem 0.38rem', fontSize: '7px', letterSpacing: '0.08em', maxWidth: '100%', overflowWrap: 'anywhere', textAlign: 'center'}}>{layoutOption.label}</div>
                         </div>
                     </nav>
@@ -9962,8 +9982,7 @@
                                         <button type="button" onClick={() => sendPasswordReset(loginUsername, 'login')} className="w-full" style={{padding: '10px 16px', fontSize: '11px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.2)', color: 'var(--text-primary)', background: 'rgba(255,255,255,0.03)'}}>SEND PASSWORD RESET EMAIL</button>
                                     </form>
                                     <div className="mt-5 text-center text-[12px] text-white/50">
-                                        No account yet?{' '}
-                                        <button type="button" onClick={() => { setLoginMode('register'); setLoginError(''); }} className="text-[var(--accent)] underline bg-transparent border-0 cursor-pointer p-0">Create one</button>
+                                        Guest view is always available. Admin sign-in only.
                                     </div>
                                     </>
                                 )}
