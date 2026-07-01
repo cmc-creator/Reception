@@ -18,182 +18,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet">
-    
     <style>
-        /* ═══════════════════════════════════════════════════════
-           LUXURY HOTEL MANAGEMENT SUITE
-           ═══════════════════════════════════════════════════════ */
-        :root {
-            --charcoal: #1c1b1a;
-            --accent: #c8a96e;
-            --accent-dark: #9a7d4a;
-            --accent-soft: rgba(200, 169, 110, 0.22);
-            --accent-glow: rgba(200, 169, 110, 0.38);
-            --highlight: #e2d5bc;
-            --highlight-glow: rgba(226, 213, 188, 0.3);
-            --rivet-color: #2e2c2a;
-            --panel-edge: #252422;
-            --bg-top: #0f0e0d;
-            --bg-mid: #0a0908;
-            --bg-bottom: #060605;
-            --panel-start: rgba(18, 17, 15, 0.98);
-            --panel-end: rgba(26, 24, 20, 0.96);
-            --texture-layer: none;
-            --text-primary: #f0e8d8;
-            --text-muted: #8a8278;
-            --text-soft: #a09a92;
-            --surface-1: rgba(255, 255, 255, 0.05);
-            --surface-2: rgba(255, 255, 255, 0.08);
-            --surface-3: rgba(0, 0, 0, 0.32);
-            --border-muted: rgba(200, 169, 110, 0.18);
-            --critical: #e11d48;
-            --critical-soft: rgba(225, 29, 72, 0.2);
-            --success: #22c55e;
-            --space-1: 0.4rem;
-            --space-2: 0.7rem;
-            --space-3: 1rem;
-            --space-4: 1.4rem;
-            --space-5: 1.9rem;
-            --radius-soft: 12px;
-            --radius-panel: 18px;
-        }
-
-        body[data-theme="aurora"] {
-            --accent: #7dd3fc;
-            --accent-dark: #0369a1;
-            --accent-soft: rgba(125, 211, 252, 0.28);
-            --accent-glow: rgba(56, 189, 248, 0.55);
-            --highlight: #6ee7b7;
-            --highlight-glow: rgba(110, 231, 183, 0.6);
-            --rivet-color: #1f4f5f;
-            --panel-edge: #0f3442;
-            --bg-top: #091726;
-            --bg-mid: #07111b;
-            --bg-bottom: #03080e;
-            --panel-start: rgba(7, 18, 28, 0.97);
-            --panel-end: rgba(11, 33, 47, 0.94);
-            --texture-layer: radial-gradient(circle at 10% 20%, rgba(255,255,255,0.05) 0px, rgba(255,255,255,0) 3px), radial-gradient(circle at 70% 80%, rgba(125,211,252,0.08) 0px, rgba(125,211,252,0) 4px);
-            --text-primary: #e0f2fe;
-            --text-muted: #93c5fd;
-            --critical: #fb7185;
-            --critical-soft: rgba(251, 113, 133, 0.22);
-            --success: #34d399;
-        }
-
-        body[data-theme="daybreak"] {
-            --accent: #f97316;
-            --accent-dark: #c2410c;
-            --accent-soft: rgba(249, 115, 22, 0.24);
-            --accent-glow: rgba(249, 115, 22, 0.45);
-            --highlight: #facc15;
-            --highlight-glow: rgba(250, 204, 21, 0.5);
-            --rivet-color: #7c4b1d;
-            --panel-edge: #854d0e;
-            --bg-top: #3b1f12;
-            --bg-mid: #1f140f;
-            --bg-bottom: #120c09;
-            --panel-start: rgba(38, 23, 17, 0.96);
-            --panel-end: rgba(63, 34, 17, 0.92);
-            --texture-layer: linear-gradient(180deg, rgba(255,186,120,0.05), transparent), repeating-linear-gradient(0deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 5px);
-            --text-primary: #fff7ed;
-            --text-muted: #fdba74;
-            --critical: #ef4444;
-            --critical-soft: rgba(239, 68, 68, 0.2);
-            --success: #84cc16;
-        }
-
-        body[data-theme="midnight"] {
-            --accent: #00e5ff;
-            --accent-dark: #0369a1;
-            --accent-soft: rgba(0, 229, 255, 0.28);
-            --accent-glow: rgba(0, 229, 255, 0.58);
-            --highlight: #a3ff12;
-            --highlight-glow: rgba(163, 255, 18, 0.5);
-            --rivet-color: #4b5563;
-            --panel-edge: #1f2937;
-            --bg-top: #060606;
-            --bg-mid: #020202;
-            --bg-bottom: #000000;
-            --panel-start: rgba(7, 7, 7, 0.97);
-            --panel-end: rgba(17, 17, 17, 0.94);
-            --texture-layer: repeating-linear-gradient(90deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 4px), radial-gradient(circle at 78% 22%, rgba(0,229,255,0.07) 0px, rgba(0,229,255,0) 130px);
-            --text-primary: #f1f5f9;
-            --text-muted: #94a3b8;
-            --critical: #f43f5e;
-            --critical-soft: rgba(244, 63, 94, 0.2);
-            --success: #10b981;
-        }
-
-        body[data-theme="walnut"] {
-            --accent: #d4a373;
-            --accent-dark: #8d5a2b;
-            --accent-soft: rgba(212, 163, 115, 0.26);
-            --accent-glow: rgba(212, 163, 115, 0.45);
-            --highlight: #f2cc8f;
-            --highlight-glow: rgba(242, 204, 143, 0.48);
-            --rivet-color: #6f4e37;
-            --panel-edge: #4f321e;
-            --bg-top: #3d291b;
-            --bg-mid: #2b1d14;
-            --bg-bottom: #1b120c;
-            --panel-start: rgba(52, 33, 22, 0.96);
-            --panel-end: rgba(40, 25, 17, 0.94);
-            --texture-layer: repeating-linear-gradient(12deg, rgba(255,219,172,0.07) 0px, rgba(255,219,172,0.07) 2px, rgba(122,75,39,0.08) 2px, rgba(122,75,39,0.08) 5px, transparent 5px, transparent 10px);
-            --text-primary: #f7eadf;
-            --text-muted: #ddb892;
-            --critical: #f87171;
-            --critical-soft: rgba(248, 113, 113, 0.2);
-            --success: #84cc16;
-        }
-
-        body[data-theme="slatework"] {
-            --accent: #94a3b8;
-            --accent-dark: #475569;
-            --accent-soft: rgba(148, 163, 184, 0.24);
-            --accent-glow: rgba(148, 163, 184, 0.36);
-            --highlight: #67e8f9;
-            --highlight-glow: rgba(103, 232, 249, 0.42);
-            --rivet-color: #475569;
-            --panel-edge: #1f2937;
-            --bg-top: #202935;
-            --bg-mid: #121a24;
-            --bg-bottom: #0a0f16;
-            --panel-start: rgba(23, 31, 43, 0.96);
-            --panel-end: rgba(14, 21, 31, 0.94);
-            --texture-layer: radial-gradient(circle at 20% 30%, rgba(148,163,184,0.05) 0px, rgba(148,163,184,0) 3px), radial-gradient(circle at 60% 65%, rgba(148,163,184,0.05) 0px, rgba(148,163,184,0) 3px), repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 6px);
-            --text-primary: #e2e8f0;
-            --text-muted: #94a3b8;
-            --critical: #fb7185;
-            --critical-soft: rgba(251, 113, 133, 0.18);
-            --success: #22c55e;
-        }
-
-        body[data-theme="linen"] {
-            --accent: #c9915d;
-            --accent-dark: #915f36;
-            --accent-soft: rgba(201, 145, 93, 0.25);
-            --accent-glow: rgba(201, 145, 93, 0.34);
-            --highlight: #6ee7b7;
-            --highlight-glow: rgba(110, 231, 183, 0.36);
-            --rivet-color: #8b7355;
-            --panel-edge: #5c4c3a;
-            --bg-top: #f3eee6;
-            --bg-mid: #e5dccf;
-            --bg-bottom: #d7ccb9;
-            --panel-start: rgba(243, 238, 230, 0.95);
-            --panel-end: rgba(226, 215, 198, 0.92);
-            --texture-layer: repeating-linear-gradient(0deg, rgba(140,113,86,0.06) 0px, rgba(140,113,86,0.06) 1px, transparent 1px, transparent 4px), repeating-linear-gradient(90deg, rgba(140,113,86,0.04) 0px, rgba(140,113,86,0.04) 1px, transparent 1px, transparent 5px);
-            --text-primary: #3c2f25;
-            --text-muted: #7c6148;
-            --text-soft: #6b5643;
-            --surface-1: rgba(255, 255, 255, 0.45);
-            --surface-2: rgba(255, 255, 255, 0.62);
-            --surface-3: rgba(130, 95, 64, 0.12);
-            --border-muted: rgba(123, 97, 72, 0.35);
-            --critical: #dc2626;
-            --critical-soft: rgba(220, 38, 38, 0.16);
-            --success: #15803d;
-        }
 
         body[data-theme="solstice"] {
             --accent: #fb923c;
@@ -1154,197 +979,6 @@
             box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 0 14px rgba(251, 113, 133, 0.2);
         }
 
-        .top-header .header-chip {
-            background: linear-gradient(150deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04));
-            border-color: rgba(255,255,255,0.24);
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
-        }
-
-        .top-header {
-            padding: 0.5rem 1rem;
-            gap: 0.7rem;
-            display: grid;
-            grid-template-columns: minmax(220px, 0.95fr) minmax(320px, 1.35fr) auto;
-            align-items: stretch;
-        }
-
-        .luxury-top-header {
-            background: rgba(10,9,9,0.99) !important;
-            border-bottom: 1px solid rgba(200,169,110,0.18) !important;
-            box-shadow: inset 0 1px 0 rgba(200,169,110,0.05), 0 4px 16px rgba(0,0,0,0.6) !important;
-        }
-
-        .header-cluster,
-        .header-action-bank {
-            border: 1px solid rgba(200,169,110,0.22) !important;
-            border-radius: 20px !important;
-            background: linear-gradient(145deg, rgba(17,16,15,0.88), rgba(13,12,11,0.92)) !important;
-            box-shadow: inset 0 1px 0 rgba(200,169,110,0.07), 0 8px 28px rgba(0,0,0,0.4) !important;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(6px);
-        }
-
-        .header-cluster::before,
-        .header-action-bank::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: none;
-        }
-
-        .header-cluster > *,
-        .header-action-bank > *,
-        .header-intel-card > * {
-            position: relative;
-            z-index: 1;
-        }
-
-        .header-intel-card::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            background: none;
-            border-radius: 16px;
-        }
-
-        .header-cluster {
-            padding: 0.4rem 0.7rem;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            gap: 0.2rem;
-        }
-
-        .header-kicker {
-            color: var(--text-muted);
-            font-size: 9px;
-            font-weight: 500;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .header-facility-title {
-            color: var(--text-primary);
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 17px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            line-height: 1.1;
-        }
-
-        .header-facility-meta {
-            color: var(--accent);
-            font-size: 10px;
-            font-weight: 400;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .header-metric-row {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.35rem;
-        }
-
-        .header-metric-card {
-            padding: 0.3rem 0.55rem;
-            border-radius: 10px;
-            border: 1px solid rgba(200,169,110,0.22) !important;
-            background: linear-gradient(145deg, rgba(16,15,14,0.85), rgba(13,12,12,0.8)) !important;
-            backdrop-filter: blur(4px);
-            color: inherit;
-        }
-
-        .header-metric-label {
-            color: var(--text-muted);
-            font-size: 8px;
-            font-weight: 500;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-        }
-
-        .header-metric-value {
-            color: var(--text-primary);
-            font-size: 11px;
-            font-weight: 600;
-            margin-top: 0.1rem;
-        }
-
-        .header-intel-card {
-            padding: 0.4rem 0.7rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-            border: 1px solid rgba(200,169,110,0.22);
-            border-radius: 16px;
-            background: linear-gradient(145deg, rgba(17,16,15,0.85), rgba(13,12,11,0.88)) !important;
-            backdrop-filter: blur(8px);
-        }
-
-        .header-intel-top {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            flex-wrap: wrap;
-        }
-
-        .header-alert-input {
-            width: 100%;
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 16px;
-            padding: 0.7rem 0.85rem;
-            color: var(--text-primary);
-            font-size: 12px;
-            font-weight: 800;
-            outline: none;
-        }
-
-        .header-alert-input::placeholder {
-            color: rgba(255,255,255,0.34);
-        }
-
-        .header-chip-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 0.45rem;
-        }
-
-        .header-action-bank {
-            padding: 0.4rem 0.6rem;
-            display: flex;
-            align-items: center;
-            gap: 0.35rem;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-            min-width: 260px;
-        }
-
-        .header-action-bank .fancy-btn,
-        .header-action-bank .header-orb-btn,
-        .header-action-bank .data-chip,
-        .header-action-bank .role-badge {
-            min-height: 28px;
-        }
-
-        .header-action-bank .role-badge {
-            padding-inline: 0.75rem;
-        }
-
-        .top-header .header-orb-btn {
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.09), 0 6px 14px rgba(0,0,0,0.24);
-        }
-
-        .top-header .header-orb-btn:hover {
-            transform: translateY(-1px);
-            border-color: rgba(255,255,255,0.34) !important;
-            box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), 0 8px 18px rgba(0,0,0,0.34);
-        }
-
         @keyframes stripSweep {
             0% { transform: translateX(-60%); }
             100% { transform: translateX(60%); }
@@ -1806,10 +1440,7 @@
         }
 
         body[data-holo="on"] .glass-panel,
-        body[data-holo="on"] .report-field-card,
-        body[data-holo="on"] .header-cluster,
-        body[data-holo="on"] .header-action-bank,
-        body[data-holo="on"] .header-intel-card {
+        body[data-holo="on"] .report-field-card {
             position: relative;
         }
 
@@ -2668,23 +2299,6 @@
             min-width: 0;
         }
 
-        .top-header {
-            gap: 0.7rem;
-        }
-
-        @media (max-width: 1200px) {
-            .top-header {
-                grid-template-columns: 1fr;
-                align-items: stretch;
-            }
-
-            .header-action-bank {
-                width: 100%;
-                justify-content: flex-start;
-                flex-wrap: wrap;
-            }
-        }
-
         @media (max-width: 900px) {
             .app-shell {
                 display: block;
@@ -2748,11 +2362,6 @@
                 width: 100%;
             }
 
-            .top-header {
-                padding: 0.6rem;
-                gap: 0.5rem;
-            }
-
             .work-area {
                 display: block;
                 height: auto;
@@ -2780,24 +2389,6 @@
 
             .main-content {
                 padding: 0.9rem !important;
-            }
-
-            .header-actions {
-                width: 100%;
-                display: flex;
-                flex-wrap: wrap;
-                gap: 0.45rem;
-            }
-
-            .header-chip-grid,
-            .header-metric-row {
-                grid-template-columns: 1fr;
-            }
-
-            .header-actions .data-chip,
-            .header-actions button,
-            .header-actions .role-badge {
-                font-size: 10px;
             }
 
             .main-content .grid.grid-cols-7 {
@@ -2834,18 +2425,9 @@
                 letter-spacing: 0.05em;
             }
 
-            .header-actions > button,
-            .header-actions > .data-chip,
             .nav-rail > button {
                 min-height: 42px;
                 min-width: 42px;
-            }
-
-            .top-header {
-                position: sticky;
-                top: 0;
-                z-index: 15;
-                backdrop-filter: blur(8px);
             }
 
             .modal-card-enter {
@@ -2917,6 +2499,30 @@
             white-space: nowrap;
         }
         .cal-input:focus { border-color: var(--accent); }
+        .cal-zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 9px;
+            border: 1px solid var(--accent-soft);
+            border-radius: 8px;
+            background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+            min-width: 170px;
+        }
+        .cal-zoom-control__label,
+        .cal-zoom-control__value {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            flex: 0 0 auto;
+        }
+        .cal-zoom-control input[type="range"] {
+            flex: 1 1 auto;
+            accent-color: var(--accent);
+            min-width: 84px;
+        }
         .cal-staff-tray {
             position: sticky;
             top: 0;
@@ -3849,7 +3455,11 @@
             const [achievementWindow, setAchievementWindow] = useState('month');
             const [chatLastSeenAt, setChatLastSeenAt] = useState(0);
             const [calendarViewMode, setCalendarViewMode] = useState(() => loadFromStorage('reception_calendar_view_mode', 'grid'));
-            const [calendarScaleMode, setCalendarScaleMode] = useState(() => loadFromStorage('reception_calendar_scale_mode', 'normal'));
+            const [calendarZoomPercent, setCalendarZoomPercent] = useState(() => {
+                const loaded = Number(loadFromStorage('reception_calendar_zoom_percent', 100));
+                if (!Number.isFinite(loaded)) return 100;
+                return Math.min(140, Math.max(70, loaded));
+            });
             const [noteTagFilter, setNoteTagFilter] = useState('all');
             const [dayNoteDraft, setDayNoteDraft] = useState('');
             const [dayNoteTagDraft, setDayNoteTagDraft] = useState('general');
@@ -7106,11 +6716,9 @@
                 const total = new Date(yIdx, mIdx + 1, 0).getDate();
                 const weekOffset = appSettings.weekStartsOnMonday ? 1 : 0;
                 const start = (new Date(yIdx, mIdx, 1).getDay() - weekOffset + 7) % 7;
-                const minCellHeight = calendarScaleMode === 'compact'
-                    ? '130px'
-                    : calendarScaleMode === 'expanded'
-                        ? '220px'
-                        : (appSettings.compactCalendar ? '150px' : '190px');
+                const baseMinCellHeight = appSettings.compactCalendar ? 150 : 190;
+                const zoomFactor = calendarZoomPercent / 100;
+                const minCellHeight = `${Math.max(120, Math.min(300, Math.round(baseMinCellHeight * zoomFactor)))}px`;
                 const coverageStartMinutes = toMinutes(appSettings.defaultShiftStart || '08:00');
                 const coverageEndMinutes = Math.max(coverageStartMinutes + 60, toMinutes(appSettings.defaultShiftEnd || '20:00'));
                 const largeGapAlertMinutes = 60;
@@ -7267,7 +6875,7 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter, calendarScaleMode]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter, calendarZoomPercent]);
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
@@ -7439,7 +7047,7 @@
             const timelineWindowStart = 6 * 60;
             const timelineWindowEnd = 24 * 60;
             const timelineWindowSpan = timelineWindowEnd - timelineWindowStart;
-            const timelineHeight = calendarScaleMode === 'compact' ? '400px' : calendarScaleMode === 'expanded' ? '640px' : '500px';
+            const timelineHeight = `${Math.max(340, Math.min(760, Math.round(500 * (calendarZoomPercent / 100))))}px`;
             const editShiftInvalidRange = editingShift ? toMinutes(editShiftEnd || '00:00') <= toMinutes(editShiftStart || '00:00') : false;
             const editShiftHasConflict = editingShift && !editShiftInvalidRange
                 ? hasShiftConflict(events, editingShift.empId, editingShift.date, editShiftStart || '08:00', editShiftEnd || '20:00', editingShift.id)
@@ -7464,8 +7072,8 @@
             }, [calendarViewMode]);
 
             useEffect(() => {
-                try { localStorage.setItem('reception_calendar_scale_mode', JSON.stringify(calendarScaleMode)); } catch (e) {}
-            }, [calendarScaleMode]);
+                try { localStorage.setItem('reception_calendar_zoom_percent', JSON.stringify(calendarZoomPercent)); } catch (e) {}
+            }, [calendarZoomPercent]);
 
             return (
                 <div className="app-shell flex h-screen w-screen overflow-hidden text-xs">
@@ -7573,32 +7181,6 @@
                     </nav>
 
                     <div className="main-stack flex-1 flex flex-col min-h-0">
-                        <header className="top-header command-strip luxury-top-header no-print min-h-10 text-left font-bold">
-                            <div className="header-cluster">
-                                <div>
-                                    <div className="header-kicker">Facility Command</div>
-                                    <div className="header-facility-title neon-heading">{appSettings.facilityName || 'Destiny Springs'}</div>
-                                    <div className="header-facility-meta">{currentDate.toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}</div>
-                                </div>
-                                <div className="header-metric-row">
-                                    <div className="header-metric-card rivet-frame">
-                                        <div className="header-metric-label">Month Shifts</div>
-                                        <div className="header-metric-value">{activeMonthShiftCount}</div>
-                                        <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentShiftSpark)} /></svg>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="header-action-bank">
-                                {!isFocusMode && <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>}
-                                {!isFocusMode && <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
-                                    📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
-                                </button>}
-                                {currentUser && <div className={`role-badge ${currentUser.role}`}><IconUser /> {currentUser.displayName}</div>}
-                                <button className="fancy-btn" onClick={() => setIsSettingsOpen(true)} style={{padding: '8px 14px', fontSize: '10px'}}>SETTINGS</button>
-                                {currentUser && <button onClick={handleLogout} style={{background: 'transparent', border: '1px solid rgba(255,255,255,0.16)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px', letterSpacing: '0.12em'}} className="header-orb-btn uppercase">Sign Out</button>}
-                            </div>
-                        </header>
-
                         <div className="work-area flex-1 flex overflow-hidden min-h-0">
                             {/* SIDEBAR LOGS */}
                             <aside className="report-sidebar luxury-report-sidebar no-print p-5 flex flex-col gap-4 overflow-y-auto no-scrollbar min-h-0" style={{width: reportSidebarWidth}}>
@@ -7796,10 +7378,18 @@
                                             <button onClick={() => setCalendarViewMode('timeline')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'timeline' ? 1 : 0.6}}>TIMELINE</button>
                                             <button onClick={() => setCalendarViewMode('agenda')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'agenda' ? 1 : 0.6}}>AGENDA</button>
                                         </div>
-                                        <div className="cal-nav-group" title="Shrink or expand the schedule view">
-                                            <button onClick={() => setCalendarScaleMode('compact')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'compact' ? 1 : 0.6}}>S</button>
-                                            <button onClick={() => setCalendarScaleMode('normal')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'normal' ? 1 : 0.6}}>M</button>
-                                            <button onClick={() => setCalendarScaleMode('expanded')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'expanded' ? 1 : 0.6}}>L</button>
+                                        <div className="cal-zoom-control" title="Drag to zoom the schedule view">
+                                            <span className="cal-zoom-control__label">Zoom</span>
+                                            <input
+                                                type="range"
+                                                min="70"
+                                                max="140"
+                                                step="5"
+                                                value={calendarZoomPercent}
+                                                onChange={e => setCalendarZoomPercent(Number(e.target.value) || 100)}
+                                                aria-label="Calendar zoom"
+                                            />
+                                            <span className="cal-zoom-control__value">{calendarZoomPercent}%</span>
                                         </div>
                                         <button onClick={() => window.print()} className="fancy-btn" style={{padding: '8px 16px', fontSize: '10px'}}>EXPORT MATRIX</button>
                                         <button
