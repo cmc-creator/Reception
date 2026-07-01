@@ -3848,7 +3848,8 @@
             const [commandQuery, setCommandQuery] = useState('');
             const [achievementWindow, setAchievementWindow] = useState('month');
             const [chatLastSeenAt, setChatLastSeenAt] = useState(0);
-            const [calendarViewMode, setCalendarViewMode] = useState('grid');
+            const [calendarViewMode, setCalendarViewMode] = useState(() => loadFromStorage('reception_calendar_view_mode', 'grid'));
+            const [calendarScaleMode, setCalendarScaleMode] = useState(() => loadFromStorage('reception_calendar_scale_mode', 'normal'));
             const [noteTagFilter, setNoteTagFilter] = useState('all');
             const [dayNoteDraft, setDayNoteDraft] = useState('');
             const [dayNoteTagDraft, setDayNoteTagDraft] = useState('general');
@@ -7105,7 +7106,11 @@
                 const total = new Date(yIdx, mIdx + 1, 0).getDate();
                 const weekOffset = appSettings.weekStartsOnMonday ? 1 : 0;
                 const start = (new Date(yIdx, mIdx, 1).getDay() - weekOffset + 7) % 7;
-                const minCellHeight = appSettings.compactCalendar ? '140px' : '180px';
+                const minCellHeight = calendarScaleMode === 'compact'
+                    ? '130px'
+                    : calendarScaleMode === 'expanded'
+                        ? '220px'
+                        : (appSettings.compactCalendar ? '150px' : '190px');
                 const coverageStartMinutes = toMinutes(appSettings.defaultShiftStart || '08:00');
                 const coverageEndMinutes = Math.max(coverageStartMinutes + 60, toMinutes(appSettings.defaultShiftEnd || '20:00'));
                 const largeGapAlertMinutes = 60;
@@ -7262,7 +7267,7 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter, calendarScaleMode]);
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
@@ -7434,6 +7439,7 @@
             const timelineWindowStart = 6 * 60;
             const timelineWindowEnd = 24 * 60;
             const timelineWindowSpan = timelineWindowEnd - timelineWindowStart;
+            const timelineHeight = calendarScaleMode === 'compact' ? '400px' : calendarScaleMode === 'expanded' ? '640px' : '500px';
             const editShiftInvalidRange = editingShift ? toMinutes(editShiftEnd || '00:00') <= toMinutes(editShiftStart || '00:00') : false;
             const editShiftHasConflict = editingShift && !editShiftInvalidRange
                 ? hasShiftConflict(events, editingShift.empId, editingShift.date, editShiftStart || '08:00', editShiftEnd || '20:00', editingShift.id)
@@ -7452,6 +7458,14 @@
             useEffect(() => {
                 try { localStorage.setItem('reception_focus_mode', JSON.stringify(isFocusMode)); } catch (e) {}
             }, [isFocusMode]);
+
+            useEffect(() => {
+                try { localStorage.setItem('reception_calendar_view_mode', JSON.stringify(calendarViewMode)); } catch (e) {}
+            }, [calendarViewMode]);
+
+            useEffect(() => {
+                try { localStorage.setItem('reception_calendar_scale_mode', JSON.stringify(calendarScaleMode)); } catch (e) {}
+            }, [calendarScaleMode]);
 
             return (
                 <div className="app-shell flex h-screen w-screen overflow-hidden text-xs">
@@ -7520,14 +7534,6 @@
                                     <span className="nav-action-icon">🏆</span>
                                     <span className="nav-action-text">Ranks</span>
                                 </button>
-                                <button onClick={() => setShowGameHub(true)} className="nav-action-btn nav-action-btn--blue" title="Open downtime games">
-                                    <span className="nav-action-icon">🎮</span>
-                                    <span className="nav-action-text">Games</span>
-                                </button>
-                                <button onClick={() => setIsShiftSwapOpen(true)} className="nav-action-btn nav-action-btn--blue" title="Shift swap portal">
-                                    <span className="nav-action-icon">🔄</span>
-                                    <span className="nav-action-text">Swaps</span>
-                                </button>
                             </>}
                         </div>}
                         <div className="nav-section-card">
@@ -7537,7 +7543,6 @@
                             </div>
                             {(isFocusMode || !collapsedNavSections.ops) && <>
                                 {isAdmin && <button onClick={() => setIsPersonnelModalOpen(true)} className="nav-action-btn" title="Personnel manifest"><span className="nav-action-icon">👥</span><span className="nav-action-text">Staff</span></button>}
-                                {isFocusMode && <button onClick={() => setIsShiftSwapOpen(true)} className="nav-action-btn nav-action-btn--blue" title="Shift swap portal"><span className="nav-action-icon">🔄</span><span className="nav-action-text">Swaps</span></button>}
                                 {!isFocusMode && isAdmin && <button onClick={() => setIsPrnDashboardOpen(true)} className="nav-action-btn nav-action-btn--blue" title="PRN dashboard"><span className="nav-action-icon">📞</span><span className="nav-action-text">PRN</span></button>}
                                 {!isFocusMode && <button onClick={() => setIsDocRepoOpen(true)} className="nav-action-btn" title="Document repository"><span className="nav-action-icon">📄</span><span className="nav-action-text">Docs</span></button>}
                                 {!isFocusMode && <button onClick={() => setIsVisitationOpen(true)} className="nav-action-btn nav-action-btn--pink" title="Visitation schedule"><span className="nav-action-icon">👥</span><span className="nav-action-text">Visits</span></button>}
@@ -7577,24 +7582,14 @@
                                 </div>
                                 <div className="header-metric-row">
                                     <div className="header-metric-card rivet-frame">
-                                        <div className="header-metric-label">Pending Swaps</div>
-                                        <div className="header-metric-value">{pendingSwapCount}</div>
-                                        <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentSwapSpark)} /></svg>
+                                        <div className="header-metric-label">Month Shifts</div>
+                                        <div className="header-metric-value">{activeMonthShiftCount}</div>
+                                        <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentShiftSpark)} /></svg>
                                     </div>
                                 </div>
                             </div>
-                            {!isFocusMode && <div className="header-intel-card" style={{cursor: 'pointer', justifyContent: 'space-between'}} onClick={() => setShowGameHub(true)}>
-                                <div className="header-kicker">Recreation Suite</div>
-                                <div style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '22px', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-primary)', lineHeight: 1.1}}>Game Lounge</div>
-                                <div style={{fontSize: '11px', color: 'var(--text-muted)', lineHeight: 1.4}}>Reaction Duel, Trivia &amp; team rankings</div>
-                                <div className="header-chip-grid" style={{marginTop: 'auto'}}>
-                                    <div className="data-chip header-chip">Week: {gameWeekKey}</div>
-                                    <div className="data-chip header-chip">{gameHistory.length} matches</div>
-                                </div>
-                            </div>}
                             <div className="header-action-bank">
                                 {!isFocusMode && <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>}
-                                {!isFocusMode && <button onClick={() => setIsRequestDrawerOpen(previous => !previous)} className="data-chip header-chip" title="Open pending requests">REQUESTS {pendingSwapCount > 0 ? `(${pendingSwapCount})` : ''}</button>}
                                 {!isFocusMode && <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>}
@@ -7762,7 +7757,6 @@
                                         <option value="copy-previous">Copy Previous</option>
                                         <option value="export-current">Export Current</option>
                                         <option value="reload-current">Reload Saved</option>
-                                        <option value="open-swap">Open Shift Swap</option>
                                     </select>
                                     <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
                                         Saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : 'Not yet'}
@@ -7800,6 +7794,12 @@
                                         <div className="cal-nav-group">
                                             <button onClick={() => setCalendarViewMode('grid')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'grid' ? 1 : 0.6}}>GRID</button>
                                             <button onClick={() => setCalendarViewMode('timeline')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'timeline' ? 1 : 0.6}}>TIMELINE</button>
+                                            <button onClick={() => setCalendarViewMode('agenda')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'agenda' ? 1 : 0.6}}>AGENDA</button>
+                                        </div>
+                                        <div className="cal-nav-group" title="Shrink or expand the schedule view">
+                                            <button onClick={() => setCalendarScaleMode('compact')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'compact' ? 1 : 0.6}}>S</button>
+                                            <button onClick={() => setCalendarScaleMode('normal')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'normal' ? 1 : 0.6}}>M</button>
+                                            <button onClick={() => setCalendarScaleMode('expanded')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'expanded' ? 1 : 0.6}}>L</button>
                                         </div>
                                         <button onClick={() => window.print()} className="fancy-btn" style={{padding: '8px 16px', fontSize: '10px'}}>EXPORT MATRIX</button>
                                         <button
@@ -7907,7 +7907,7 @@
                                             </div>
                                             <div className="text-xs text-white/70">{selectedDayTimelineShifts.length} shifts</div>
                                         </div>
-                                        <div className="relative rounded-xl border border-white/10 bg-slate-950/65 p-3" style={{height: '500px'}}>
+                                        <div className="relative rounded-xl border border-white/10 bg-slate-950/65 p-3" style={{height: timelineHeight}}>
                                             {[6, 8, 10, 12, 14, 16, 18, 20, 22].map(hour => (
                                                 <div key={`axis-${hour}`} className="absolute left-0 right-0 border-t border-white/10" style={{top: `${((hour * 60 - timelineWindowStart) / timelineWindowSpan) * 100}%`}}>
                                                     <span className="absolute -top-2 left-1 text-[9px] text-cyan-200/70">{hour}:00</span>
@@ -7939,11 +7939,42 @@
                                         </div>
                                     </div>
                                 )}
+                                {calendarViewMode === 'agenda' && (
+                                    <div className="rounded-2xl border border-cyan-500/25 bg-black/35 p-5 text-left">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div>
+                                                <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-300">Agenda View</div>
+                                                <div className="text-lg font-black text-white">{new Date(`${selectedDate}T12:00:00`).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+                                            </div>
+                                            <div className="text-xs text-white/70">{selectedDayTimelineShifts.length} shifts</div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {selectedDayTimelineShifts.length === 0 && (
+                                                <div className="rounded-xl border border-white/15 bg-slate-950/65 p-4 text-sm text-white/60">No shifts scheduled for this day.</div>
+                                            )}
+                                            {selectedDayTimelineShifts.map(shift => (
+                                                <button
+                                                    key={`agenda-${shift.id}`}
+                                                    type="button"
+                                                    onClick={() => setEditingShift(shift)}
+                                                    className="w-full rounded-xl border border-cyan-300/30 bg-cyan-500/15 p-4 text-left hover:bg-cyan-400/20 transition-colors"
+                                                    title="Click to edit shift"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="text-sm font-black text-white">{staff[shift.empId]?.name || shift.empId}</div>
+                                                        <div className="text-[10px] uppercase tracking-[0.12em] text-cyan-100/90">{shift.start || shift.time || '08:00'} - {shift.end || '20:00'}</div>
+                                                    </div>
+                                                    {shift.note && <div className="text-[11px] text-cyan-100/80 mt-2">{shift.note}</div>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </main>
                         </div>
                     </div>
 
-                    {isRequestDrawerOpen && (
+                    {false && isRequestDrawerOpen && (
                         <aside className="no-print" style={{position: 'fixed', top: '78px', right: '16px', width: '360px', maxHeight: '78vh', zIndex: 550, border: '1px solid rgba(245,158,11,0.4)', background: 'linear-gradient(180deg, rgba(17,24,39,0.95), rgba(2,6,23,0.96))', borderRadius: '14px', boxShadow: '0 18px 40px rgba(0,0,0,0.45)', display: 'flex', flexDirection: 'column'}}>
                             <div style={{padding: '12px 14px', borderBottom: '1px solid rgba(245,158,11,0.28)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                                 <div>
@@ -9084,8 +9115,8 @@
                         </div>
                     )}
 
-                    {/* Game Lounge Modal */}
-                    {showGameHub && (
+                    {/* Game Lounge Modal removed */}
+                    {false && showGameHub && (
                         <div className="fixed inset-0 bg-black/84 backdrop-blur-md flex items-center justify-center p-4 z-[1320] modal-surface" onClick={() => setShowGameHub(false)}>
                             <div className="crew-modal-card max-w-6xl w-full max-h-[92vh] overflow-y-auto modal-card-enter" onClick={(e) => e.stopPropagation()}>
                                 <div className="crew-modal-header">
@@ -9751,8 +9782,8 @@
                         </div>
                     )}
 
-                    {/* SHIFT SWAP PORTAL MODAL */}
-                    {isShiftSwapOpen && (
+                    {/* Shift swap portal removed */}
+                    {false && isShiftSwapOpen && (
                         <div className="modal-backdrop z-[1850]" onClick={() => setIsShiftSwapOpen(false)}>
                             <div className="modal-panel modal-panel--lg modal-card-enter text-left" onClick={e => e.stopPropagation()}>
                                 <div className="modal-panel__header">

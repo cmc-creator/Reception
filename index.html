@@ -3858,7 +3858,8 @@
             const [commandQuery, setCommandQuery] = useState('');
             const [achievementWindow, setAchievementWindow] = useState('month');
             const [chatLastSeenAt, setChatLastSeenAt] = useState(0);
-            const [calendarViewMode, setCalendarViewMode] = useState('grid');
+            const [calendarViewMode, setCalendarViewMode] = useState(() => loadFromStorage('reception_calendar_view_mode', 'grid'));
+            const [calendarScaleMode, setCalendarScaleMode] = useState(() => loadFromStorage('reception_calendar_scale_mode', 'normal'));
             const [isShiftReportOpen, setIsShiftReportOpen] = useState(true);
             const [isFailsafeOpen, setIsFailsafeOpen] = useState(false);
             const [isChatOpen, setIsChatOpen] = useState(true);
@@ -6466,9 +6467,6 @@
                     showNotification('Reloaded report from saved data.', 'info');
                     return;
                 }
-                if (action === 'open-swap') {
-                    setIsShiftSwapOpen(true);
-                }
             }
 
             function exportFullBackup() {
@@ -6583,10 +6581,6 @@
                             setIsPrnDashboardOpen(false);
                             return;
                         }
-                        if (isShiftSwapOpen) {
-                            setIsShiftSwapOpen(false);
-                            return;
-                        }
                         if (isDocRepoOpen) {
                             setIsDocRepoOpen(false);
                             return;
@@ -6653,7 +6647,7 @@
                 }
                 window.addEventListener('keydown', handleKeyDown);
                 return () => window.removeEventListener('keydown', handleKeyDown);
-            }, [appSettings.enableKeyboardShortcuts, selectedDate, isCommandPaletteOpen, isSignOutGuardOpen, isNotificationCenterOpen, isSettingsOpen, isPersonnelModalOpen, isAddModalOpen, isBulkAssignOpen, isPrnDashboardOpen, isShiftSwapOpen, isDocRepoOpen, isVisitationOpen, isDischargeOpen, showReportHistory, showTemplateModal, showAchievements, showKudos, showPanicAlert, showDeescalation, reportData.__meta?.status]);
+            }, [appSettings.enableKeyboardShortcuts, selectedDate, isCommandPaletteOpen, isSignOutGuardOpen, isNotificationCenterOpen, isSettingsOpen, isPersonnelModalOpen, isAddModalOpen, isBulkAssignOpen, isPrnDashboardOpen, isDocRepoOpen, isVisitationOpen, isDischargeOpen, showReportHistory, showTemplateModal, showAchievements, showKudos, showPanicAlert, showDeescalation, reportData.__meta?.status]);
 
             // --- AUTO-SCROLL CHAT TO LATEST MESSAGE ---
             useEffect(() => {
@@ -7051,7 +7045,11 @@
                 const total = new Date(yIdx, mIdx + 1, 0).getDate();
                 const weekOffset = appSettings.weekStartsOnMonday ? 1 : 0;
                 const start = (new Date(yIdx, mIdx, 1).getDay() - weekOffset + 7) % 7;
-                const minCellHeight = appSettings.compactCalendar ? '140px' : '180px';
+                const minCellHeight = calendarScaleMode === 'compact'
+                    ? '130px'
+                    : calendarScaleMode === 'expanded'
+                        ? '220px'
+                        : (appSettings.compactCalendar ? '150px' : '190px');
                 const coverageStartMinutes = toMinutes(appSettings.defaultShiftStart || '08:00');
                 const coverageEndMinutes = Math.max(coverageStartMinutes + 60, toMinutes(appSettings.defaultShiftEnd || '20:00'));
                 const largeGapAlertMinutes = 60;
@@ -7208,7 +7206,7 @@
                     );
                 }
                 return cells;
-            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter]);
+            }, [currentDate, events, selectedDate, staff, shiftStatusFilter, shiftSearch, dragOverDate, appSettings.weekStartsOnMonday, appSettings.compactCalendar, appSettings.defaultShiftStart, appSettings.defaultShiftEnd, scheduleChangeAlerts, dayNotes, noteTagFilter, calendarScaleMode]);
 
             const reportCompletion = getReportCompletion(reportData);
             const reportReadiness = getReportReadiness(reportData);
@@ -7315,8 +7313,6 @@
                 if (date.getFullYear() !== currentDate.getFullYear() || date.getMonth() !== currentDate.getMonth()) return count;
                 return count + (events[dateKey] || []).length;
             }, 0);
-            const pendingSwapCount = shiftSwapRequests.filter(request => request.status === 'pending').length;
-            const pendingSwapRequests = shiftSwapRequests.filter(request => request.status === 'pending').sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
             const unacknowledgedScheduleChanges = scheduleChangeAlerts.filter(alert => !alert.acknowledgedAt);
             const unacknowledgedAppliedChanges = scheduleChangeAlerts.filter(alert => alert.alertType === 'applied' && !alert.acknowledgedAt);
             const unacknowledgedAppliedDates = new Set(unacknowledgedAppliedChanges.map(alert => alert.shiftDate));
@@ -7344,12 +7340,6 @@
                 dt.setDate(dt.getDate() - (6 - i));
                 const key = dt.toISOString().split('T')[0];
                 return (events[key] || []).length;
-            });
-            const recentSwapSpark = Array.from({ length: 7 }, (_, i) => {
-                const dt = new Date(`${selectedDate}T12:00:00`);
-                dt.setDate(dt.getDate() - (6 - i));
-                const ymd = dt.toISOString().slice(0, 10);
-                return shiftSwapRequests.filter(request => String(request?.createdAt || '').slice(0, 10) === ymd).length;
             });
             const recentTimelineSpark = Array.from({ length: 7 }, (_, i) => {
                 const chunk = reportActivityTimeline.slice(i * 2, i * 2 + 2);
@@ -7380,6 +7370,7 @@
             const timelineWindowStart = 6 * 60;
             const timelineWindowEnd = 24 * 60;
             const timelineWindowSpan = timelineWindowEnd - timelineWindowStart;
+            const timelineHeight = calendarScaleMode === 'compact' ? '400px' : calendarScaleMode === 'expanded' ? '640px' : '500px';
             const editShiftInvalidRange = editingShift ? toMinutes(editShiftEnd || '00:00') <= toMinutes(editShiftStart || '00:00') : false;
             const editShiftHasConflict = editingShift && !editShiftInvalidRange
                 ? hasShiftConflict(events, editingShift.empId, editingShift.date, editShiftStart || '08:00', editShiftEnd || '20:00', editingShift.id)
@@ -7387,7 +7378,7 @@
             const editShiftDuration = editingShift
                 ? Math.max(0, toMinutes(editShiftEnd || '00:00') - toMinutes(editShiftStart || '00:00'))
                 : 0;
-            const isProcessing = isReportDirty || pendingSwapCount > 0;
+            const isProcessing = isReportDirty;
             const particleSeeds = useMemo(() => Array.from({ length: 18 }, (_, i) => ({
                 id: i,
                 left: `${(i * 17) % 100}%`,
@@ -7398,6 +7389,14 @@
             useEffect(() => {
                 try { localStorage.setItem('reception_focus_mode', JSON.stringify(isFocusMode)); } catch (e) {}
             }, [isFocusMode]);
+
+            useEffect(() => {
+                try { localStorage.setItem('reception_calendar_view_mode', JSON.stringify(calendarViewMode)); } catch (e) {}
+            }, [calendarViewMode]);
+
+            useEffect(() => {
+                try { localStorage.setItem('reception_calendar_scale_mode', JSON.stringify(calendarScaleMode)); } catch (e) {}
+            }, [calendarScaleMode]);
 
             return (
                 <div className="app-shell flex h-screen w-screen overflow-hidden text-xs">
@@ -7466,14 +7465,6 @@
                                     <span className="nav-action-icon">🏆</span>
                                     <span className="nav-action-text">Ranks</span>
                                 </button>
-                                <button onClick={() => setShowGameHub(true)} className="nav-action-btn nav-action-btn--blue" title="Open downtime games">
-                                    <span className="nav-action-icon">🎮</span>
-                                    <span className="nav-action-text">Games</span>
-                                </button>
-                                <button onClick={() => setIsShiftSwapOpen(true)} className="nav-action-btn nav-action-btn--blue" title="Shift swap portal">
-                                    <span className="nav-action-icon">🔄</span>
-                                    <span className="nav-action-text">Swaps</span>
-                                </button>
                             </>}
                         </div>}
                         <div className="nav-section-card">
@@ -7483,7 +7474,6 @@
                             </div>
                             {(isFocusMode || !collapsedNavSections.ops) && <>
                                 {isAdmin && <button onClick={() => setIsPersonnelModalOpen(true)} className="nav-action-btn" title="Personnel manifest"><span className="nav-action-icon">👥</span><span className="nav-action-text">Staff</span></button>}
-                                {isFocusMode && <button onClick={() => setIsShiftSwapOpen(true)} className="nav-action-btn nav-action-btn--blue" title="Shift swap portal"><span className="nav-action-icon">🔄</span><span className="nav-action-text">Swaps</span></button>}
                                 {!isFocusMode && isAdmin && <button onClick={() => setIsPrnDashboardOpen(true)} className="nav-action-btn nav-action-btn--blue" title="PRN dashboard"><span className="nav-action-icon">📞</span><span className="nav-action-text">PRN</span></button>}
                                 {!isFocusMode && <button onClick={() => setIsDocRepoOpen(true)} className="nav-action-btn" title="Document repository"><span className="nav-action-icon">📄</span><span className="nav-action-text">Docs</span></button>}
                                 {!isFocusMode && <button onClick={() => setIsVisitationOpen(true)} className="nav-action-btn nav-action-btn--pink" title="Visitation schedule"><span className="nav-action-icon">👥</span><span className="nav-action-text">Visits</span></button>}
@@ -7522,26 +7512,14 @@
                                 </div>
                                 <div className="header-metric-row">
                                     <div className="header-metric-card rivet-frame">
-                                        <div className="header-metric-label">Pending Swaps</div>
-                                        <div className="header-metric-value">{pendingSwapCount}</div>
-                                        <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentSwapSpark)} /></svg>
+                                        <div className="header-metric-label">Month Shifts</div>
+                                        <div className="header-metric-value">{activeMonthShiftCount}</div>
+                                        <svg className="metric-spark" viewBox="0 0 100 24" preserveAspectRatio="none"><polyline points={sparklinePoints(recentShiftSpark)} /></svg>
                                     </div>
                                 </div>
                             </div>
-                            {!isFocusMode && <div className="header-intel-card" style={{cursor: 'pointer', justifyContent: 'center', flexDirection: 'row', alignItems: 'center', gap: '0.6rem'}} onClick={() => setShowGameHub(true)}>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '2px', flex: 1, minWidth: 0}}>
-                                    <div className="header-kicker">Recreation Suite</div>
-                                    <div style={{fontFamily: "'Cormorant Garamond', serif", fontSize: '16px', fontWeight: 600, letterSpacing: '0.02em', color: 'var(--text-primary)', lineHeight: 1.1, whiteSpace: 'nowrap'}}>Game Lounge</div>
-                                    <div style={{fontSize: '10px', color: 'var(--text-muted)', lineHeight: 1.3}}>Reaction Duel · Trivia · Rankings</div>
-                                </div>
-                                <div style={{display: 'flex', flexDirection: 'column', gap: '4px', flexShrink: 0}}>
-                                    <div className="data-chip header-chip" style={{fontSize: '9px'}}>Wk: {gameWeekKey}</div>
-                                    <div className="data-chip header-chip" style={{fontSize: '9px'}}>{gameHistory.length} matches</div>
-                                </div>
-                            </div>}
                             <div className="header-action-bank">
                                 {!isFocusMode && <button onClick={() => setIsCommandPaletteOpen(true)} className="data-chip header-chip" title="Open commands">COMMANDS</button>}
-                                {!isFocusMode && <button onClick={() => setIsRequestDrawerOpen(previous => !previous)} className="data-chip header-chip" title="Open pending requests">REQUESTS {pendingSwapCount > 0 ? `(${pendingSwapCount})` : ''}</button>}
                                 {!isFocusMode && <button onClick={() => setIsNotificationCenterOpen(!isNotificationCenterOpen)} className="header-orb-btn" style={{position: 'relative', background: 'transparent', border: '1px solid rgba(255,255,255,0.18)', color: 'var(--text-primary)', borderRadius: '999px', padding: '8px 12px', fontSize: '10px'}} title="View notifications">
                                     📢 Alerts {unreadNotificationCount > 0 && <span style={{position: 'absolute', top: '-6px', right: '-6px', background: '#ef4444', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: 'bold', color: 'white'}}>{unreadNotificationCount}</span>}
                                 </button>}
@@ -7710,7 +7688,6 @@
                                         <option value="copy-previous">Copy Previous</option>
                                         <option value="export-current">Export Current</option>
                                         <option value="reload-current">Reload Saved</option>
-                                        <option value="open-swap">Open Shift Swap</option>
                                     </select>}
                                     <div className="text-[10px]" style={{color: 'var(--text-muted)'}}>
                                         Saved: {reportLastSavedAt ? new Date(reportLastSavedAt).toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) : 'Not yet'}
@@ -7748,6 +7725,12 @@
                                         <div className="cal-nav-group">
                                             <button onClick={() => setCalendarViewMode('grid')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'grid' ? 1 : 0.6}}>GRID</button>
                                             <button onClick={() => setCalendarViewMode('timeline')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'timeline' ? 1 : 0.6}}>TIMELINE</button>
+                                            <button onClick={() => setCalendarViewMode('agenda')} className="cal-nav-btn" style={{opacity: calendarViewMode === 'agenda' ? 1 : 0.6}}>AGENDA</button>
+                                        </div>
+                                        <div className="cal-nav-group" title="Shrink or expand the schedule view">
+                                            <button onClick={() => setCalendarScaleMode('compact')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'compact' ? 1 : 0.6}}>S</button>
+                                            <button onClick={() => setCalendarScaleMode('normal')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'normal' ? 1 : 0.6}}>M</button>
+                                            <button onClick={() => setCalendarScaleMode('expanded')} className="cal-nav-btn" style={{opacity: calendarScaleMode === 'expanded' ? 1 : 0.6}}>L</button>
                                         </div>
                                         <button onClick={() => window.print()} className="fancy-btn" style={{padding: '8px 16px', fontSize: '10px'}}>EXPORT MATRIX</button>
                                         <button
@@ -7855,7 +7838,7 @@
                                             </div>
                                             <div className="text-xs text-white/70">{selectedDayTimelineShifts.length} shifts</div>
                                         </div>
-                                        <div className="relative rounded-xl border border-white/10 bg-slate-950/65 p-3" style={{height: '500px'}}>
+                                        <div className="relative rounded-xl border border-white/10 bg-slate-950/65 p-3" style={{height: timelineHeight}}>
                                             {[6, 8, 10, 12, 14, 16, 18, 20, 22].map(hour => (
                                                 <div key={`axis-${hour}`} className="absolute left-0 right-0 border-t border-white/10" style={{top: `${((hour * 60 - timelineWindowStart) / timelineWindowSpan) * 100}%`}}>
                                                     <span className="absolute -top-2 left-1 text-[9px] text-cyan-200/70">{hour}:00</span>
@@ -7887,42 +7870,41 @@
                                         </div>
                                     </div>
                                 )}
+                                {calendarViewMode === 'agenda' && (
+                                    <div className="rounded-2xl border border-cyan-500/25 bg-black/35 p-5 text-left">
+                                        <div className="flex items-center justify-between mb-4">
+                                            <div>
+                                                <div className="text-[10px] uppercase tracking-[0.14em] text-cyan-300">Agenda View</div>
+                                                <div className="text-lg font-black text-white">{new Date(`${selectedDate}T12:00:00`).toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
+                                            </div>
+                                            <div className="text-xs text-white/70">{selectedDayTimelineShifts.length} shifts</div>
+                                        </div>
+                                        <div className="space-y-3">
+                                            {selectedDayTimelineShifts.length === 0 && (
+                                                <div className="rounded-xl border border-white/15 bg-slate-950/65 p-4 text-sm text-white/60">No shifts scheduled for this day.</div>
+                                            )}
+                                            {selectedDayTimelineShifts.map(shift => (
+                                                <button
+                                                    key={`agenda-${shift.id}`}
+                                                    type="button"
+                                                    onClick={() => setEditingShift(shift)}
+                                                    className="w-full rounded-xl border border-cyan-300/30 bg-cyan-500/15 p-4 text-left hover:bg-cyan-400/20 transition-colors"
+                                                    title="Click to edit shift"
+                                                >
+                                                    <div className="flex items-center justify-between gap-3">
+                                                        <div className="text-sm font-black text-white">{staff[shift.empId]?.name || shift.empId}</div>
+                                                        <div className="text-[10px] uppercase tracking-[0.12em] text-cyan-100/90">{shift.start || shift.time || '08:00'} - {shift.end || '20:00'}</div>
+                                                    </div>
+                                                    {shift.note && <div className="text-[11px] text-cyan-100/80 mt-2">{shift.note}</div>}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </main>
                         </div>
                     </div>
 
-                    {isRequestDrawerOpen && (
-                        <aside className="no-print" style={{position: 'fixed', top: '78px', right: '16px', width: '360px', maxHeight: '78vh', zIndex: 550, border: '1px solid rgba(245,158,11,0.4)', background: 'linear-gradient(180deg, rgba(17,24,39,0.95), rgba(2,6,23,0.96))', borderRadius: '14px', boxShadow: '0 18px 40px rgba(0,0,0,0.45)', display: 'flex', flexDirection: 'column'}}>
-                            <div style={{padding: '12px 14px', borderBottom: '1px solid rgba(245,158,11,0.28)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
-                                <div>
-                                    <div style={{fontSize: '10px', letterSpacing: '0.14em', textTransform: 'uppercase', color: '#fcd34d', fontWeight: 900}}>Pending Requests</div>
-                                    <div style={{fontSize: '13px', color: '#fde68a', fontWeight: 800}}>{pendingSwapRequests.length} awaiting action</div>
-                                </div>
-                                <button onClick={() => setIsRequestDrawerOpen(false)} className="header-orb-btn" style={{padding: '5px 10px'}}>Close</button>
-                            </div>
-                            <div className="no-scrollbar" style={{overflowY: 'auto', padding: '10px', display: 'flex', flexDirection: 'column', gap: '8px'}}>
-                                {pendingSwapRequests.length === 0 && (
-                                    <div style={{padding: '14px', borderRadius: '10px', border: '1px solid rgba(148,163,184,0.35)', color: '#cbd5e1', fontSize: '12px'}}>No pending requests right now.</div>
-                                )}
-                                {pendingSwapRequests.map(request => (
-                                    <div key={request.id} style={{padding: '10px', borderRadius: '10px', border: '1px solid rgba(250,204,21,0.25)', background: 'rgba(15,23,42,0.72)'}}>
-                                        <div style={{fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#fde68a', marginBottom: '4px'}}>{request.type === 'coverage' ? 'Coverage Request' : 'Swap Request'} • {request.date}</div>
-                                        <div style={{fontSize: '12px', color: '#f8fafc', fontWeight: 700}}>{staff[request.fromStaffId]?.name || request.fromStaffId} → {staff[request.toStaffId]?.name || request.toStaffId}</div>
-                                        {request.reason && <div style={{fontSize: '11px', color: '#e2e8f0', marginTop: '5px'}}>Reason: {request.reason}</div>}
-                                        <div style={{fontSize: '10px', color: '#94a3b8', marginTop: '5px'}}>{new Date(request.createdAt).toLocaleString()}</div>
-                                        {isAdmin ? (
-                                            <div style={{display: 'flex', gap: '8px', marginTop: '8px'}}>
-                                                <button onClick={() => approveShiftSwap(request.id)} className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#059669'}}>Approve</button>
-                                                <button onClick={() => declineShiftSwap(request.id)} className="fancy-btn" style={{padding: '6px 10px', fontSize: '10px', background: '#dc2626'}}>Decline</button>
-                                            </div>
-                                        ) : (
-                                            <div style={{fontSize: '10px', color: '#fbbf24', marginTop: '8px'}}>Admin review required.</div>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </aside>
-                    )}
 
                     {/* MODAL: PERSONNEL */}
                     {isPersonnelModalOpen && (
@@ -9032,8 +9014,8 @@
                         </div>
                     )}
 
-                    {/* Game Lounge Modal */}
-                    {showGameHub && (
+                    {/* Game Lounge Modal removed */}
+                    {false && showGameHub && (
                         <div className="fixed inset-0 bg-black/84 backdrop-blur-md flex items-center justify-center p-4 z-[1320] modal-surface" onClick={() => setShowGameHub(false)}>
                             <div className="crew-modal-card max-w-6xl w-full max-h-[92vh] overflow-y-auto modal-card-enter" onClick={(e) => e.stopPropagation()}>
                                 <div className="crew-modal-header">
@@ -9699,117 +9681,6 @@
                         </div>
                     )}
 
-                    {/* SHIFT SWAP PORTAL MODAL */}
-                    {isShiftSwapOpen && (
-                        <div className="modal-backdrop z-[1850]" onClick={() => setIsShiftSwapOpen(false)}>
-                            <div className="modal-panel modal-panel--lg modal-card-enter text-left" onClick={e => e.stopPropagation()}>
-                                <div className="modal-panel__header">
-                                    <div>
-                                        <div className="modal-panel__kicker">Shift Swap Portal</div>
-                                        <h3 className="modal-panel__title">Trade Shifts</h3>
-                                    </div>
-                                    <button type="button" onClick={() => setIsShiftSwapOpen(false)} className="modal-panel__close">&times;</button>
-                                </div>
-                                <div className="modal-panel__body">
-                                <div className="mb-6 p-4 rounded-lg bg-blue-600/10 border border-blue-500/20">
-                                    <div className="text-sm mb-4">
-                                        <strong>Active Swap Requests:</strong>
-                                    </div>
-                                    {shiftSwapRequests.filter(r => r.status === 'pending').length === 0 ? (
-                                        <div className="text-[11px] text-slate-400">No pending swap requests</div>
-                                    ) : (
-                                        <div className="space-y-2">
-                                            {shiftSwapRequests.filter(r => r.status === 'pending').map(req => (
-                                                <div key={req.id} className="flex items-center justify-between p-3 rounded-lg bg-white/[0.05] border border-white/10">
-                                                    <div className="text-sm">
-                                                        <div>{staff[req.fromStaffId]?.name} ↔ {staff[req.toStaffId]?.name}</div>
-                                                        <div className="text-[10px] text-slate-400">Date: {req.shiftDate} | Requested by: {req.requestedBy}</div>
-                                                    </div>
-                                                    <div className="flex gap-2">
-                                                        {(isAdmin || currentUser?.id === req.toStaffId) && (
-                                                            <>
-                                                                <button onClick={() => approveShiftSwap(req.id)} className="fancy-btn" style={{padding: '6px 10px', fontSize: '9px', background: '#10b981'}}>APPROVE</button>
-                                                                <button onClick={() => rejectShiftSwap(req.id)} className="fancy-btn" style={{padding: '6px 10px', fontSize: '9px', background: '#ef4444'}}>REJECT</button>
-                                                            </>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-
-                                <div className="mb-6 p-4 rounded-lg bg-purple-600/10 border border-purple-500/20">
-                                    <div className="text-sm font-bold mb-4">Request a Swap:</div>
-                                    <div className="grid grid-cols-2 gap-3 mb-3">
-                                        <div>
-                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Request Type</label>
-                                            <select id="swapType" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}}>
-                                                <option value="swap">Swap Shift</option>
-                                                <option value="coverage">Coverage Change</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Reason (optional)</label>
-                                            <input type="text" id="swapReason" placeholder="Reason for request" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}} />
-                                        </div>
-                                    </div>
-                                    <div className="grid grid-cols-3 gap-3">
-                                        <div>
-                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Your Shift Date</label>
-                                            <input type="date" id="swapDate" className="panel-input date-input-luxe w-full" style={{padding: '8px', fontSize: '11px'}} />
-                                        </div>
-                                        <div>
-                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Your Name</label>
-                                            <select id="fromStaff" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}}>
-                                                <option value="">Select staff</option>
-                                                {Object.entries(staff).map(([id, s]) => <option key={id} value={id}>{s.name}</option>)}
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label style={{fontSize: '10px', color: 'var(--accent)', fontWeight: 'bold', textTransform: 'uppercase', display: 'block', marginBottom: '4px'}}>Trade With</label>
-                                            <select id="toStaff" className="panel-input w-full" style={{padding: '8px', fontSize: '11px'}}>
-                                                <option value="">Select staff</option>
-                                                {Object.entries(staff).map(([id, s]) => <option key={id} value={id}>{s.name}</option>)}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <button onClick={() => {
-                                        const date = document.getElementById('swapDate').value;
-                                        const from = document.getElementById('fromStaff').value;
-                                        const to = document.getElementById('toStaff').value;
-                                        const type = document.getElementById('swapType').value || 'swap';
-                                        const reason = document.getElementById('swapReason').value || '';
-                                        if (date && from && to) {
-                                            requestShiftSwap(from, to, date, type, reason);
-                                            document.getElementById('swapDate').value = '';
-                                            document.getElementById('fromStaff').value = '';
-                                            document.getElementById('toStaff').value = '';
-                                            document.getElementById('swapReason').value = '';
-                                        } else {
-                                            showNotification('Please complete all fields', 'error');
-                                        }
-                                    }} className="fancy-btn mt-3 w-full" style={{padding: '10px', fontSize: '11px', background: '#8b5cf6'}}>REQUEST SWAP</button>
-                                </div>
-
-                                <div className="p-4 rounded-lg bg-green-600/10 border border-green-500/20">
-                                    <div className="text-sm font-bold mb-3">Completed Swaps:</div>
-                                    {shiftSwapRequests.filter(r => r.status === 'approved').length === 0 ? (
-                                        <div className="text-[11px] text-slate-400">No approved swaps yet</div>
-                                    ) : (
-                                        <div className="space-y-2 text-[11px]">
-                                            {shiftSwapRequests.filter(r => r.status === 'approved').map(req => (
-                                                <div key={req.id} className="p-2 rounded bg-white/[0.05]">
-                                                    ✅ {staff[req.fromStaffId]?.name} {String.fromCharCode(8596)} {staff[req.toStaffId]?.name} on {req.shiftDate} (Approved by {req.approvedBy})
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {/* PRN AVAILABILITY DASHBOARD MODAL */}
                     {isPrnDashboardOpen && (
